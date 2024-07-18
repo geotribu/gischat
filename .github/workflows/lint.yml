@@ -1,0 +1,55 @@
+name: "🐍 Linter"
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "**.py"
+
+  pull_request:
+    branches: [main]
+    paths:
+      - "**.py"
+
+env:
+  PROJECT_FOLDER: "qchat_api"
+  PYTHON_VERSION: "3.12"
+
+jobs:
+  lint-ubuntu:
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Get source code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: "poetry"
+
+      - name: Install poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: 1.8
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+          virtualenvs-path: ~/.env
+          installer-parallel: true
+
+      - name: Install requirements
+        run: |
+          python -m pip install -U pip setuptools wheel
+          python -m pip install -U -r requirements/development.txt
+
+      - name: Check black lint
+        run: poetry run black --check --diff ./air_bot
+
+      - name: Check isort lint
+        run: poetry run isort --check ./air_bot
+
+      - name: Lint with flake8
+        run: |
+          poetry run flake8 qchat_api --count --select=E9,F63,F7,F82 --show-source --statistics
+          poetry run flake8 qchat_api --count --exit-zero --statistics
