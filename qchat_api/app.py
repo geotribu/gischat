@@ -12,66 +12,19 @@ from qchat_api.constants import FETCH_MESSAGES_NUMBER
 from qchat_api.db import insert_message, lifespan
 from qchat_api.models import CreateRoomModel, MessageModel, PostMessageModel, RoomModel
 from qchat_api.utils import get_version
+from qchat_api.ws_html import ws_html
 
-app = FastAPI(title="QChat API", lifespan=lifespan)
-
-html = """
-<!DOCTYPE html>
-<html>
-    <head>
-        <title>Chat</title>
-    </head>
-    <body>
-        <h1>QChat Websocket</h1>
-        <form action="" onsubmit="sendMessage(event)">
-            <label>Room: <input type="text" id="roomId" autocomplete="off" value="QGIS"/></label>
-            <button onclick="connect(event)">Connect</button>
-            <hr>
-            <label>Author: <input type="text" id="authorId" autocomplete="off" value="geotribu"/></label>
-            <label>Message: <input type="text" id="messageText" autocomplete="off"/></label>
-            <button>Send</button>
-        </form>
-        <ul id='messages'>
-        </ul>
-        <script>
-            let ws = null;
-            function displayMessage(msg){
-                const messages = document.getElementById('messages');
-                const message = document.createElement('li');
-                console.log(msg);
-                const content = document.createTextNode(msg);
-                message.appendChild(content);
-                messages.appendChild(message);
-            };
-            function connect(event) {
-                const room = document.getElementById("roomId");
-                const author = document.getElementById("authorId");
-                ws = new WebSocket("ws://localhost:8000/room/" + room.value + "/ws");
-                ws.onopen = (event) => displayMessage("connection to websocket ok");
-                ws.onmessage = (event) => {
-                    const data = JSON.parse(event.data);
-                    const log = `[${data.author}] (${data.date_posted}): ${data.message}`;
-                    displayMessage(log);
-                };
-                ws.onerror = (error) => displayMessage(error);
-                event.preventDefault();
-            };
-            function sendMessage(event) {
-                const message = document.getElementById("messageText");
-                const author = document.getElementById("authorId");
-                ws.send(JSON.stringify({message: message.value, author: author.value}));
-                message.value = ''
-                event.preventDefault()
-            };
-        </script>
-    </body>
-</html>
-"""
+app = FastAPI(
+    title="QChat API",
+    summary="Chat with your GIS tribe in QGIS and QField !",
+    version=get_version(),
+    lifespan=lifespan,
+)
 
 
 @app.get("/")
-async def get():
-    return HTMLResponse(html)
+async def get_ws_page():
+    return HTMLResponse(ws_html)
 
 
 @app.get("/version")
@@ -241,7 +194,6 @@ async def websocket_endpoint(websocket: WebSocket, room_name: str):
             postmodel = PostMessageModel(**json.loads(data))
             logging.getLogger().info(f"WS message received: {postmodel}")
             pm = await insert_message(websocket.app, room_name, postmodel)
-            # await websocket.send_json(jsonable_encoder(pm))
             await notifier._notify(json.dumps(jsonable_encoder(pm)))
     except WebSocketDisconnect:
         notifier.remove(websocket)

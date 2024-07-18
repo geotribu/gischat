@@ -1,0 +1,53 @@
+ws_html = """
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>QChat</title>
+    </head>
+    <body>
+        <h1>QChat Websocket</h1>
+        <form action="" onsubmit="sendMessage(event)">
+            <label>Room: <input type="text" id="roomId" autocomplete="off" value="QGIS"/></label>
+            <button onclick="connect(event)">Connect</button>
+            <hr>
+            <label>Author: <input type="text" id="authorId" autocomplete="off" value="geotribu"/></label>
+            <label>Message: <input type="text" id="messageText" autocomplete="off"/></label>
+            <button>Send</button>
+        </form>
+        <hr>
+        <ul id='messages'>
+        </ul>
+        <script>
+            let ws = null;
+            function displayMessage(msg){
+                const messages = document.getElementById('messages');
+                const message = document.createElement('li');
+                console.log(msg);
+                const content = document.createTextNode(msg);
+                message.appendChild(content);
+                messages.appendChild(message);
+            };
+            function connect(event) {
+                const room = document.getElementById("roomId");
+                const author = document.getElementById("authorId");
+                ws = new WebSocket("ws://localhost:8000/room/" + room.value + "/ws");
+                ws.onopen = (event) => displayMessage("connection to websocket ok");
+                ws.onmessage = (event) => {
+                    const data = JSON.parse(event.data);
+                    const log = `[${data.author}] (${data.date_posted}): ${data.message}`;
+                    displayMessage(log);
+                };
+                ws.onerror = (error) => displayMessage(error);
+                event.preventDefault();
+            };
+            function sendMessage(event) {
+                const message = document.getElementById("messageText");
+                const author = document.getElementById("authorId");
+                ws.send(JSON.stringify({message: message.value, author: author.value}));
+                message.value = ''
+                event.preventDefault()
+            };
+        </script>
+    </body>
+</html>
+"""
