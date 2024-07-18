@@ -1,0 +1,32 @@
+services:
+
+  api:
+    build: .
+    image: qchat-api
+    environment:
+      POSTGRES_HOST: ${POSTGRES_HOST}
+      POSTGRES_PORT: ${POSTGRES_PORT}
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_DB_TEST: test_${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - .:/qchat:ro
+    ports:
+      - "8000:8000"
+
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - ./db:/docker-entrypoint-initdb.d
+      - qchat_pg_data:/var/lib/postgresql/data/
+    ports:
+      - 5432:5432
+
+volumes:
+  qchat_pg_data:
