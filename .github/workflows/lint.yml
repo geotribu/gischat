@@ -39,15 +39,13 @@ jobs:
           installer-parallel: true
 
       - name: Install requirements
-        run: |
-          python -m pip install -U pip setuptools wheel
-          python -m pip install -U -r requirements/development.txt
+        run: poetry install
 
       - name: Check black lint
-        run: poetry run black --check --diff ./air_bot
+        run: poetry run black --check --diff ./qchat_api
 
       - name: Check isort lint
-        run: poetry run isort --check ./air_bot
+        run: poetry run isort --check ./qchat_api
 
       - name: Lint with flake8
         run: |
