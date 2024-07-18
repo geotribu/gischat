@@ -151,3 +151,6 @@ GeotribuToolbelt_*_Python*
 
 # poetry stuff
 peotry.lock
+
+# environments
+.env.dockerlocal
