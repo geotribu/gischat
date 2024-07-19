@@ -24,6 +24,6 @@ jobs:
 
       - name: Build Inventory Image
         run: |
-          docker build . --tag ghcr.io/geotribu/qchat-api:$(poetry version -s) --tag ghcr.io/geotribu/qchat-api:latest
+          docker build . --tag geotribu/qchat-api:$(poetry version -s) --tag geotribu/qchat-api:latest
           docker push ghcr.io/geotribu/qchat-api:$(poetry version -s)
           docker push ghcr.io/geotribu/qchat-api:latest
