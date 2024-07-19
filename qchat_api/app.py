@@ -156,33 +156,36 @@ class Notifier:
     """
 
     def __init__(self):
-        self.connections: list[WebSocket] = []
+        # registered websockets for rooms
+        self.connections: dict[str, list[WebSocket]] = {}
         self.generator = self.get_notification_generator()
 
     async def get_notification_generator(self):
         while True:
-            message = yield
-            await self._notify(message)
+            room, message = yield
+            await self.notify(room, message)
 
     async def push(self, msg: str):
         await self.generator.asend(msg)
 
-    async def connect(self, websocket: WebSocket):
+    async def connect(self, room: str, websocket: WebSocket):
         await websocket.accept()
-        self.connections.append(websocket)
+        if room not in self.connections.keys():
+            self.connections[room] = []
+        self.connections[room].append(websocket)
 
-    def remove(self, websocket: WebSocket):
-        self.connections.remove(websocket)
+    def remove(self, room: str, websocket: WebSocket):
+        self.connections[room].remove(websocket)
 
-    async def _notify(self, message: str):
+    async def notify(self, room: str, message: str):
         living_connections = []
-        while len(self.connections) > 0:
+        while len(self.connections[room]) > 0:
             # Looping like this is necessary in case a disconnection is handled
             # during await websocket.send_text(message)
-            websocket = self.connections.pop()
+            websocket = self.connections[room].pop()
             await websocket.send_text(message)
             living_connections.append(websocket)
-        self.connections = living_connections
+        self.connections[room] = living_connections
 
 
 notifier = Notifier()
@@ -190,22 +193,16 @@ notifier = Notifier()
 
 @app.websocket("/room/{room_name}/ws")
 async def websocket_endpoint(websocket: WebSocket, room_name: str):
-    await notifier.connect(websocket)
+    await notifier.connect(room_name, websocket)
     try:
         while True:
             data = await websocket.receive_text()
             postmodel = PostMessageModel(**json.loads(data))
             logging.getLogger().info(f"WS message received: {postmodel}")
             pm = await insert_message(websocket.app, room_name, postmodel)
-            await notifier._notify(json.dumps(jsonable_encoder(pm)))
+            await notifier.notify(room_name, json.dumps(jsonable_encoder(pm)))
     except WebSocketDisconnect:
-        notifier.remove(websocket)
-
-
-@app.on_event("startup")
-async def startup():
-    # Prime the push notification generator
-    await notifier.generator.asend(None)
+        notifier.remove(room_name, websocket)
 
 
 # endregion
