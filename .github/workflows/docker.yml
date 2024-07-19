@@ -18,7 +18,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: ${{ env.PYTHON_VERSION }}
+          python-version: "3.12"
           cache: "pip"
 
       - name: Install poetry
@@ -39,6 +39,6 @@ jobs:
 
       - name: Build Inventory Image
         run: |
-          docker build . --tag ghcr.io/geotribu/qchat-api:$(poetry version -s) --tag ghcr.io/geotribu/qchat-api:latest
-          docker push ghcr.io/geotribu/qchat-api:$(poetry version -s)
-          docker push ghcr.io/geotribu/qchat-api:latest
+          docker build . --tag ghcr.io/geotribu/gischat:$(poetry version -s) --tag ghcr.io/geotribu/gischat:latest
+          docker push ghcr.io/geotribu/gischat:$(poetry version -s)
+          docker push ghcr.io/geotribu/gischat:latest

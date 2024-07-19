@@ -1,10 +1,10 @@
 [tool.poetry]
-name = "qchat-back"
+name = "gischat"
 version = "0.1.0"
-description = "Chat backend for QGIS and QField"
+description = "GIS chat backend for QGIS and QField"
 authors = ["Guilhem Allaman <contact@guilhemallaman.net>"]
 readme = "README.md"
-packages = [{include = "qchat_api"}]
+packages = [{include = "gischat"}]
 
 [tool.poetry.dependencies]
 python = "^3.10"

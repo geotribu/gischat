@@ -2,7 +2,7 @@ services:
 
   api:
     build: .
-    image: qchat-api:latest
+    image: gischat:latest
     environment:
       POSTGRES_HOST: ${POSTGRES_HOST}
       POSTGRES_PORT: ${POSTGRES_PORT}
@@ -21,9 +21,9 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
       - ./db:/docker-entrypoint-initdb.d
-      - qchat_pg_data:/var/lib/postgresql/data/
+      - gischat_pg_data:/var/lib/postgresql/data/
     ports:
       - 5432:5432
 
 volumes:
-  qchat_pg_data:
+  gischat_pg_data:

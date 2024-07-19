@@ -10,11 +10,11 @@ from fastapi.responses import HTMLResponse
 from psycopg.rows import dict_row
 from starlette.websockets import WebSocketDisconnect
 
-from qchat_api.constants import FETCH_MESSAGES_NUMBER
-from qchat_api.db import insert_message, lifespan
-from qchat_api.models import CreateRoomModel, MessageModel, PostMessageModel, RoomModel
-from qchat_api.utils import get_version
-from qchat_api.ws_html import ws_html
+from gischat.constants import FETCH_MESSAGES_NUMBER
+from gischat.db import insert_message, lifespan
+from gischat.models import CreateRoomModel, MessageModel, PostMessageModel, RoomModel
+from gischat.utils import get_version
+from gischat.ws_html import ws_html
 
 # logger
 logger = logging.getLogger()
@@ -28,8 +28,8 @@ handler.setFormatter(formatter)
 logger.addHandler(handler)
 
 app = FastAPI(
-    title="QChat API",
-    summary="Chat with your GIS tribe in QGIS and QField !",
+    title="gischat API",
+    summary="Chat with your GIS tribe in QGIS, QField and other clients !",
     version=get_version(),
     lifespan=lifespan,
 )

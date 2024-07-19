@@ -2,11 +2,12 @@ ws_html = """
 <!DOCTYPE html>
 <html>
     <head>
-        <title>QChat</title>
+        <title>gischat</title>
     </head>
     <body>
-        <h1>QChat Websocket</h1>
+        <h1>gischat websocket</h1>
         <form action="" onsubmit="sendMessage(event)">
+            <label>Instance: <input type="text" id="instance" autocomplete="off" value="localhost:8000"/></label>
             <label>Room: <input type="text" id="roomId" autocomplete="off" value="QGIS"/></label>
             <button onclick="connect(event)">Connect</button>
             <hr>
@@ -28,9 +29,10 @@ ws_html = """
                 messages.appendChild(message);
             };
             function connect(event) {
+                const instance = document.getElementById("instance");
                 const room = document.getElementById("roomId");
                 const author = document.getElementById("authorId");
-                ws = new WebSocket("ws://localhost:8000/room/" + room.value + "/ws");
+                ws = new WebSocket("ws://" + instance.value + "/room/" + room.value + "/ws");
                 ws.onopen = (event) => displayMessage("connection to websocket ok");
                 ws.onmessage = (event) => {
                     const data = JSON.parse(event.data);
