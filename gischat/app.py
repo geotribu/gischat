@@ -117,13 +117,13 @@ async def websocket_endpoint(websocket: WebSocket, room: str):
     if room not in available_rooms():
         raise HTTPException(status_code=404, detail=f"Room '{room}' not registered")
     await notifier.connect(room, websocket)
-    logger.info(f"New websocket connected in room {room}")
+    logger.info(f"New websocket connected in room '{room}'")
     try:
         while True:
             data = await websocket.receive_text()
             message = MessageModel(**json.loads(data))
-            logging.getLogger().info(f"WS message received: {message}")
+            logging.getLogger().info(f"Ws message in room '{room}': {message}")
             await notifier.notify(room, json.dumps(jsonable_encoder(message)))
     except WebSocketDisconnect:
         notifier.remove(room, websocket)
-        logger.info(f"Websocket disconnected from room {room}")
+        logger.info(f"Websocket disconnected from room '{room}'")
