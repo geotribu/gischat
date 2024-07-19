@@ -3,15 +3,11 @@ services:
   api:
     build: .
     image: qchat-api
-    environment:
-      POSTGRES_HOST: ${POSTGRES_HOST}
-      POSTGRES_PORT: ${POSTGRES_PORT}
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_DB_TEST: test_${POSTGRES_DB}
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    env_file:
+      - .env
     volumes:
       - .:/qchat:ro
+      - .env:/qchat/.env:ro
     ports:
       - "8000:8000"
 
