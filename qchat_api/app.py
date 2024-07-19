@@ -2,6 +2,7 @@ import json
 import logging
 from typing import Optional
 
+from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, Request, WebSocket
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import HTMLResponse
@@ -13,6 +14,8 @@ from qchat_api.db import insert_message, lifespan
 from qchat_api.models import CreateRoomModel, MessageModel, PostMessageModel, RoomModel
 from qchat_api.utils import get_version
 from qchat_api.ws_html import ws_html
+
+load_dotenv()
 
 app = FastAPI(
     title="QChat API",

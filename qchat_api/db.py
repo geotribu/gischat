@@ -9,7 +9,7 @@ from psycopg_pool import AsyncConnectionPool
 from qchat_api.models import MessageModel, PostMessageModel
 
 
-def get_conn_str():
+def get_conn_str() -> str:
     return f"""
     dbname={os.environ.get('POSTGRES_DB')}
     user={os.environ.get('POSTGRES_USER')}
@@ -27,7 +27,7 @@ async def lifespan(app: FastAPI):
 
 
 async def insert_message(
-    app: Any, room_name: str, message: PostMessageModel
+    app: Any, room: str, message: PostMessageModel
 ) -> MessageModel:
     async with app.async_pool.connection() as conn:
         async with conn.cursor(row_factory=dict_row) as cursor:
@@ -39,7 +39,7 @@ async def insert_message(
                 {
                     "message": message.message,
                     "author": message.author,
-                    "room": room_name,
+                    "room": room,
                 },
             )
             result = await cursor.fetchone()
