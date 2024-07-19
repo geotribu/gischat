@@ -148,6 +148,3 @@ GeotribuToolbelt_*_Python*
 
 # jb stuff
 .idea
-
-# environments
-.env.dockerlocal
