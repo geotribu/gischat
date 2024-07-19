@@ -45,7 +45,7 @@ jobs:
         run: poetry run black --check --diff ./qchat_api
 
       - name: Check isort lint
-        run: poetry run isort --check ./qchat_api
+        run: poetry run isort --check --profile=black ./qchat_api
 
       - name: Lint with flake8
         run: |
