@@ -11,6 +11,7 @@ ARG PIP_NO_CACHE_DIR 1
 WORKDIR /qchat
 
 COPY ./pyproject.toml /qchat/pyproject.toml
+COPY ./poetry.lock /qchat/poetry.lock
 
 COPY ./qchat_api /qchat/qchat_api
 
@@ -18,4 +19,4 @@ RUN pip install poetry
 
 RUN poetry install
 
-CMD ["poetry", "run", "uvicorn", "qchat_api.app:app", "--proxy-headers", "--port", "8000", "--workers", "8", "--env-file", ".env"]
+CMD ["poetry", "run", "uvicorn", "qchat_api.app:app", "--proxy-headers", "--port", "8000", "--workers", "8"]

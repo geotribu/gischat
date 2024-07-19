@@ -1,3 +1,4 @@
+import logging
 import os
 from contextlib import asynccontextmanager
 from typing import Any
@@ -11,16 +12,19 @@ from qchat_api.models import MessageModel, PostMessageModel
 
 def get_conn_str() -> str:
     return f"""
+    host={os.environ.get('POSTGRES_HOST')}
+    port={os.environ.get('POSTGRES_PORT')}
     dbname={os.environ.get('POSTGRES_DB')}
     user={os.environ.get('POSTGRES_USER')}
     password={os.environ.get('POSTGRES_PASSWORD')}
-    host={os.environ.get('POSTGRES_HOST')}
-    port={os.environ.get('POSTGRES_PORT')}
     """
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    logging.getLogger().info(
+        f"Connecting pg pool to db '{os.environ.get('POSTGRES_DB')}' on host '{os.environ.get('POSTGRES_HOST')}'"
+    )
     app.async_pool = AsyncConnectionPool(conninfo=get_conn_str())
     yield
     await app.async_pool.close()
