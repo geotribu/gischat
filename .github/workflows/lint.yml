@@ -27,15 +27,15 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-          cache: "poetry"
+          cache: "pip"
 
       - name: Install poetry
         uses: snok/install-poetry@v1
         with:
-          version: 1.8
+          version: 1.8.3
           virtualenvs-create: true
           virtualenvs-in-project: true
-          virtualenvs-path: ~/.env
+          virtualenvs-path: ~/.venv
           installer-parallel: true
 
       - name: Install requirements
@@ -45,7 +45,7 @@ jobs:
         run: poetry run black --check --diff ./qchat_api
 
       - name: Check isort lint
-        run: poetry run isort --check ./qchat_api
+        run: poetry run isort --check --profile=black ./qchat_api
 
       - name: Lint with flake8
         run: |

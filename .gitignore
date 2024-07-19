@@ -149,8 +149,5 @@ GeotribuToolbelt_*_Python*
 # jb stuff
 .idea
 
-# poetry stuff
-poetry.lock
-
 # environments
 .env.dockerlocal
