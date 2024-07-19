@@ -7,7 +7,7 @@ from fastapi import FastAPI
 from psycopg.rows import dict_row
 from psycopg_pool import AsyncConnectionPool
 
-from qchat_api.models import MessageModel, PostMessageModel
+from gischat.models import MessageModel, PostMessageModel
 
 
 def get_conn_str() -> str:

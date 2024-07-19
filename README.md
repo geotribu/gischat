@@ -1,4 +1,4 @@
-# QChat - API
+# gischat - API
 
 ## Development
 
@@ -18,5 +18,5 @@ docker compose up db
 - Launch API:
 
 ```sh
-poetry run uvicorn qchat_api.app:app --reload --env-file .env
+poetry run uvicorn gischat.app:app --reload --env-file .env
 ```
