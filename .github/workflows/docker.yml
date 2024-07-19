@@ -15,6 +15,21 @@ jobs:
       - name: Checkout GitHub Action
         uses: actions/checkout@main
 
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: "pip"
+
+      - name: Install poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: 1.8.3
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+          virtualenvs-path: ~/.venv
+          installer-parallel: true
+
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v1
         with:
@@ -24,6 +39,6 @@ jobs:
 
       - name: Build Inventory Image
         run: |
-          docker build . --tag geotribu/qchat-api:$(poetry version -s) --tag geotribu/qchat-api:latest
+          docker build . --tag ghcr.io/geotribu/qchat-api:$(poetry version -s) --tag ghcr.io/geotribu/qchat-api:latest
           docker push ghcr.io/geotribu/qchat-api:$(poetry version -s)
           docker push ghcr.io/geotribu/qchat-api:latest
