@@ -8,15 +8,22 @@
 cp .env.example .env
 ```
 
-- Run local database:
-
-```sh
-source .env
-docker compose up db
-```
-
 - Launch API:
 
 ```sh
 poetry run uvicorn gischat.app:app --reload --env-file .env
+```
+
+## Build
+
+- Build docker image:
+
+```sh
+docker build . --tag geotribu/gischat:latest
+```
+
+- Run docker image:
+
+```sh
+docker run geotribu/latest --env ROOMS=QGIS,QField,Geotribu
 ```

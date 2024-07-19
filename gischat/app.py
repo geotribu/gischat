@@ -1,18 +1,16 @@
 import json
 import logging
+import os
 import sys
-from typing import Optional
+from typing import Any
 
 import colorlog
-from fastapi import FastAPI, HTTPException, Request, WebSocket
+from fastapi import FastAPI, HTTPException, WebSocket
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import HTMLResponse
-from psycopg.rows import dict_row
 from starlette.websockets import WebSocketDisconnect
 
-from gischat.constants import FETCH_MESSAGES_NUMBER
-from gischat.db import insert_message, lifespan
-from gischat.models import CreateRoomModel, MessageModel, PostMessageModel, RoomModel
+from gischat.models import MessageModel
 from gischat.utils import get_version
 from gischat.ws_html import ws_html
 
@@ -27,140 +25,12 @@ formatter = colorlog.ColoredFormatter(
 handler.setFormatter(formatter)
 logger.addHandler(handler)
 
-app = FastAPI(
-    title="gischat API",
-    summary="Chat with your GIS tribe in QGIS, QField and other clients !",
-    version=get_version(),
-    lifespan=lifespan,
-)
+
+def available_rooms() -> list[str]:
+    return os.environ.get("ROOMS").split(",")
 
 
-@app.get("/")
-async def get_ws_page():
-    return HTMLResponse(ws_html)
-
-
-@app.get("/version")
-async def get_version() -> dict:
-    return {"version": get_version()}
-
-
-@app.get("/status")
-async def get_status(request: Request) -> dict:
-    return {
-        "status": "ok",
-        "healthy": True,
-        "db_pool": request.app.async_pool.get_stats(),
-    }
-
-
-@app.get("/rooms")
-async def get_rooms(request: Request) -> list[RoomModel]:
-    async with request.app.async_pool.connection() as conn:
-        async with conn.cursor(row_factory=dict_row) as cursor:
-            await cursor.execute("SELECT * FROM room ORDER BY date_created DESC")
-            results = await cursor.fetchall()
-            return [RoomModel(**r) for r in results]
-
-
-@app.get("/room/{room_name}")
-async def get_room_info(request: Request, room_name: str) -> Optional[RoomModel]:
-    async with request.app.async_pool.connection() as conn:
-        async with conn.cursor(row_factory=dict_row) as cursor:
-            await cursor.execute(
-                """
-                SELECT *
-                FROM room
-                WHERE name LIKE %(name)s""",
-                {"name": room_name},
-            )
-            if cursor.rowcount == 0:
-                raise HTTPException(
-                    status_code=404, detail=f"Room with name '{room_name}' not found"
-                )
-            result = await cursor.fetchone()
-            return RoomModel(**result)
-
-
-@app.put("/room")
-async def create_room(request: Request, room: CreateRoomModel) -> Optional[RoomModel]:
-    async with request.app.async_pool.connection() as conn:
-        async with conn.cursor(row_factory=dict_row) as cursor:
-            await cursor.execute(
-                """
-            INSERT INTO room (name, creator)
-            VALUES (%(name)s, %(creator)s)
-            RETURNING *""",
-                {"name": room.name, "creator": room.creator},
-            )
-            result = await cursor.fetchone()
-            return RoomModel(**result)
-
-
-@app.get("/room/{room_name}/messages/{number}")
-async def get_room_messages(
-    request: Request, room_name: str, number: int = FETCH_MESSAGES_NUMBER
-) -> list[MessageModel]:
-    async with request.app.async_pool.connection() as conn:
-        async with conn.cursor(row_factory=dict_row) as cursor:
-            await cursor.execute(
-                """
-                SELECT *
-                FROM message
-                WHERE room LIKE %(room)s
-                ORDER BY date_posted DESC
-                LIMIT %(number)s
-                """,
-                {"room": room_name, "number": number},
-            )
-            results = await cursor.fetchall()
-            return [MessageModel(**r) for r in results]
-
-
-@app.put("/room/{room_name}/message")
-async def put_message(
-    request: Request, room_name: str, message: PostMessageModel
-) -> MessageModel:
-    async with request.app.async_pool.connection() as conn:
-        async with conn.cursor(row_factory=dict_row) as cursor:
-            await cursor.execute(
-                """
-            INSERT INTO message (message, author, room)
-            VALUES (%(message)s, %(author)s, %(room)s)
-            RETURNING *""",
-                {
-                    "message": message.message,
-                    "author": message.author,
-                    "room": room_name,
-                },
-            )
-            result = await cursor.fetchone()
-            return MessageModel(**result)
-
-
-@app.get("/messages/{number}")
-async def get_latest_messages(
-    request: Request, number: int = FETCH_MESSAGES_NUMBER
-) -> list[MessageModel]:
-    async with request.app.async_pool.connection() as conn:
-        async with conn.cursor(row_factory=dict_row) as cursor:
-            await cursor.execute(
-                """
-            SELECT *
-            FROM message
-            ORDER BY date_posted DESC
-            LIMIT %(number)s
-            """,
-                {"number": number},
-            )
-            results = await cursor.fetchall()
-            return [MessageModel(**r) for r in results]
-
-
-# region websocket
-
-
-class Notifier:
+class WebsocketNotifier:
     """
     Class used to broadcast messages to registered websockets
     """
@@ -198,21 +68,62 @@ class Notifier:
         self.connections[room] = living_connections
 
 
-notifier = Notifier()
+notifier = WebsocketNotifier()
+
+app = FastAPI(
+    title="gischat API",
+    summary="Chat with your GIS tribe in QGIS, QField and other clients !",
+    version=get_version(),
+)
 
 
-@app.websocket("/room/{room_name}/ws")
-async def websocket_endpoint(websocket: WebSocket, room_name: str):
-    await notifier.connect(room_name, websocket)
+@app.get("/")
+async def get_ws_page():
+    return HTMLResponse(ws_html)
+
+
+@app.get("/version")
+async def get_version() -> dict[str, Any]:
+    return {"version": get_version()}
+
+
+@app.get("/status")
+async def get_status() -> dict[str, Any]:
+    return {
+        "status": "ok",
+        "healthy": True,
+        "rooms": [
+            {"name": k, "nb_connected_users": len(v)}
+            for k, v in notifier.connections.items()
+        ],
+    }
+
+
+@app.get("/rooms")
+async def get_rooms() -> list[str]:
+    return available_rooms()
+
+
+@app.put("/room/{room}/message")
+async def put_message(room: str, message: MessageModel) -> MessageModel:
+    if room not in notifier.connections.keys():
+        raise HTTPException(status_code=404, detail=f"Room '{room}' not registered")
+    await notifier.notify(room, json.dumps(jsonable_encoder(message)))
+    return message
+
+
+@app.websocket("/room/{room}/ws")
+async def websocket_endpoint(websocket: WebSocket, room: str):
+    if room not in available_rooms():
+        raise HTTPException(status_code=404, detail=f"Room '{room}' not registered")
+    await notifier.connect(room, websocket)
+    logger.info(f"New websocket connected in room {room}")
     try:
         while True:
             data = await websocket.receive_text()
-            postmodel = PostMessageModel(**json.loads(data))
-            logging.getLogger().info(f"WS message received: {postmodel}")
-            pm = await insert_message(websocket.app, room_name, postmodel)
-            await notifier.notify(room_name, json.dumps(jsonable_encoder(pm)))
+            message = MessageModel(**json.loads(data))
+            logging.getLogger().info(f"WS message received: {message}")
+            await notifier.notify(room, json.dumps(jsonable_encoder(message)))
     except WebSocketDisconnect:
-        notifier.remove(room_name, websocket)
-
-
-# endregion
+        notifier.remove(room, websocket)
+        logger.info(f"Websocket disconnected from room {room}")

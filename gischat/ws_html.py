@@ -36,7 +36,7 @@ ws_html = """
                 ws.onopen = (event) => displayMessage("connection to websocket ok");
                 ws.onmessage = (event) => {
                     const data = JSON.parse(event.data);
-                    const log = `[${data.author}] (${data.date_posted}): ${data.message}`;
+                    const log = `[${data.author}] (${new Date().toLocaleTimeString()}): ${data.message}`;
                     displayMessage(log);
                 };
                 ws.onerror = (error) => displayMessage(error);
