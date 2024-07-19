@@ -1,8 +1,9 @@
 import json
 import logging
+import sys
 from typing import Optional
 
-from dotenv import load_dotenv
+import colorlog
 from fastapi import FastAPI, HTTPException, Request, WebSocket
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import HTMLResponse
@@ -15,7 +16,16 @@ from qchat_api.models import CreateRoomModel, MessageModel, PostMessageModel, Ro
 from qchat_api.utils import get_version
 from qchat_api.ws_html import ws_html
 
-load_dotenv()
+# logger
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
+handler = logging.StreamHandler(sys.stdout)
+handler.setLevel(logging.INFO)
+formatter = colorlog.ColoredFormatter(
+    "%(yellow)s[%(asctime)s] %(log_color)s[%(levelname)s]%(reset)s %(purple)s[%(name)s %(module)s]%(reset)s %(message)s"
+)
+handler.setFormatter(formatter)
+logger.addHandler(handler)
 
 app = FastAPI(
     title="QChat API",
