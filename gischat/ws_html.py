@@ -5,9 +5,9 @@ ws_html = """
         <title>gischat</title>
     </head>
     <body>
-        <h1>gischat websocket</h1>
+        <h1>gischat websocket client</h1>
         <form action="" onsubmit="sendMessage(event)">
-            <label>Instance: <input type="text" id="instance" autocomplete="off" value="localhost:8000"/></label>
+            <label>Instance: <input type="text" id="instance" autocomplete="off" value=""/></label>
             <label>Room: <input type="text" id="roomId" autocomplete="off" value="QGIS"/></label>
             <button onclick="connect(event)">Connect</button>
             <hr>
@@ -20,6 +20,10 @@ ws_html = """
         </ul>
         <script>
             let ws = null;
+
+            const instance = document.getElementById('instance');
+            instance.value = window.location.host;
+
             function displayMessage(msg){
                 const messages = document.getElementById('messages');
                 const message = document.createElement('li');
