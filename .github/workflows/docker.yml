@@ -62,6 +62,4 @@ jobs:
           push: true
           tags: |
             gounux/gischat:latest
-            gounux/gischat:$(poetry version -s)
             ghcr.io/geotribu/gischat:latest
-            ghcr.io/geotribu/gischat:$(poetry version -s)
