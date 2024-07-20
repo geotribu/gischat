@@ -49,11 +49,11 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GHCR_TOKEN }}
 
-      - name: Build Inventory Image
+      - name: Build and push image
         run: |
           docker build . \
             --tag gounux/gischat:$(poetry version -s) \
-            --tag gounux/gischat:latest
+            --tag gounux/gischat:latest \
             --tag ghcr.io/geotribu/gischat:$(poetry version -s) \
             --tag ghcr.io/geotribu/gischat:latest
           docker push gounux/gischat:$(poetry version -s)
