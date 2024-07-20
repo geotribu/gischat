@@ -1,4 +1,4 @@
-name: "⚒️ Deploy image to GHCR"
+name: "⚒️ Deploy image to Dockerhub and GHCR"
 
 on:
   push:
@@ -30,15 +30,38 @@ jobs:
           virtualenvs-path: ~/.venv
           installer-parallel: true
 
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ vars.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
       - name: Login to GitHub Container Registry
-        uses: docker/login-action@v1
+        uses: docker/login-action@v3
         with:
           registry: ghcr.io
-          username: ${{github.actor}}
-          password: ${{secrets.DOCKER_TOKEN}}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GHCR_TOKEN }}
 
-      - name: Build Inventory Image
-        run: |
-          docker build . --tag ghcr.io/geotribu/gischat:$(poetry version -s) --tag ghcr.io/geotribu/gischat:latest
-          docker push ghcr.io/geotribu/gischat:$(poetry version -s)
-          docker push ghcr.io/geotribu/gischat:latest
+#      - name: Build Inventory Image
+#        run: |
+#          docker build . --tag ghcr.io/geotribu/gischat:$(poetry version -s) --tag ghcr.io/geotribu/gischat:latest
+#          docker push ghcr.io/geotribu/gischat:$(poetry version -s)
+#          docker push ghcr.io/geotribu/gischat:latest
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: |
+            gounux/gischat:latest
+            gounux/gischat:$(poetry version -s)
+            ghcr.io/geotribu/gischat:latest
+            ghcr.io/geotribu/gischat:$(poetry version -s)
