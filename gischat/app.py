@@ -27,7 +27,7 @@ logger.addHandler(handler)
 
 
 def available_rooms() -> list[str]:
-    return os.environ.get("ROOMS").split(",")
+    return os.environ.get("ROOMS", "QGIS,QField,Geotribu").split(",")
 
 
 class WebsocketNotifier:
