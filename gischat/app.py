@@ -2,7 +2,6 @@ import json
 import logging
 import os
 import sys
-from typing import Any
 
 import colorlog
 from fastapi import FastAPI, HTTPException, WebSocket
@@ -10,8 +9,8 @@ from fastapi.encoders import jsonable_encoder
 from fastapi.responses import HTMLResponse
 from starlette.websockets import WebSocketDisconnect
 
-from gischat.models import MessageModel
-from gischat.utils import get_version
+from gischat.models import MessageModel, StatusModel, VersionModel
+from gischat.utils import get_poetry_version
 from gischat.ws_html import ws_html
 
 # logger
@@ -37,7 +36,9 @@ class WebsocketNotifier:
 
     def __init__(self):
         # registered websockets for rooms
-        self.connections: dict[str, list[WebSocket]] = {}
+        self.connections: dict[str, list[WebSocket]] = {
+            room: [] for room in available_rooms()
+        }
         self.generator = self.get_notification_generator()
 
     async def get_notification_generator(self):
@@ -50,8 +51,6 @@ class WebsocketNotifier:
 
     async def connect(self, room: str, websocket: WebSocket):
         await websocket.accept()
-        if room not in self.connections.keys():
-            self.connections[room] = []
         self.connections[room].append(websocket)
 
     def remove(self, room: str, websocket: WebSocket):
@@ -73,7 +72,7 @@ notifier = WebsocketNotifier()
 app = FastAPI(
     title="gischat API",
     summary="Chat with your GIS tribe in QGIS, QField and other clients !",
-    version=get_version(),
+    version=get_poetry_version(),
 )
 
 
@@ -82,21 +81,21 @@ async def get_ws_page():
     return HTMLResponse(ws_html)
 
 
-@app.get("/version")
-async def get_version() -> dict[str, Any]:
-    return {"version": get_version()}
+@app.get("/version", response_model=VersionModel)
+async def get_version() -> VersionModel:
+    return VersionModel(version=get_poetry_version())
 
 
-@app.get("/status")
-async def get_status() -> dict[str, Any]:
-    return {
-        "status": "ok",
-        "healthy": True,
-        "rooms": [
+@app.get("/status", response_model=StatusModel)
+async def get_status() -> StatusModel:
+    return StatusModel(
+        status="ok",
+        healthy=True,
+        rooms=[
             {"name": k, "nb_connected_users": len(v)}
             for k, v in notifier.connections.items()
         ],
-    }
+    )
 
 
 @app.get("/rooms")
@@ -109,7 +108,7 @@ async def get_rules() -> str:
     return os.environ.get("RULES", "YOLO")
 
 
-@app.put("/room/{room}/message")
+@app.put("/room/{room}/message", response_model=MessageModel)
 async def put_message(room: str, message: MessageModel) -> MessageModel:
     if room not in notifier.connections.keys():
         raise HTTPException(status_code=404, detail=f"Room '{room}' not registered")
@@ -118,8 +117,8 @@ async def put_message(room: str, message: MessageModel) -> MessageModel:
 
 
 @app.websocket("/room/{room}/ws")
-async def websocket_endpoint(websocket: WebSocket, room: str):
-    if room not in available_rooms():
+async def websocket_endpoint(websocket: WebSocket, room: str) -> None:
+    if room not in notifier.connections.keys():
         raise HTTPException(status_code=404, detail=f"Room '{room}' not registered")
     await notifier.connect(room, websocket)
     logger.info(f"New websocket connected in room '{room}'")

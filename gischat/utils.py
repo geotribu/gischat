@@ -3,7 +3,7 @@ from pathlib import Path
 import toml
 
 
-def get_version() -> str:
+def get_poetry_version() -> str:
     v = "unknown"
     pyproject_toml_file = Path(__file__).parent.parent / "pyproject.toml"
     if pyproject_toml_file.exists() and pyproject_toml_file.is_file():
