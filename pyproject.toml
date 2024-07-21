@@ -34,7 +34,7 @@ testpaths = "tests"
 branch = true
 
 [tool.coverage.report]
-include = ["gischat/**.py"]
+include = ["gischat/*.py"]
 
 [build-system]
 requires = ["poetry-core"]
