@@ -36,7 +36,9 @@ class WebsocketNotifier:
 
     def __init__(self):
         # registered websockets for rooms
-        self.connections: dict[str, list[WebSocket]] = {}
+        self.connections: dict[str, list[WebSocket]] = {
+            room: [] for room in available_rooms()
+        }
         self.generator = self.get_notification_generator()
 
     async def get_notification_generator(self):
@@ -49,8 +51,6 @@ class WebsocketNotifier:
 
     async def connect(self, room: str, websocket: WebSocket):
         await websocket.accept()
-        if room not in self.connections.keys():
-            self.connections[room] = []
         self.connections[room].append(websocket)
 
     def remove(self, room: str, websocket: WebSocket):
@@ -88,7 +88,6 @@ async def get_version() -> VersionModel:
 
 @app.get("/status", response_model=StatusModel)
 async def get_status() -> StatusModel:
-    print(notifier.connections)
     return StatusModel(
         status="ok",
         healthy=True,
@@ -114,7 +113,7 @@ async def put_message(room: str, message: MessageModel) -> MessageModel:
 
 @app.websocket("/room/{room}/ws")
 async def websocket_endpoint(websocket: WebSocket, room: str) -> None:
-    if room not in available_rooms():
+    if room not in notifier.connections.keys():
         raise HTTPException(status_code=404, detail=f"Room '{room}' not registered")
     await notifier.connect(room, websocket)
     logger.info(f"New websocket connected in room '{room}'")
