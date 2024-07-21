@@ -1,6 +1,6 @@
 FROM python:3.10-alpine AS python-base
 LABEL org.opencontainers.image.source="https://github.com/geotribu/gischat"
-LABEL authors="Guilhem Allaman (contact@guilhemallaman.net)"
+LABEL maintainer="Guilhem Allaman <contact@guilhemallaman.net>"
 
 # Disable annoying pip version check, we don't care if pip is slightly older
 ARG PIP_DISABLE_PIP_VERSION_CHECK 1
@@ -19,4 +19,6 @@ RUN pip install poetry
 
 RUN poetry install
 
-CMD ["poetry", "run", "uvicorn", "gischat.app:app", "--proxy-headers", "--port", "8000", "--workers", "8"]
+EXPOSE 8000
+
+CMD ["poetry", "run", "uvicorn", "gischat.app:app", "--host", "0.0.0.0", "--port", "8000", "--proxy-headers"]
