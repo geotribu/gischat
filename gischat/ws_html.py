@@ -36,7 +36,7 @@ ws_html = """
                 const instance = document.getElementById("instance");
                 const room = document.getElementById("roomId");
                 const author = document.getElementById("authorId");
-                ws = new WebSocket("ws://" + instance.value + "/room/" + room.value + "/ws");
+                ws = new WebSocket("wss://" + instance.value + "/room/" + room.value + "/ws");
                 ws.onopen = (event) => displayMessage("connection to websocket ok");
                 ws.onmessage = (event) => {
                     const data = JSON.parse(event.data);
