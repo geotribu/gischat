@@ -1,8 +1,0 @@
-services:
-
-  api:
-    build: .
-    image: gischat:latest
-    container_name: gischat-app
-    ports:
-      - 8000:8000
