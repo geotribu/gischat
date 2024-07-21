@@ -104,6 +104,11 @@ async def get_rooms() -> list[str]:
     return available_rooms()
 
 
+@app.get("/rules")
+async def get_rules() -> str:
+    return os.environ.get("RULES", "YOLO")
+
+
 @app.put("/room/{room}/message")
 async def put_message(room: str, message: MessageModel) -> MessageModel:
     if room not in notifier.connections.keys():
