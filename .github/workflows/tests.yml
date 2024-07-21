@@ -1,25 +1,39 @@
-name: "🐍 Lint py code"
+name: "🎳 Test"
 
 on:
   push:
     branches:
       - main
     paths:
-      - "**.py"
+      - "**/*.py"
+      - ".github/workflows/tests.yml"
 
   pull_request:
     branches:
       - main
     paths:
-      - "**.py"
-
-env:
-  PYTHON_VERSION: "3.12"
+      - "**/*.py"
+      - ".github/workflows/tests.yml"
+      - "pyproject.toml"
+      - "poetry.lock"
 
 jobs:
-  lint-ubuntu:
-    runs-on: ubuntu-22.04
 
+  unit-test:
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - macos-latest
+          - ubuntu-22.04
+        python-version:
+            - "3.9"
+            - "3.10"
+            - "3.11"
+            - "3.12"
+
+    runs-on: ${{ matrix.os }}
     steps:
       - name: Get source code
         uses: actions/checkout@v4
@@ -27,7 +41,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: ${{ env.PYTHON_VERSION }}
+          python-version: ${{ matrix.python-version }}
           cache: "pip"
           cache-dependency-path: "poetry.lock"
 
@@ -43,13 +57,5 @@ jobs:
       - name: Install requirements
         run: poetry install
 
-      - name: Check black lint
-        run: poetry run black --check --diff ./gischat
-
-      - name: Check isort lint
-        run: poetry run isort --check --profile=black ./gischat
-
-      - name: Lint with flake8
-        run: |
-          poetry run flake8 gischat --count --select=E9,F63,F7,F82 --show-source --statistics
-          poetry run flake8 gischat --count --exit-zero --statistics
+      - name: Unit tests
+        run: poetry run pytest -v
