@@ -9,6 +9,15 @@ Gischat API backend for chatting with your tribe in GIS tools like QGIS, QField 
 [![🐍 Linter](https://github.com/geotribu/gischat/actions/workflows/lint.yml/badge.svg)](https://github.com/geotribu/gischat/actions/workflows/lint.yml)
 [![⚒️ Deploy docker image](https://github.com/geotribu/gischat/actions/workflows/docker.yml/badge.svg)](https://github.com/geotribu/gischat/actions/workflows/docker.yml)
 
+[![Docker Pulls](https://badgen.net/docker/pulls/gounux/gischat?icon=docker&label=pulls)](https://hub.docker.com/r/gounux/gischat/)
+[![Docker Stars](https://badgen.net/docker/stars/gounux/gischat?icon=docker&label=stars)](https://hub.docker.com/r/gounux/gischat/)
+[![Docker Image Size](https://badgen.net/docker/size/gounux/gischat?icon=docker&label=image%20size)](https://hub.docker.com/r/gounux/gischat/)
+
+![Github stars](https://badgen.net/github/stars/geotribu/gischat?icon=github&label=stars)
+![Github forks](https://badgen.net/github/forks/geotribu/gischat?icon=github&label=forks)
+![Github issues](https://img.shields.io/github/issues/geotribu/gischat)
+![Github last-commit](https://img.shields.io/github/last-commit/geotribu/gischat)
+
 ## Development
 
 - Install [poetry](https://python-poetry.org/):
