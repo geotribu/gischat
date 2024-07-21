@@ -2,8 +2,6 @@ name: "⚒️ Deploy image to Dockerhub and GHCR"
 
 on:
   push:
-    branches:
-      - main
     tags:
       - "*"
   workflow_dispatch:
@@ -30,12 +28,6 @@ jobs:
           virtualenvs-path: ~/.venv
           installer-parallel: true
 
-#      - name: Set up QEMU
-#        uses: docker/setup-qemu-action@v3
-#
-#      - name: Set up Docker Buildx
-#        uses: docker/setup-buildx-action@v3
-
       - name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
@@ -60,12 +52,3 @@ jobs:
           docker push gounux/gischat:latest
           docker push ghcr.io/geotribu/gischat:$(poetry version -s)
           docker push ghcr.io/geotribu/gischat:latest
-
-#      - name: Build and push
-#        uses: docker/build-push-action@v6
-#        with:
-#          platforms: linux/amd64,linux/arm64
-#          push: true
-#          tags: |
-#            gounux/gischat:latest
-#            ghcr.io/geotribu/gischat:latest
