@@ -31,11 +31,10 @@ python_files = "test_*.py"
 testpaths = "tests"
 
 [tool.coverage.run]
-command_line = "-m pytest"
+branch = "True"
 
 [tool.coverage.report]
-include = ["gischat/*.py"]
-show_missing = true
+include = ["gischat/**.py"]
 
 [build-system]
 requires = ["poetry-core"]
