@@ -8,6 +8,7 @@ ws_html = """
         <h1>gischat websocket client</h1>
         <form action="" onsubmit="sendMessage(event)">
             <label>Instance: <input type="text" id="instance" autocomplete="off" value=""/></label>
+            <label>SSL: <input type="checkbox" id="ssl" checked/></label>
             <label>Room: <input type="text" id="roomId" autocomplete="off" value="QGIS"/></label>
             <button onclick="connect(event)">Connect</button>
             <hr>
@@ -19,7 +20,7 @@ ws_html = """
         <ul id='messages'>
         </ul>
         <script>
-            let ws = null;
+            let websocket = null;
 
             const instance = document.getElementById('instance');
             instance.value = window.location.host;
@@ -34,22 +35,24 @@ ws_html = """
             };
             function connect(event) {
                 const instance = document.getElementById("instance");
+                const ssl = document.getElementById("ssl");
                 const room = document.getElementById("roomId");
                 const author = document.getElementById("authorId");
-                ws = new WebSocket("wss://" + instance.value + "/room/" + room.value + "/ws");
-                ws.onopen = (event) => displayMessage("connection to websocket ok");
-                ws.onmessage = (event) => {
+                const ws_protocol = ssl.value ? "wss" : "ws";
+                websocket = new WebSocket(`${ws_protocol}://${instance.value}/room/${room.value}/ws`);
+                websocket.onopen = (event) => displayMessage("connection to websocket ok");
+                websocket.onmessage = (event) => {
                     const data = JSON.parse(event.data);
                     const log = `[${data.author}] (${new Date().toLocaleTimeString()}): ${data.message}`;
                     displayMessage(log);
                 };
-                ws.onerror = (error) => displayMessage(error);
+                websocket.onerror = (error) => displayMessage(error);
                 event.preventDefault();
             };
             function sendMessage(event) {
                 const message = document.getElementById("messageText");
                 const author = document.getElementById("authorId");
-                ws.send(JSON.stringify({message: message.value, author: author.value}));
+                websocket.send(JSON.stringify({message: message.value, author: author.value}));
                 message.value = ''
                 event.preventDefault()
             };
