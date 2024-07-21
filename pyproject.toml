@@ -23,6 +23,19 @@ black = "^24.4.2"
 isort = "^5.13.2"
 flake8 = "^7.1.0"
 
+[tool.pytest]
+addopts = "--junitxml=junit/test-results.xml --cov-config=setup.cfg --cov=geotribu_cli --cov-report=html --cov-report=term --cov-report=xml --ignore=tests/_wip/"
+junit_family = "xunit2"
+python_files = "test_*.py"
+testpaths = "tests"
+
+[tool.coverage.run]
+command_line = "-m pytest"
+
+[tool.coverage.report]
+include = ["gischat/*.py"]
+show_missing = true
+
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
