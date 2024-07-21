@@ -9,7 +9,7 @@ from fastapi.encoders import jsonable_encoder
 from fastapi.responses import HTMLResponse
 from starlette.websockets import WebSocketDisconnect
 
-from gischat.models import MessageModel, StatusModel, VersionModel
+from gischat.models import MessageModel, RulesModel, StatusModel, VersionModel
 from gischat.utils import get_poetry_version
 from gischat.ws_html import ws_html
 
@@ -98,9 +98,14 @@ async def get_status() -> StatusModel:
     )
 
 
-@app.get("/rooms")
+@app.get("/rooms", response_model=list[str])
 async def get_rooms() -> list[str]:
     return available_rooms()
+
+
+@app.get("/rules", response_model=RulesModel)
+async def get_rules() -> RulesModel:
+    return RulesModel(rules=os.environ.get("RULES", "YOLO"))
 
 
 @app.put("/room/{room}/message", response_model=MessageModel)

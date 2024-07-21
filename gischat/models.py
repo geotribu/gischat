@@ -16,6 +16,10 @@ class StatusModel(BaseModel):
     rooms: list[RoomStatusModel]
 
 
+class RulesModel(BaseModel):
+    rules: str
+
+
 class MessageModel(BaseModel):
     message: str
     author: str

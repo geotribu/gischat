@@ -2,6 +2,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from gischat.utils import get_poetry_version
+from tests import TEST_RULES
 from tests.conftest import test_rooms
 
 
@@ -30,3 +31,9 @@ def test_rooms(client: TestClient, room: str):
     response = client.get("/rooms")
     assert response.status_code == 200
     assert room in response.json()
+
+
+def test_rules(client: TestClient):
+    response = client.get("/rules")
+    assert response.status_code == 200
+    assert response.json()["rules"] == TEST_RULES

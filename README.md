@@ -37,12 +37,15 @@ services:
     image: gounux/gischat:latest
     container_name: gischat-app
     environment:
-      - ROOMS=LivingRoom,Kitchen,Garden
+      - ROOMS="LivingRoom,Kitchen,Garden"
+      - RULES="Be kind and nice to this wonderful world"
     ports:
       - 8000:8000
 ```
 
-`ROOMS` environment variable is a comma-separated list of strings which represent the available chat rooms
+`ROOMS` environment variable is a comma-separated list of strings which represent the available chat rooms  
+`RULES` environment variable describres the instance's rules
+
 
 - Launch the app using `compose` :
 
