@@ -19,9 +19,22 @@ toml = "^0.10.2"
 pre-commit = "^3.7.1"
 pytest = "^8.2.2"
 pytest-cov = "^5.0.0"
+codecov = "^2.1.13"
 black = "^24.4.2"
 isort = "^5.13.2"
 flake8 = "^7.1.0"
+
+[tool.pytest]
+addopts = "--junitxml=junit/test-results.xml --cov=gischat --cov-report=html --cov-report=term --cov-report=xml"
+junit_family = "xunit2"
+python_files = "test_*.py"
+testpaths = "tests"
+
+[tool.coverage.run]
+branch = true
+
+[tool.coverage.report]
+include = ["gischat/*.py"]
 
 [build-system]
 requires = ["poetry-core"]
