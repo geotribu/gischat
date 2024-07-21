@@ -12,6 +12,7 @@ WORKDIR /gischat
 
 COPY ./pyproject.toml /gischat/pyproject.toml
 COPY ./poetry.lock /gischat/poetry.lock
+COPY ./log_config.yaml /gischat/log_config.yaml
 
 COPY gischat /gischat/gischat
 
@@ -21,4 +22,4 @@ RUN poetry install
 
 EXPOSE 8000
 
-CMD ["poetry", "run", "uvicorn", "gischat.app:app", "--host", "0.0.0.0", "--port", "8000", "--proxy-headers"]
+CMD ["poetry", "run", "uvicorn", "gischat.app:app", "--host", "0.0.0.0", "--port", "8000", "--proxy-headers", "--log-config=log_config.yaml"]

@@ -20,7 +20,7 @@ logger.setLevel(logging.INFO)
 handler = logging.StreamHandler(sys.stdout)
 handler.setLevel(logging.INFO)
 formatter = colorlog.ColoredFormatter(
-    "%(yellow)s[%(asctime)s] %(log_color)s[%(levelname)s]%(reset)s %(purple)s[%(name)s %(module)s]%(reset)s %(message)s"
+    "%(yellow)s[%(asctime)s] %(log_color)s[%(levelname)s]%(reset)s %(message)s"
 )
 handler.setFormatter(formatter)
 logger.addHandler(handler)
@@ -122,7 +122,7 @@ async def websocket_endpoint(websocket: WebSocket, room: str):
         while True:
             data = await websocket.receive_text()
             message = MessageModel(**json.loads(data))
-            logging.getLogger().info(f"Ws message in room '{room}': {message}")
+            logger.info(f"Message in room '{room}': {message}")
             await notifier.notify(room, json.dumps(jsonable_encoder(message)))
     except WebSocketDisconnect:
         notifier.remove(room, websocket)
