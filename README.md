@@ -7,6 +7,7 @@
 [![🎳 Tester](https://github.com/geotribu/gischat/actions/workflows/tests.yml/badge.svg)](https://github.com/geotribu/gischat/actions/workflows/tests.yml)
 [![🐍 Linter](https://github.com/geotribu/gischat/actions/workflows/lint.yml/badge.svg)](https://github.com/geotribu/gischat/actions/workflows/lint.yml)
 [![⚒️ Deploy docker image](https://github.com/geotribu/gischat/actions/workflows/docker.yml/badge.svg)](https://github.com/geotribu/gischat/actions/workflows/docker.yml)
+[![codecov](https://codecov.io/github/geotribu/gischat/graph/badge.svg?token=EW5SU9VKRD)](https://codecov.io/github/geotribu/gischat)
 
 [![Docker Pulls](https://badgen.net/docker/pulls/gounux/gischat?icon=docker&label=pulls)](https://hub.docker.com/r/gounux/gischat/)
 [![Docker Stars](https://badgen.net/docker/stars/gounux/gischat?icon=docker&label=stars)](https://hub.docker.com/r/gounux/gischat/)
