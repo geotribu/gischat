@@ -21,7 +21,7 @@
 
 ---
 
-Gischat API backend for chatting with your tribe in GIS tools like QGIS, QField and many other to come
+Gischat API backend for chatting with your tribe in GIS tools like QGIS (using [QTribu](https://github.com/geotribu/qtribu) plugin available [from official plugin repository](https://plugins.qgis.org/plugins/qtribu/), QField and other to come
 
 ---
 
@@ -46,7 +46,7 @@ services:
 ```
 
 `ROOMS` environment variable is a comma-separated list of strings which represent the available chat rooms  
-`RULES` environment variable describres the instance's rules
+`RULES` environment variable describes the instance's rules
 
 
 - Launch the app using `compose` :
@@ -85,7 +85,7 @@ The Let's Encrypt SSL certificate should be saved to `/etc/letsencrypt/live/DOMA
 - Create a nginx config file :
 
 ```sh
-touch /etc/nginx/sites-available/giscaht.conf
+touch /etc/nginx/sites-available/gischat.conf
 ```
 
 - Edit the file and add the following content (using your domain):
@@ -189,5 +189,5 @@ docker build . --tag geotribu/gischat:latest
 - Run docker image:
 
 ```sh
-docker run geotribu/latest --env ROOMS=QGIS,QField,Geotribu
+docker run geotribu/gischat:latest --env ROOMS=QGIS,QField,Geotribu --env RULES="Those are the rules: ..."
 ```
