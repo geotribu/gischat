@@ -1,7 +1,10 @@
+from typing import Any
+
 import pytest
 from fastapi.testclient import TestClient
 
 from tests.conftest import test_rooms
+from tests.utils import nb_connected_users
 
 TEST_MESSAGE = "Is this websocket working ?"
 
@@ -23,3 +26,22 @@ def test_websocket_send_message(client: TestClient, room: str):
         websocket.send_json({"message": TEST_MESSAGE, "author": f"ws-tester-{room}"})
         data = websocket.receive_json()
         assert data == {"message": TEST_MESSAGE, "author": f"ws-tester-{room}"}
+
+
+def nb_connected_users(json: dict[str, Any], room: str) -> bool:
+    """
+    Utils function to get number of connected users in a room from a status dict
+    """
+    rooms_dict = {r["name"]: r["nb_connected_users"] for r in json["rooms"]}
+    return rooms_dict[room]
+
+
+@pytest.mark.parametrize("room", test_rooms())
+def test_websocket_nb_users_connected(client: TestClient, room: str):
+    assert nb_connected_users(client.get("/status").json(), room) == 0
+    with client.websocket_connect(f"/room/{room}/ws"):
+        assert nb_connected_users(client.get("/status").json(), room) == 1
+        with client.websocket_connect(f"/room/{room}/ws"):
+            assert nb_connected_users(client.get("/status").json(), room) == 2
+        assert nb_connected_users(client.get("/status").json(), room) == 1
+    assert nb_connected_users(client.get("/status").json(), room) == 0
