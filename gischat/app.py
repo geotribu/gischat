@@ -74,7 +74,7 @@ app = FastAPI(
     summary="Chat with your GIS tribe in QGIS, QField and other clients !",
     version=get_poetry_version(),
 )
-templates = Jinja2Templates(directory="templates")
+templates = Jinja2Templates(directory="gischat/templates")
 
 
 @app.get("/", response_class=HTMLResponse)

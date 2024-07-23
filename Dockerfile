@@ -15,7 +15,6 @@ COPY ./poetry.lock /gischat/poetry.lock
 COPY ./log_config.yaml /gischat/log_config.yaml
 
 COPY gischat /gischat/gischat
-COPY templates /gischat/templates
 
 RUN pip install poetry
 
