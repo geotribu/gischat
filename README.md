@@ -23,14 +23,24 @@
 
 Gischat API backend for chatting with your tribe in GIS tools like QGIS (using [QTribu](https://github.com/geotribu/qtribu) plugin available [from official plugin repository](https://plugins.qgis.org/plugins/qtribu/)), QField and other to come
 
-No database : messages are not stored. Just stateless websockets.
+**No database : messages are not stored. Just stateless websockets.**
 
-Known instances :
+## Known instances
 
-- https://gischat.geotribu.net : "official" international instance (hosted in Germany)
-- https://gischat.geotribu.fr : "official" french-speaking instance (hosted in Germany)
+Following instances are up and running :
 
----
+| URL | Description | Location |
+|-----|-------------|----------|
+|https://gischat.geotribu.net|"official" international instance| Germany|
+|https://gischat.geotribu.fr|"official" french-speaking instance| Germany|
+
+## Developer information
+
+- Rooms can be fetched using [the `/rooms` endpoint](https://gischat.geotribu.net/docs#/default/get_rooms_rooms_get)
+- Rules can be fetched using [the `/rules` endpoint](https://gischat.geotribu.net/docs#/default/get_rules_rules_get)
+- Number of connected users can be fetched using [the `/status` endpoint](https://gischat.geotribu.net/docs#/default/get_status_status_get)
+- New users must connect a websocket to the `/room/{room_name}/ws` endpoint
+- Messages passing through the websocket are simply JSON dicts liek this: `{"message": "hello", "author": "Hans Hibbel"}`
 
 ## Deploy a self-hosted instance
 
@@ -46,10 +56,11 @@ services:
     image: gounux/gischat:latest
     container_name: gischat-app
     environment:
-      - ROOMS="LivingRoom,Kitchen,Garden"
-      - RULES="Be kind and nice to this wonderful world"
+      - ROOMS=QGIS,Field and mobile,GIS tribe, Living room,Kitchen,Garden
+      - RULES=Be kind and nice to this wonderful world
     ports:
       - 8000:8000
+    restart: unless-stopped
 ```
 
 `ROOMS` environment variable is a comma-separated list of strings which represent the available chat rooms  
@@ -104,17 +115,17 @@ upstream gischat_upstream {
 
 server {
   listen 80;
-  server_name DOMAIN;
+  server_name <DOMAIN>;
   return 301 https://$host$request_uri;
 }
 
 server {
 
   listen 443 ssl;
-  server_name DOMAIN;
+  server_name <DOMAIN>;
 
-  ssl_certificate /etc/letsencrypt/live/DOMAIN/fullchain.pem;
-  ssl_certificate_key /etc/letsencrypt/live/DOMAIN/privkey.pem;
+  ssl_certificate /etc/letsencrypt/live/<DOMAIN>/fullchain.pem;
+  ssl_certificate_key /etc/letsencrypt/live/<DOMAIN>/privkey.pem;
 
   location / {
     proxy_pass http://gischat_upstream;
@@ -173,7 +184,7 @@ poetry install
 poetry run pre-commit install
 ```
 
-- Create local environment file:
+- Create local environment file and edit it:
 
 ```sh
 cp .env.example .env
