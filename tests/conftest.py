@@ -7,8 +7,8 @@ from fastapi.testclient import TestClient
 from tests import TEST_ROOMS, TEST_RULES
 
 
-def test_rooms() -> Generator[list[str], None, None]:
-    yield from TEST_ROOMS
+def test_rooms() -> list[str]:
+    return TEST_ROOMS
 
 
 @pytest.fixture
