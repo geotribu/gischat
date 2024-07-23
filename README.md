@@ -21,7 +21,12 @@
 
 ---
 
-Gischat API backend for chatting with your tribe in GIS tools like QGIS (using [QTribu](https://github.com/geotribu/qtribu) plugin available [from official plugin repository](https://plugins.qgis.org/plugins/qtribu/), QField and other to come
+Gischat API backend for chatting with your tribe in GIS tools like QGIS (using [QTribu](https://github.com/geotribu/qtribu) plugin available [from official plugin repository](https://plugins.qgis.org/plugins/qtribu/)), QField and other to come
+
+Known instances :
+
+- https://gischat.geotribu.net ("official" international instance)
+- https://gischat.geotribu.fr ("official" french-speaking instance)
 
 ---
 
