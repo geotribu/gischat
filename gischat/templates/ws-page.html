@@ -11,11 +11,11 @@
     <button onclick="onRulesButtonClick(event)">Rules</button>
     <button onclick="onStatusButtonClick(event)">Status</button>
     <hr>
-    <label>Room: <input type="text" id="roomId" autocomplete="off" value="QGIS"/></label>
+    <label>Room: <input type="text" id="roomId" autocomplete="off" value=""/></label>
     <button onclick="onDetectButtonClick(event)">Detect</button>
     <button id="connectButton" onclick="onConnectButtonClick(event)">Connect</button>
     <hr>
-    <label>Author: <input type="text" id="authorId" autocomplete="off" value="geotribu"/></label>
+    <label>Author: <input type="text" id="authorId" autocomplete="off" value=""/></label>
     <label>Message: <input type="text" id="messageText" autocomplete="off"/></label>
     <button>Send</button>
 </form>
@@ -52,7 +52,7 @@
         const protocol = ssl.checked ? "https" : "http";
         fetch(`${protocol}://${instance.value}/status`)
             .then(response => response.json())
-            .then(data => displayMessage(`Instance status: ${data.status} - users: ${data.rooms.map(room => `'${room.name}': ${room.nb_connected_users}`).join(",")}`));
+            .then(data => displayMessage(`Instance status: ${data.status} - users in rooms: ${data.rooms.map(room => `'${room.name}': ${room.nb_connected_users}`).join(",")}`));
         event.preventDefault();
     }
 
@@ -70,8 +70,11 @@
             event.preventDefault();
             return;
         }
-        const ssl = document.getElementById("ssl");
         const room = document.getElementById("roomId");
+        if (!room.value) {
+            alert("Room must be set");
+            return;
+        }
         const ws_protocol = ssl.checked ? "wss" : "ws";
         const ws_url = `${ws_protocol}://${instance.value}/room/${room.value}/ws`;
         websocket = new WebSocket(ws_url);
