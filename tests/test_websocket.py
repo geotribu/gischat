@@ -4,7 +4,6 @@ import pytest
 from fastapi.testclient import TestClient
 
 from tests.conftest import test_rooms
-from tests.utils import nb_connected_users
 
 TEST_MESSAGE = "Is this websocket working ?"
 
