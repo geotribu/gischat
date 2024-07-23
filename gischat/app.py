@@ -4,14 +4,14 @@ import os
 import sys
 
 import colorlog
-from fastapi import FastAPI, HTTPException, WebSocket
+from fastapi import FastAPI, HTTPException, Request, WebSocket
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import HTMLResponse
+from fastapi.templating import Jinja2Templates
 from starlette.websockets import WebSocketDisconnect
 
 from gischat.models import MessageModel, RulesModel, StatusModel, VersionModel
 from gischat.utils import get_poetry_version
-from gischat.ws_html import ws_html
 
 # logger
 logger = logging.getLogger()
@@ -74,11 +74,15 @@ app = FastAPI(
     summary="Chat with your GIS tribe in QGIS, QField and other clients !",
     version=get_poetry_version(),
 )
+templates = Jinja2Templates(directory="gischat/templates")
 
 
-@app.get("/")
-async def get_ws_page():
-    return HTMLResponse(ws_html)
+@app.get("/", response_class=HTMLResponse)
+async def get_ws_page(request: Request):
+    return templates.TemplateResponse(
+        request=request,
+        name="ws-page.html",
+    )
 
 
 @app.get("/version", response_model=VersionModel)
