@@ -26,3 +26,8 @@ class MessageModel(BaseModel):
 
     def __str__(self) -> str:
         return f"[{self.author}]: '{self.message}'"
+
+
+class InternalMessageModel(BaseModel):
+    author: str
+    nb_users: int

@@ -88,7 +88,7 @@
             const data = JSON.parse(event.data);
             const author = data.author;
             const log = author === "internal" ?
-                `${JSON.parse(data.message).nb_users} users connected in room` :
+                `${data.nb_users} user${data.nb_users > 1 ? "s" : ""} connected in room` :
                 `[${author}] (${new Date().toLocaleTimeString()}): ${data.message}`;
             displayMessage(log);
         };

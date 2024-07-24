@@ -11,7 +11,13 @@ from fastapi.templating import Jinja2Templates
 from starlette.websockets import WebSocketDisconnect
 
 from gischat import INTERNAL_MESSAGE_AUTHOR
-from gischat.models import MessageModel, RulesModel, StatusModel, VersionModel
+from gischat.models import (
+    InternalMessageModel,
+    MessageModel,
+    RulesModel,
+    StatusModel,
+    VersionModel,
+)
 from gischat.utils import get_poetry_version
 
 # logger
@@ -73,9 +79,8 @@ class WebsocketNotifier:
         return len(self.connections[room])
 
     async def notify_internal(self, room: str) -> None:
-        message = MessageModel(
-            author=INTERNAL_MESSAGE_AUTHOR,
-            message=json.dumps({"nb_users": self.get_nb_users(room)}),
+        message = InternalMessageModel(
+            author=INTERNAL_MESSAGE_AUTHOR, nb_users=self.get_nb_users(room)
         )
         await self.notify(room, json.dumps(jsonable_encoder(message)))
 
