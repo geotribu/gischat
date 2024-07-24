@@ -41,6 +41,7 @@ Following instances are up and running :
 - Number of connected users can be fetched using [the `/status` endpoint](https://gischat.geotribu.net/docs#/default/get_status_status_get)
 - New users must connect a websocket to the `/room/{room_name}/ws` endpoint
 - Messages passing through the websocket are simple JSON dicts like this: `{"message": "hello", "author": "Hans Hibbel"}`
+- :warning: Messages having the `"internal"` author are internal messages and should not be printed, they contain technical information: `{"author": "internal", "nb_users": 36}`
 
 ## Deploy a self-hosted instance
 

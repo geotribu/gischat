@@ -3,14 +3,26 @@ from typing import Any
 import pytest
 from fastapi.testclient import TestClient
 
+from gischat import INTERNAL_MESSAGE_AUTHOR
 from tests.conftest import test_rooms
 
 TEST_MESSAGE = "Is this websocket working ?"
 
 
 @pytest.mark.parametrize("room", test_rooms())
+def test_websocket_connection(client: TestClient, room: str):
+    with client.websocket_connect(f"/room/{room}/ws") as websocket:
+        data = websocket.receive_json()
+        assert data == {"author": INTERNAL_MESSAGE_AUTHOR, "nb_users": 1}
+
+
+@pytest.mark.parametrize("room", test_rooms())
 def test_websocket_put_message(client: TestClient, room: str):
     with client.websocket_connect(f"/room/{room}/ws") as websocket:
+        assert websocket.receive_json() == {
+            "author": INTERNAL_MESSAGE_AUTHOR,
+            "nb_users": 1,
+        }
         client.put(
             f"/room/{room}/message",
             json={"message": TEST_MESSAGE, "author": f"ws-tester-{room}"},
@@ -22,6 +34,10 @@ def test_websocket_put_message(client: TestClient, room: str):
 @pytest.mark.parametrize("room", test_rooms())
 def test_websocket_send_message(client: TestClient, room: str):
     with client.websocket_connect(f"/room/{room}/ws") as websocket:
+        assert websocket.receive_json() == {
+            "author": INTERNAL_MESSAGE_AUTHOR,
+            "nb_users": 1,
+        }
         websocket.send_json({"message": TEST_MESSAGE, "author": f"ws-tester-{room}"})
         data = websocket.receive_json()
         assert data == {"message": TEST_MESSAGE, "author": f"ws-tester-{room}"}
@@ -38,9 +54,25 @@ def nb_connected_users(json: dict[str, Any], room: str) -> bool:
 @pytest.mark.parametrize("room", test_rooms())
 def test_websocket_nb_users_connected(client: TestClient, room: str):
     assert nb_connected_users(client.get("/status").json(), room) == 0
-    with client.websocket_connect(f"/room/{room}/ws"):
+    with client.websocket_connect(f"/room/{room}/ws") as websocket1:
+        assert websocket1.receive_json() == {
+            "author": INTERNAL_MESSAGE_AUTHOR,
+            "nb_users": 1,
+        }
         assert nb_connected_users(client.get("/status").json(), room) == 1
-        with client.websocket_connect(f"/room/{room}/ws"):
+        with client.websocket_connect(f"/room/{room}/ws") as websocket2:
+            assert websocket1.receive_json() == {
+                "author": INTERNAL_MESSAGE_AUTHOR,
+                "nb_users": 2,
+            }
+            assert websocket2.receive_json() == {
+                "author": INTERNAL_MESSAGE_AUTHOR,
+                "nb_users": 2,
+            }
             assert nb_connected_users(client.get("/status").json(), room) == 2
+        assert websocket1.receive_json() == {
+            "author": INTERNAL_MESSAGE_AUTHOR,
+            "nb_users": 1,
+        }
         assert nb_connected_users(client.get("/status").json(), room) == 1
     assert nb_connected_users(client.get("/status").json(), room) == 0

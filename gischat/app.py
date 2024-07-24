@@ -10,7 +10,14 @@ from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from starlette.websockets import WebSocketDisconnect
 
-from gischat.models import MessageModel, RulesModel, StatusModel, VersionModel
+from gischat import INTERNAL_MESSAGE_AUTHOR
+from gischat.models import (
+    InternalMessageModel,
+    MessageModel,
+    RulesModel,
+    StatusModel,
+    VersionModel,
+)
 from gischat.utils import get_poetry_version
 
 # logger
@@ -34,6 +41,8 @@ class WebsocketNotifier:
     Class used to broadcast messages to registered websockets
     """
 
+    connections: dict[str, list[WebSocket]]
+
     def __init__(self):
         # registered websockets for rooms
         self.connections: dict[str, list[WebSocket]] = {
@@ -46,17 +55,17 @@ class WebsocketNotifier:
             room, message = yield
             await self.notify(room, message)
 
-    async def push(self, msg: str):
+    async def push(self, msg: str) -> None:
         await self.generator.asend(msg)
 
-    async def connect(self, room: str, websocket: WebSocket):
+    async def connect(self, room: str, websocket: WebSocket) -> None:
         await websocket.accept()
         self.connections[room].append(websocket)
 
-    def remove(self, room: str, websocket: WebSocket):
+    def remove(self, room: str, websocket: WebSocket) -> None:
         self.connections[room].remove(websocket)
 
-    async def notify(self, room: str, message: str):
+    async def notify(self, room: str, message: str) -> None:
         living_connections = []
         while len(self.connections[room]) > 0:
             # Looping like this is necessary in case a disconnection is handled
@@ -65,6 +74,15 @@ class WebsocketNotifier:
             await websocket.send_text(message)
             living_connections.append(websocket)
         self.connections[room] = living_connections
+
+    def get_nb_users(self, room: str) -> int:
+        return len(self.connections[room])
+
+    async def notify_internal(self, room: str) -> None:
+        message = InternalMessageModel(
+            author=INTERNAL_MESSAGE_AUTHOR, nb_users=self.get_nb_users(room)
+        )
+        await self.notify(room, json.dumps(jsonable_encoder(message)))
 
 
 notifier = WebsocketNotifier()
@@ -122,10 +140,15 @@ async def put_message(room: str, message: MessageModel) -> MessageModel:
 
 @app.websocket("/room/{room}/ws")
 async def websocket_endpoint(websocket: WebSocket, room: str) -> None:
+
+    # check if room is registered
     if room not in notifier.connections.keys():
         raise HTTPException(status_code=404, detail=f"Room '{room}' not registered")
+
     await notifier.connect(room, websocket)
+    await notifier.notify_internal(room)
     logger.info(f"New websocket connected in room '{room}'")
+
     try:
         while True:
             data = await websocket.receive_text()
@@ -134,4 +157,5 @@ async def websocket_endpoint(websocket: WebSocket, room: str) -> None:
             await notifier.notify(room, json.dumps(jsonable_encoder(message)))
     except WebSocketDisconnect:
         notifier.remove(room, websocket)
+        await notifier.notify_internal(room)
         logger.info(f"Websocket disconnected from room '{room}'")
