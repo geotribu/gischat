@@ -5,19 +5,20 @@
 </head>
 <body>
 <h1>gischat websocket client</h1>
-<form action="" onsubmit="sendMessage(event)">
+<form>
     <label>Instance: <input type="text" id="instance" autocomplete="off" value=""/></label>
     <label>SSL: <input type="checkbox" id="ssl" checked/></label>
     <button onclick="onRulesButtonClick(event)">Rules</button>
     <button onclick="onStatusButtonClick(event)">Status</button>
     <hr>
-    <label>Room: <input type="text" id="roomId" autocomplete="off" value=""/></label>
+    <label>Room: <input type="text" id="roomId" autocomplete="off" value="QGIS"/></label>
     <button onclick="onDetectButtonClick(event)">Detect</button>
     <button id="connectButton" onclick="onConnectButtonClick(event)">Connect</button>
-    <hr>
+    <br>
     <label>Author: <input type="text" id="authorId" autocomplete="off" value=""/></label>
+    <hr>
     <label>Message: <input type="text" id="messageText" autocomplete="off"/></label>
-    <button>Send</button>
+    <button onclick="sendMessage(event)">Send</button>
 </form>
 <hr>
 <ul id='messages'>
@@ -85,7 +86,10 @@
         }
         websocket.onmessage = (event) => {
             const data = JSON.parse(event.data);
-            const log = `[${data.author}] (${new Date().toLocaleTimeString()}): ${data.message}`;
+            const author = data.author;
+            const log = author === "internal" ?
+                `${JSON.parse(data.message).nb_users} users connected in room` :
+                `[${author}] (${new Date().toLocaleTimeString()}): ${data.message}`;
             displayMessage(log);
         };
         websocket.onerror = (error) => {
