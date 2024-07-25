@@ -37,6 +37,7 @@ def test_get_rules(client: TestClient):
     response = client.get("/rules")
     assert response.status_code == 200
     assert response.json()["rules"] == TEST_RULES
+    assert response.json()["main_lang"] == "en"
 
 
 @pytest.mark.parametrize("room", test_rooms())

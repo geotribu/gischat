@@ -61,6 +61,7 @@ services:
     environment:
       - ROOMS=QGIS,Field and mobile,GIS tribe, Living room,Kitchen,Garden
       - RULES=Be kind and nice to this wonderful world
+      - MAIN_LANGUAGE=en
       - MIN_AUTHOR_LENGTH=3
       - MAX_AUTHOR_LENGTH=32
       - MAX_MESSAGE_LENGTH=255
