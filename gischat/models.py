@@ -1,4 +1,5 @@
 import os
+from typing import Optional
 
 from pydantic import BaseModel
 
@@ -25,6 +26,7 @@ class RulesModel(BaseModel):
 class MessageModel(BaseModel):
     message: str
     author: str
+    avatar: Optional[str] = None
 
     def __str__(self) -> str:
         return f"[{self.author}]: '{self.message}'"

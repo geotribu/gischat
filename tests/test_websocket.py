@@ -25,10 +25,18 @@ def test_websocket_put_message(client: TestClient, room: str):
         }
         client.put(
             f"/room/{room}/message",
-            json={"message": TEST_MESSAGE, "author": f"ws-tester-{room}"},
+            json={
+                "message": TEST_MESSAGE,
+                "author": f"ws-tester-{room}",
+                "avatar": "postgis",
+            },
         )
         data = websocket.receive_json()
-        assert data == {"message": TEST_MESSAGE, "author": f"ws-tester-{room}"}
+        assert data == {
+            "message": TEST_MESSAGE,
+            "author": f"ws-tester-{room}",
+            "avatar": "postgis",
+        }
 
 
 @pytest.mark.parametrize("room", test_rooms())
@@ -40,7 +48,11 @@ def test_websocket_send_message(client: TestClient, room: str):
         }
         websocket.send_json({"message": TEST_MESSAGE, "author": f"ws-tester-{room}"})
         data = websocket.receive_json()
-        assert data == {"message": TEST_MESSAGE, "author": f"ws-tester-{room}"}
+        assert data == {
+            "message": TEST_MESSAGE,
+            "author": f"ws-tester-{room}",
+            "avatar": None,
+        }
 
 
 def nb_connected_users(json: dict[str, Any], room: str) -> bool:

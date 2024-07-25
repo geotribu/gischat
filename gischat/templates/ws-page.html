@@ -16,6 +16,7 @@
     <button id="connectButton" onclick="onConnectButtonClick(event)">Connect</button>
     <br>
     <label>Author: <input type="text" id="authorId" autocomplete="off" value=""/></label>
+    <label>Avatar: <input type="text" id="avatarId" autocomplete="off" value="mGeoPackage.svg"/></label>
     <hr>
     <label>Message: <input type="text" id="messageText" autocomplete="off"/></label>
     <button onclick="sendMessage(event)">Send</button>
@@ -112,11 +113,12 @@
         }
         const message = document.getElementById("messageText");
         const author = document.getElementById("authorId");
+        const avatar = document.getElementById("avatarId");
         if (!message.value || !author.value) {
             alert("Author and message can not be empty");
             return;
         }
-        websocket.send(JSON.stringify({message: message.value, author: author.value}));
+        websocket.send(JSON.stringify({message: message.value, author: author.value, avatar: avatar.value}));
         message.value = '';
         event.preventDefault();
     }
