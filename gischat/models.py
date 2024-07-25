@@ -21,6 +21,7 @@ class StatusModel(BaseModel):
 
 class RulesModel(BaseModel):
     rules: str
+    main_lang: str
 
 
 class MessageModel(BaseModel):

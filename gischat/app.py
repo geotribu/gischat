@@ -128,7 +128,10 @@ async def get_rooms() -> list[str]:
 
 @app.get("/rules", response_model=RulesModel)
 async def get_rules() -> RulesModel:
-    return RulesModel(rules=os.environ.get("RULES", "YOLO"))
+    return RulesModel(
+        rules=os.environ.get("RULES", "YOLO"),
+        main_lang=os.environ.get("MAIN_LANG", "en"),
+    )
 
 
 @app.put(
