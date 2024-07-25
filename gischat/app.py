@@ -4,6 +4,7 @@ import os
 import sys
 
 import colorlog
+import sentry_sdk
 from fastapi import FastAPI, HTTPException, Request, WebSocket
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import HTMLResponse
@@ -87,6 +88,16 @@ class WebsocketNotifier:
 
 
 notifier = WebsocketNotifier()
+
+
+if "SENTRY_DSN" in os.environ and os.environ.get("SENTRY_DSN"):
+    sentry_sdk.init(
+        dsn=os.environ.get("SENTRY_DSN"),
+        environment=os.environ.get("ENVIRONMENT", "production"),
+        traces_sample_rate=float(os.environ.get("SENTRY_TRACES_SAMPLE_RATE", 1)),
+        profiles_sample_rate=float(os.environ.get("SENTRY_PROFILES_SAMPLE_RATE", 1)),
+    )
+
 
 app = FastAPI(
     title="gischat API",
