@@ -43,11 +43,12 @@ def test_get_rules(client: TestClient):
 def test_put_message(client: TestClient, room: str):
     response = client.put(
         f"/room/{room}/message",
-        json={"message": "fromage", "author": f"ws-tester-{room}"},
+        json={"message": "fromage", "author": f"ws-tester-{room}", "avatar": "postgis"},
     )
     assert response.status_code == 200
     assert response.json()["message"] == "fromage"
     assert response.json()["author"] == f"ws-tester-{room}"
+    assert response.json()["avatar"] == "postgis"
 
 
 def test_put_message_wrong_room(client: TestClient):
@@ -83,7 +84,7 @@ def test_put_message_author_not_alphanum(client: TestClient, room: str):
 def test_put_message_author_too_short(client: TestClient, room: str):
     response = client.put(
         f"/room/{room}/message",
-        json={"message": "fromage", "author": "ch"},
+        json={"message": "fromage", "author": "ch", "avatar": "postgis"},
     )
     assert response.status_code == 420
     payload = response.json()["detail"]
