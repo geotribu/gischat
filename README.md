@@ -42,6 +42,8 @@ Following instances are up and running :
 - New users must connect a websocket to the `/room/{room_name}/ws` endpoint
 - Messages passing through the websocket are simple JSON dicts like this: `{"message": "hello", "author": "Hans Hibbel"}`
 - :warning: Messages having the `"internal"` author are internal messages and should not be printed, they contain technical information: `{"author": "internal", "nb_users": 36}`
+- `"author"` value must be alphanumeric (or `_` or `-`) and have min / max length set by `MIN_AUTHOR_LENGTH` / `MAX_AUTHOR_LENGTH` environment variables
+- `"message"` value must have max length set by `MAX_MESSAGE_LENGTH` environment variable
 
 ## Deploy a self-hosted instance
 
@@ -59,6 +61,9 @@ services:
     environment:
       - ROOMS=QGIS,Field and mobile,GIS tribe, Living room,Kitchen,Garden
       - RULES=Be kind and nice to this wonderful world
+      - MIN_AUTHOR_LENGTH=3
+      - MAX_AUTHOR_LENGTH=32
+      - MAX_MESSAGE_LENGTH=255
     ports:
       - 8000:8000
     restart: unless-stopped

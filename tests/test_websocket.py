@@ -76,3 +76,18 @@ def test_websocket_nb_users_connected(client: TestClient, room: str):
         }
         assert nb_connected_users(client.get("/status").json(), room) == 1
     assert nb_connected_users(client.get("/status").json(), room) == 0
+
+
+@pytest.mark.parametrize("room", test_rooms())
+def test_websocket_uncompliant_message(client: TestClient, room: str):
+    with client.websocket_connect(f"/room/{room}/ws") as websocket1:
+        assert websocket1.receive_json() == {
+            "author": INTERNAL_MESSAGE_AUTHOR,
+            "nb_users": 1,
+        }
+        websocket1.send_json({"message": TEST_MESSAGE, "author": "chri$tian"})
+        with client.websocket_connect(f"/room/{room}/ws"):
+            assert websocket1.receive_json() == {
+                "author": INTERNAL_MESSAGE_AUTHOR,
+                "nb_users": 2,
+            }
