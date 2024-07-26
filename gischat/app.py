@@ -142,6 +142,9 @@ async def get_rules() -> RulesModel:
     return RulesModel(
         rules=os.environ.get("RULES", "YOLO"),
         main_lang=os.environ.get("MAIN_LANG", "en"),
+        min_author_length=int(os.environ.get("MIN_AUTHOR_LENGTH", 3)),
+        max_author_length=int(os.environ.get("MAX_AUTHOR_LENGTH", 32)),
+        max_message_length=int(os.environ.get("MAX_MESSAGE_LENGTH", 255)),
     )
 
 

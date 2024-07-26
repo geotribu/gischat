@@ -2,7 +2,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from gischat.utils import get_poetry_version
-from tests import MAX_AUTHOR_LENGTH, MIN_AUTHOR_LENGTH, TEST_RULES
+from tests import MAX_AUTHOR_LENGTH, MAX_MESSAGE_LENGTH, MIN_AUTHOR_LENGTH, TEST_RULES
 from tests.conftest import test_rooms
 
 
@@ -38,6 +38,9 @@ def test_get_rules(client: TestClient):
     assert response.status_code == 200
     assert response.json()["rules"] == TEST_RULES
     assert response.json()["main_lang"] == "en"
+    assert response.json()["min_author_length"] == int(MIN_AUTHOR_LENGTH)
+    assert response.json()["max_author_length"] == int(MAX_AUTHOR_LENGTH)
+    assert response.json()["max_message_length"] == int(MAX_MESSAGE_LENGTH)
 
 
 @pytest.mark.parametrize("room", test_rooms())
@@ -106,3 +109,16 @@ def test_put_message_author_too_long(client: TestClient, room: str):
     payload = response.json()["detail"]
     assert payload["message"] == "Uncompliant message"
     assert f"Author too long: max {MAX_AUTHOR_LENGTH} characters" in payload["errors"]
+
+
+@pytest.mark.parametrize("room", test_rooms())
+def test_put_message_too_long(client: TestClient, room: str):
+    message = "".join(["a" for _ in range(int(MAX_MESSAGE_LENGTH) + 1)])
+    response = client.put(
+        f"/room/{room}/message",
+        json={"message": message, "author": "stephanie"},
+    )
+    assert response.status_code == 420
+    payload = response.json()["detail"]
+    assert payload["message"] == "Uncompliant message"
+    assert f"Message too long: max {MAX_MESSAGE_LENGTH} characters" in payload["errors"]
