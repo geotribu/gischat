@@ -2,7 +2,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from gischat.utils import get_poetry_version
-from tests import MAX_AUTHOR_LENGTH, MIN_AUTHOR_LENGTH, TEST_RULES
+from tests import MAX_AUTHOR_LENGTH, MAX_MESSAGE_LENGTH, MIN_AUTHOR_LENGTH, TEST_RULES
 from tests.conftest import test_rooms
 
 
@@ -38,6 +38,9 @@ def test_get_rules(client: TestClient):
     assert response.status_code == 200
     assert response.json()["rules"] == TEST_RULES
     assert response.json()["main_lang"] == "en"
+    assert response.json()["min_author_length"] == int(MIN_AUTHOR_LENGTH)
+    assert response.json()["max_author_length"] == int(MAX_AUTHOR_LENGTH)
+    assert response.json()["max_message_length"] == int(MAX_MESSAGE_LENGTH)
 
 
 @pytest.mark.parametrize("room", test_rooms())

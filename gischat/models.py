@@ -22,6 +22,9 @@ class StatusModel(BaseModel):
 class RulesModel(BaseModel):
     rules: str
     main_lang: str
+    min_author_length: int
+    max_author_length: int
+    max_message_length: int
 
 
 class MessageModel(BaseModel):
