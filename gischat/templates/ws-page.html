@@ -2,24 +2,41 @@
 <html lang="en">
 <head>
     <title>gischat</title>
+    <style>
+        .button {
+            width: 160px;
+        }
+        .text-input {
+            width: 160px;
+        }
+        .text-input-long {
+            width: 320px;
+        }
+    </style>
 </head>
 <body>
-<h1>gischat websocket client</h1>
+<h1>gischat web client</h1>
 <form>
-    <label>Instance: <input type="text" id="instance" autocomplete="off" value=""/></label>
+    <label>Instance: <input type="text" id="instance" class="text-input-long" autocomplete="off" value=""/></label>
     <label>SSL: <input type="checkbox" id="ssl" checked/></label>
-    <button onclick="onRulesButtonClick(event)">Rules</button>
-    <button onclick="onStatusButtonClick(event)">Status</button>
-    <hr>
-    <label>Room: <input type="text" id="roomId" autocomplete="off" value="QGIS"/></label>
-    <button onclick="onDetectButtonClick(event)">Detect</button>
-    <button id="connectButton" onclick="onConnectButtonClick(event)">Connect</button>
-    <br>
-    <label>Author: <input type="text" id="authorId" autocomplete="off" value=""/></label>
-    <label>Avatar: <input type="text" id="avatarId" autocomplete="off" value="mGeoPackage.svg"/></label>
-    <hr>
-    <label>Message: <input type="text" id="messageText" autocomplete="off"/></label>
-    <button onclick="sendMessage(event)">Send</button>
+    <button class="button" id="rulesButton" onclick="onRulesButtonClick(event)">Rules</button>
+    <button class="button" id="statusButton" onclick="onStatusButtonClick(event)">Status</button>
+</form>
+<br>
+<form>
+    <label>Room: <input type="text" id="roomId" class="text-input" autocomplete="off" value="QGIS"/></label>
+    <button class="button" id="listRoomsButton" onclick="onListRoomsButtonClick(event)">List available rooms</button>
+    <button class="button" id="connectButton" onclick="onConnectButtonClick(event)">Connect</button>
+</form>
+<br>
+<form>
+    <label>Author: <input type="text" id="authorId" class="text-input" autocomplete="off" value="Geotribu" disabled/></label>
+    <label>Avatar: <input type="text" id="avatarId" class="text-input" autocomplete="off" value="mGeoPackage.svg" disabled/></label>
+</form>
+<br>
+<form>
+    <label>Message: <input type="text" id="messageText" class="text-input-long" autocomplete="off" disabled/></label>
+    <button class="button" onclick="sendMessage(event)" id="sendButton" disabled>Send</button>
 </form>
 <hr>
 <ul id='messages'>
@@ -31,7 +48,6 @@
     instance.value = window.location.host;
     const ssl = document.getElementById("ssl");
     ssl.checked = window.location.protocol.startsWith("https");
-    const connectButton = document.getElementById('connectButton');
 
     function displayMessage(msg) {
         const messages = document.getElementById('messages');
@@ -47,7 +63,7 @@
         fetch(`${protocol}://${instance.value}/rules`)
             .then(response => response.json())
             .then(data => displayMessage(`Instance rules: ${data.rules}`));
-        event.preventDefault();
+        event.preventDefault()
     }
 
     function onStatusButtonClick(event) {
@@ -55,15 +71,27 @@
         fetch(`${protocol}://${instance.value}/status`)
             .then(response => response.json())
             .then(data => displayMessage(`Instance status: ${data.status} - users in rooms: ${data.rooms.map(room => `'${room.name}': ${room.nb_connected_users}`).join(",")}`));
-        event.preventDefault();
+        event.preventDefault()
     }
 
-    function onDetectButtonClick(event) {
+    function onListRoomsButtonClick(event) {
         const protocol = ssl.checked ? "https" : "http";
         fetch(`${protocol}://${instance.value}/rooms`)
             .then(response => response.json())
             .then(data => displayMessage(`Available rooms: ${data.join(',')}`));
-        event.preventDefault();
+        event.preventDefault()
+    }
+
+    function setFormEnabled(enabled) {
+        instance.disabled = enabled;
+        ssl.disabled = enabled;
+        document.getElementById("roomId").disabled = enabled;
+        document.getElementById("authorId").disabled = !enabled;
+        document.getElementById("avatarId").disabled = !enabled;
+        document.getElementById("messageText").disabled = !enabled;
+        document.getElementById("sendButton").disabled = !enabled;
+        document.getElementById("sendButton").disabled = !enabled;
+        document.getElementById("connectButton").innerText = enabled ? "Disconnect" : "Connect";
     }
 
     function onConnectButtonClick(event) {
@@ -83,7 +111,7 @@
         websocket.onopen = (event) => {
             displayMessage(`Connected to websocket in room ${room.value}`);
             connected = true;
-            connectButton.innerText = "Disconnect";
+            setFormEnabled(true);
         }
         websocket.onmessage = (event) => {
             const data = JSON.parse(event.data);
@@ -99,8 +127,8 @@
         };
         websocket.onclose = (event) => {
             connected = false;
-            connectButton.innerText = "Connect";
             displayMessage("Disconnected from websocket");
+            setFormEnabled(false);
         }
         event.preventDefault();
     }
@@ -115,13 +143,16 @@
         const author = document.getElementById("authorId");
         const avatar = document.getElementById("avatarId");
         if (!message.value || !author.value) {
-            alert("Author and message can not be empty");
+            displayMessage("Impossible: author and message must be set !");
+            event.preventDefault();
             return;
         }
         websocket.send(JSON.stringify({message: message.value, author: author.value, avatar: avatar.value}));
         message.value = '';
         event.preventDefault();
     }
+
+    window.onload = () => displayMessage("Not connected: please connect to a room to chat");
 </script>
 </body>
 </html>
