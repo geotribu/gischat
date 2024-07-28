@@ -77,11 +77,6 @@ def test_put_message_author_not_alphanum(client: TestClient, room: str):
         json={"message": "fromage", "author": "<darth_chri$tian>"},
     )
     assert response.status_code == 422
-    payload = response.json()["detail"]
-    assert payload["message"] == "Uncompliant message"
-    assert "Character not alphanumeric found in author: <" in payload["errors"]
-    assert "Character not alphanumeric found in author: >" in payload["errors"]
-    assert "Character not alphanumeric found in author: $" in payload["errors"]
 
 
 @pytest.mark.parametrize("room", test_rooms())

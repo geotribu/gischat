@@ -9,12 +9,12 @@ from fastapi import FastAPI, HTTPException, Request, WebSocket
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
+from pydantic import ValidationError
 from starlette.websockets import WebSocketDisconnect
 
 from gischat import INTERNAL_MESSAGE_AUTHOR
 from gischat.models import (
     InternalMessageModel,
-    MessageErrorModel,
     MessageModel,
     RulesModel,
     StatusModel,
@@ -151,17 +151,10 @@ async def get_rules() -> RulesModel:
 @app.put(
     "/room/{room}/message",
     response_model=MessageModel,
-    responses={420: {"model": MessageErrorModel}},
 )
 async def put_message(room: str, message: MessageModel) -> MessageModel:
     if room not in notifier.connections.keys():
         raise HTTPException(status_code=404, detail=f"Room '{room}' not registered")
-    ok, errors = message.check_validity()
-    if not ok:
-        logger.warning(f"Uncompliant message in room '{room}': {','.join(errors)}")
-        raise HTTPException(
-            status_code=420, detail={"message": "Uncompliant message", "errors": errors}
-        )
     logger.info(f"Message in room '{room}': {message}")
     await notifier.notify(room, json.dumps(jsonable_encoder(message)))
     return message
@@ -181,12 +174,10 @@ async def websocket_endpoint(websocket: WebSocket, room: str) -> None:
     try:
         while True:
             data = await websocket.receive_text()
-            message = MessageModel(**json.loads(data))
-            ok, errors = message.check_validity()
-            if not ok:
-                logger.warning(
-                    f"Uncompliant message in room '{room}': {','.join(errors)}"
-                )
+            try:
+                message = MessageModel(**json.loads(data))
+            except ValidationError:
+                logger.error("Invalid message in websocket")
                 continue
             logger.info(f"Message in room '{room}': {message}")
             await notifier.notify(room, json.dumps(jsonable_encoder(message)))
