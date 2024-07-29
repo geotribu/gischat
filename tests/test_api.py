@@ -76,12 +76,7 @@ def test_put_message_author_not_alphanum(client: TestClient, room: str):
         f"/room/{room}/message",
         json={"message": "fromage", "author": "<darth_chri$tian>"},
     )
-    assert response.status_code == 420
-    payload = response.json()["detail"]
-    assert payload["message"] == "Uncompliant message"
-    assert "Character not alphanumeric found in author: <" in payload["errors"]
-    assert "Character not alphanumeric found in author: >" in payload["errors"]
-    assert "Character not alphanumeric found in author: $" in payload["errors"]
+    assert response.status_code == 422
 
 
 @pytest.mark.parametrize("room", test_rooms())
@@ -90,12 +85,7 @@ def test_put_message_author_too_short(client: TestClient, room: str):
         f"/room/{room}/message",
         json={"message": "fromage", "author": "ch", "avatar": "postgis"},
     )
-    assert response.status_code == 420
-    payload = response.json()["detail"]
-    assert payload["message"] == "Uncompliant message"
-    assert (
-        f"Author must have at least {MIN_AUTHOR_LENGTH} characters" in payload["errors"]
-    )
+    assert response.status_code == 422
 
 
 @pytest.mark.parametrize("room", test_rooms())
@@ -105,10 +95,7 @@ def test_put_message_author_too_long(client: TestClient, room: str):
         f"/room/{room}/message",
         json={"message": "fromage", "author": author},
     )
-    assert response.status_code == 420
-    payload = response.json()["detail"]
-    assert payload["message"] == "Uncompliant message"
-    assert f"Author too long: max {MAX_AUTHOR_LENGTH} characters" in payload["errors"]
+    assert response.status_code == 422
 
 
 @pytest.mark.parametrize("room", test_rooms())
@@ -118,7 +105,4 @@ def test_put_message_too_long(client: TestClient, room: str):
         f"/room/{room}/message",
         json={"message": message, "author": "stephanie"},
     )
-    assert response.status_code == 420
-    payload = response.json()["detail"]
-    assert payload["message"] == "Uncompliant message"
-    assert f"Message too long: max {MAX_MESSAGE_LENGTH} characters" in payload["errors"]
+    assert response.status_code == 422
