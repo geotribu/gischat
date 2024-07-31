@@ -65,7 +65,8 @@ class WebsocketNotifier:
         self.connections[room].append(websocket)
 
     def remove(self, room: str, websocket: WebSocket) -> None:
-        self.connections[room].remove(websocket)
+        if websocket in self.connections[room]:
+            self.connections[room].remove(websocket)
 
     async def notify(self, room: str, message: str) -> None:
         living_connections = []
@@ -73,8 +74,11 @@ class WebsocketNotifier:
             # Looping like this is necessary in case a disconnection is handled
             # during await websocket.send_text(message)
             websocket = self.connections[room].pop()
-            await websocket.send_text(message)
-            living_connections.append(websocket)
+            try:
+                await websocket.send_text(message)
+                living_connections.append(websocket)
+            except WebSocketDisconnect:
+                logger.error("Can not send message to disconnected websocket")
         self.connections[room] = living_connections
 
     def get_nb_users(self, room: str) -> int:
@@ -180,7 +184,10 @@ async def websocket_endpoint(websocket: WebSocket, room: str) -> None:
                 logger.error("Invalid message in websocket")
                 continue
             logger.info(f"Message in room '{room}': {message}")
-            await notifier.notify(room, json.dumps(jsonable_encoder(message)))
+            try:
+                await notifier.notify(room, json.dumps(jsonable_encoder(message)))
+            except WebSocketDisconnect:
+                logger.error("Can not send message to disconnected websocket")
     except WebSocketDisconnect:
         notifier.remove(room, websocket)
         await notifier.notify_internal(room)
