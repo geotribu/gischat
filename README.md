@@ -40,7 +40,7 @@ Following instances are up and running :
 - Rules can be fetched using [the `/rules` endpoint](https://gischat.geotribu.net/docs#/default/get_rules_rules_get)
 - Number of connected users can be fetched using [the `/status` endpoint](https://gischat.geotribu.net/docs#/default/get_status_status_get)
 - New users must connect a websocket to the `/room/{room_name}/ws` endpoint
-- Messages passing through the websocket are simple JSON dicts like this: `{"message": "hello", "author": "Hans Hibbel"}`
+- Messages passing through the websocket are simple JSON dicts like this: `{"message": "hello", "author": "Hans Hibbel", "avatar": "mGeoPackage.svg"}`
 - :warning: Messages having the `"internal"` author are internal messages and should not be printed, they contain technical information: `{"author": "internal", "nb_users": 36}`
 - `"author"` value must be alphanumeric (or `_` or `-`) and have min / max length set by `MIN_AUTHOR_LENGTH` / `MAX_AUTHOR_LENGTH` environment variables
 - `"message"` value must have max length set by `MAX_MESSAGE_LENGTH` environment variable
