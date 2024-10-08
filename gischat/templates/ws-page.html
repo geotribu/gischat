@@ -124,6 +124,9 @@
                 if (data.newcomer) {
                     log = `${data.newcomer} has joined the room`;
                 }
+                if (data.exiter) {
+                    log = `${data.exiter} has left the room`;
+                }
             } else {
                 log = `[${author}] (${new Date().toLocaleTimeString()}): ${data.message}`
             }
