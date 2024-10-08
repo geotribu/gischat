@@ -14,6 +14,7 @@ from starlette.websockets import WebSocketDisconnect
 
 from gischat import INTERNAL_MESSAGE_AUTHOR
 from gischat.models import (
+    InternalExiterMessageModel,
     InternalNbUsersMessageModel,
     InternalNewcomerMessageModel,
     MessageModel,
@@ -70,10 +71,15 @@ class WebsocketNotifier:
         await websocket.accept()
         self.connections[room].append(websocket)
 
-    def remove(self, room: str, websocket: WebSocket) -> None:
+    async def remove(self, room: str, websocket: WebSocket) -> None:
+        # remove websocket from connections
         if websocket in self.connections[room]:
             self.connections[room].remove(websocket)
-        self.unregister_user(websocket)
+        # unregister user
+        if websocket in self.users.keys():
+            exiter = self.users[websocket]
+            del self.users[websocket]
+            await self.notify_exiter(room, exiter)
 
     async def notify(self, room: str, message: str) -> None:
         living_connections = []
@@ -117,6 +123,17 @@ class WebsocketNotifier:
         )
         await self.notify(room, json.dumps(jsonable_encoder(message)))
 
+    async def notify_exiter(self, room: str, user: str) -> None:
+        """
+        Notifies a room that a user has left the room
+        :param room: room to notify
+        :param user: nickname of the exiter
+        """
+        message = InternalExiterMessageModel(
+            author=INTERNAL_MESSAGE_AUTHOR, exiter=user
+        )
+        await self.notify(room, json.dumps(jsonable_encoder(message)))
+
     def register_user(self, websocket: WebSocket, user: str) -> None:
         """
         Registers a user assigned to a websocket
@@ -124,14 +141,6 @@ class WebsocketNotifier:
         :param user: user's nickname
         """
         self.users[websocket] = user
-
-    def unregister_user(self, websocket: WebSocket) -> None:
-        """
-        Unregisters a user given with the websocket
-        :param websocket: user's websocket to unregister
-        """
-        if websocket in self.users.keys():
-            del self.users[websocket]
 
     def get_registered_users(self, room: str) -> list[str]:
         """
@@ -277,6 +286,6 @@ async def websocket_endpoint(websocket: WebSocket, room: str) -> None:
                 await notifier.notify(room, json.dumps(jsonable_encoder(message)))
 
     except WebSocketDisconnect:
-        notifier.remove(room, websocket)
+        await notifier.remove(room, websocket)
         await notifier.notify_nb_users(room)
         logger.info(f"Websocket disconnected from room '{room}'")
