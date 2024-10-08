@@ -103,3 +103,63 @@ def test_websocket_uncompliant_message(client: TestClient, room: str):
                 "author": INTERNAL_MESSAGE_AUTHOR,
                 "nb_users": 2,
             }
+
+
+@pytest.mark.parametrize("room", test_rooms())
+def test_websocket_send_newcomer(client: TestClient, room: str):
+    with client.websocket_connect(f"/room/{room}/ws") as websocket:
+        websocket.send_json({"author": INTERNAL_MESSAGE_AUTHOR, "newcomer": "Isidore"})
+        assert websocket.receive_json() == {
+            "author": INTERNAL_MESSAGE_AUTHOR,
+            "nb_users": 1,
+        }
+        assert websocket.receive_json() == {
+            "author": INTERNAL_MESSAGE_AUTHOR,
+            "newcomer": "Isidore",
+        }
+
+
+@pytest.mark.parametrize("room", test_rooms())
+def test_websocket_send_newcomer_multiple(client: TestClient, room: str):
+    with client.websocket_connect(f"/room/{room}/ws") as websocket1:
+        websocket1.send_json({"author": INTERNAL_MESSAGE_AUTHOR, "newcomer": "user1"})
+        with client.websocket_connect(f"/room/{room}/ws") as websocket2:
+            websocket2.send_json(
+                {"author": INTERNAL_MESSAGE_AUTHOR, "newcomer": "user2"}
+            )
+            assert websocket1.receive_json() == {
+                "author": INTERNAL_MESSAGE_AUTHOR,
+                "nb_users": 1,
+            }
+            assert websocket1.receive_json() == {
+                "author": INTERNAL_MESSAGE_AUTHOR,
+                "newcomer": "user1",
+            }
+            assert websocket1.receive_json() == {
+                "author": INTERNAL_MESSAGE_AUTHOR,
+                "nb_users": 2,
+            }
+            assert websocket1.receive_json() == {
+                "author": INTERNAL_MESSAGE_AUTHOR,
+                "newcomer": "user2",
+            }
+            assert websocket2.receive_json() == {
+                "author": INTERNAL_MESSAGE_AUTHOR,
+                "nb_users": 2,
+            }
+            assert websocket2.receive_json() == {
+                "author": INTERNAL_MESSAGE_AUTHOR,
+                "newcomer": "user2",
+            }
+
+
+@pytest.mark.parametrize("room", test_rooms())
+def test_websocket_send_newcomer_api_call(client: TestClient, room: str):
+    with client.websocket_connect(f"/room/{room}/ws") as websocket1:
+        websocket1.send_json({"author": INTERNAL_MESSAGE_AUTHOR, "newcomer": "Isidore"})
+        assert client.get(f"/room/{room}/users").json() == ["Isidore"]
+        with client.websocket_connect(f"/room/{room}/ws") as websocket2:
+            websocket2.send_json(
+                {"author": INTERNAL_MESSAGE_AUTHOR, "newcomer": "Barnabe"}
+            )
+            assert client.get(f"/room/{room}/users").json() == ["Barnabe", "Isidore"]
