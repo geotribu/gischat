@@ -50,4 +50,9 @@ class InternalNbUsersMessageModel(BaseModel):
 
 class InternalNewcomerMessageModel(BaseModel):
     author: str
-    newcomer: str
+    newcomer: str = Field(
+        None,
+        min_length=int(os.environ.get("MIN_AUTHOR_LENGTH", 3)),
+        max_length=int(os.environ.get("MAX_AUTHOR_LENGTH", 32)),
+        pattern=r"^[a-z-A-Z-0-9-_]+$",
+    )
