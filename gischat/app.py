@@ -14,7 +14,8 @@ from starlette.websockets import WebSocketDisconnect
 
 from gischat import INTERNAL_MESSAGE_AUTHOR
 from gischat.models import (
-    InternalMessageModel,
+    InternalNbUsersMessageModel,
+    InternalNewcomerMessageModel,
     MessageModel,
     RulesModel,
     StatusModel,
@@ -43,13 +44,18 @@ class WebsocketNotifier:
     Class used to broadcast messages to registered websockets
     """
 
+    # list of websockets connection associated to room
     connections: dict[str, list[WebSocket]]
+
+    # list of user nicknames associated to their websocket
+    users: dict[WebSocket, str]
 
     def __init__(self):
         # registered websockets for rooms
         self.connections: dict[str, list[WebSocket]] = {
             room: [] for room in available_rooms()
         }
+        self.users = {}
         self.generator = self.get_notification_generator()
 
     async def get_notification_generator(self):
@@ -67,6 +73,7 @@ class WebsocketNotifier:
     def remove(self, room: str, websocket: WebSocket) -> None:
         if websocket in self.connections[room]:
             self.connections[room].remove(websocket)
+        self.unregister_user(websocket)
 
     async def notify(self, room: str, message: str) -> None:
         living_connections = []
@@ -81,14 +88,70 @@ class WebsocketNotifier:
                 logger.error("Can not send message to disconnected websocket")
         self.connections[room] = living_connections
 
-    def get_nb_users(self, room: str) -> int:
+    def get_nb_connected_users(self, room: str) -> int:
+        """
+        Returns the number of connected users in a room
+        :param room: room to check
+        :return: number of connected users in a room
+        """
         return len(self.connections[room])
 
-    async def notify_internal(self, room: str) -> None:
-        message = InternalMessageModel(
-            author=INTERNAL_MESSAGE_AUTHOR, nb_users=self.get_nb_users(room)
+    async def notify_nb_users(self, room: str) -> None:
+        """
+        Notifies connected users in a room with the number of connected users
+        :param room: room to notify
+        """
+        message = InternalNbUsersMessageModel(
+            author=INTERNAL_MESSAGE_AUTHOR, nb_users=self.get_nb_connected_users(room)
         )
         await self.notify(room, json.dumps(jsonable_encoder(message)))
+
+    def register_user(self, websocket: WebSocket, user: str) -> None:
+        """
+        Registers a user assigned to a websocket
+        :param websocket: user's websocket
+        :param user: user's nickname
+        """
+        self.users[websocket] = user
+
+    def unregister_user(self, websocket: WebSocket) -> None:
+        """
+        Unregister a user given with the websocket
+        :param websocket: user's websocket to unregister
+        """
+        if websocket in self.users.keys():
+            del self.users[websocket]
+
+    def get_registered_users(self, room: str) -> list[str]:
+        """
+        Returns the name of users present in a room
+        :param room: room to check
+        :return: List of user names
+        """
+        users = []
+        for ws in self.connections[room]:
+            # use try/except instead of list comprehension
+            # in case a user didn't register itself
+            try:
+                users.append(self.users[ws])
+            except KeyError:
+                continue
+        return users
+
+    def is_user_present(self, room: str, user: str) -> bool:
+        """
+        Checks if a user given by the nickname is present in a room
+        :param room: room to check
+        :param user: user to check
+        :return: True if present, False otherwise
+        """
+        for ws in self.connections[room]:
+            try:
+                if self.users[ws] == user:
+                    return True
+            except KeyError:
+                continue
+        return False
 
 
 notifier = WebsocketNotifier()
@@ -152,6 +215,13 @@ async def get_rules() -> RulesModel:
     )
 
 
+@app.get("/room/{room}/users")
+async def get_connected_users(room: str) -> list[str]:
+    if room not in notifier.connections.keys():
+        raise HTTPException(status_code=404, detail=f"Room '{room}' not registered")
+    return sorted(notifier.get_registered_users(room), key=str.casefold)
+
+
 @app.put(
     "/room/{room}/message",
     response_model=MessageModel,
@@ -172,23 +242,40 @@ async def websocket_endpoint(websocket: WebSocket, room: str) -> None:
         raise HTTPException(status_code=404, detail=f"Room '{room}' not registered")
 
     await notifier.connect(room, websocket)
-    await notifier.notify_internal(room)
+    await notifier.notify_nb_users(room)
     logger.info(f"New websocket connected in room '{room}'")
 
     try:
         while True:
             data = await websocket.receive_text()
-            try:
-                message = MessageModel(**json.loads(data))
-            except ValidationError:
-                logger.error("Invalid message in websocket")
-                continue
-            logger.info(f"Message in room '{room}': {message}")
-            try:
-                await notifier.notify(room, json.dumps(jsonable_encoder(message)))
-            except WebSocketDisconnect:
-                logger.error("Can not send message to disconnected websocket")
+            payload = json.loads(data)
+            if "author" in payload and payload["author"] == "internal":
+                if "newcomer" in payload:
+                    message = InternalNewcomerMessageModel(**payload)
+                    newcomer = payload["newcomer"]
+                    notifier.register_user(websocket, newcomer)
+                    logger.info(f"Newcomer in room {room}: {newcomer}")
+
+                    try:
+                        await notifier.notify(
+                            room, json.dumps(jsonable_encoder(message))
+                        )
+                    except WebSocketDisconnect:
+                        logger.error("Can not send message to disconnected websocket")
+
+            else:
+                try:
+                    message = MessageModel(**payload)
+                    logger.info(f"Message in room '{room}': {message}")
+                except ValidationError:
+                    logger.error("Invalid message in websocket")
+                    continue
+
+                try:
+                    await notifier.notify(room, json.dumps(jsonable_encoder(message)))
+                except WebSocketDisconnect:
+                    logger.error("Can not send message to disconnected websocket")
     except WebSocketDisconnect:
         notifier.remove(room, websocket)
-        await notifier.notify_internal(room)
+        await notifier.notify_nb_users(room)
         logger.info(f"Websocket disconnected from room '{room}'")

@@ -43,6 +43,11 @@ class MessageModel(BaseModel):
         return f"[{self.author}]: '{self.message}'"
 
 
-class InternalMessageModel(BaseModel):
+class InternalNbUsersMessageModel(BaseModel):
     author: str
     nb_users: int
+
+
+class InternalNewcomerMessageModel(BaseModel):
+    author: str
+    newcomer: str
