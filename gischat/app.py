@@ -106,6 +106,17 @@ class WebsocketNotifier:
         )
         await self.notify(room, json.dumps(jsonable_encoder(message)))
 
+    async def notify_newcomer(self, room: str, user: str) -> None:
+        """
+        Notifies a room that a newcomer has joined
+        :param room: room to notify
+        :param user: nickname of the newcomer
+        """
+        message = InternalNewcomerMessageModel(
+            author=INTERNAL_MESSAGE_AUTHOR, newcomer=user
+        )
+        await self.notify(room, json.dumps(jsonable_encoder(message)))
+
     def register_user(self, websocket: WebSocket, user: str) -> None:
         """
         Registers a user assigned to a websocket
@@ -116,7 +127,7 @@ class WebsocketNotifier:
 
     def unregister_user(self, websocket: WebSocket) -> None:
         """
-        Unregister a user given with the websocket
+        Unregisters a user given with the websocket
         :param websocket: user's websocket to unregister
         """
         if websocket in self.users.keys():
@@ -124,7 +135,7 @@ class WebsocketNotifier:
 
     def get_registered_users(self, room: str) -> list[str]:
         """
-        Returns the name of users present in a room
+        Returns the nicknames of users registered in a room
         :param room: room to check
         :return: List of user names
         """
@@ -251,17 +262,10 @@ async def websocket_endpoint(websocket: WebSocket, room: str) -> None:
             payload = json.loads(data)
             if "author" in payload and payload["author"] == "internal":
                 if "newcomer" in payload:
-                    message = InternalNewcomerMessageModel(**payload)
                     newcomer = payload["newcomer"]
                     notifier.register_user(websocket, newcomer)
                     logger.info(f"Newcomer in room {room}: {newcomer}")
-
-                    try:
-                        await notifier.notify(
-                            room, json.dumps(jsonable_encoder(message))
-                        )
-                    except WebSocketDisconnect:
-                        logger.error("Can not send message to disconnected websocket")
+                    await notifier.notify_newcomer(room, newcomer)
 
             else:
                 try:
@@ -270,11 +274,8 @@ async def websocket_endpoint(websocket: WebSocket, room: str) -> None:
                 except ValidationError:
                     logger.error("Invalid message in websocket")
                     continue
+                await notifier.notify(room, json.dumps(jsonable_encoder(message)))
 
-                try:
-                    await notifier.notify(room, json.dumps(jsonable_encoder(message)))
-                except WebSocketDisconnect:
-                    logger.error("Can not send message to disconnected websocket")
     except WebSocketDisconnect:
         notifier.remove(room, websocket)
         await notifier.notify_nb_users(room)
