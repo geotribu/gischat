@@ -41,9 +41,13 @@ Following instances are up and running :
 - Number of connected users can be fetched using [the `/status` endpoint](https://gischat.geotribu.net/docs#/default/get_status_status_get)
 - New users must connect a websocket to the `/room/{room_name}/ws` endpoint
 - Messages passing through the websocket are simple JSON dicts like this: `{"message": "hello", "author": "Hans Hibbel", "avatar": "mGeoPackage.svg"}`
-- :warning: Messages having the `"internal"` author are internal messages and should not be printed, they contain technical information: `{"author": "internal", "nb_users": 36}`
+- :warning: Messages having the `"internal"` author are internal messages and should not be printed, they contain technical information:
+  - `{"author": "internal", "nb_users": 36}` -> there are now 36 users in the room
+  - `{"author": "internal", "newcomer": "Jane"}` -> Jane has joined the room
+  - `{"author": "internal", "exiter": "Jane"}` -> Jane has left the room
 - `"author"` value must be alphanumeric (or `_` or `-`) and have min / max length set by `MIN_AUTHOR_LENGTH` / `MAX_AUTHOR_LENGTH` environment variables
 - `"message"` value must have max length set by `MAX_MESSAGE_LENGTH` environment variable
+- Once the websocket is connected, it might be polite to send a registration message like : `{"author": "internal", "newcomer": "Jane"}`
 
 ## Deploy a self-hosted instance
 
