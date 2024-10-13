@@ -106,12 +106,13 @@
         }
         const ws_protocol = ssl.checked ? "wss" : "ws";
         const ws_url = `${ws_protocol}://${instance.value}/room/${room.value}/ws`;
+        const user = document.getElementById("authorId").value;
         websocket = new WebSocket(ws_url);
         websocket.onopen = (event) => {
             displayMessage(`Connected to websocket in room ${room.value}`);
             connected = true;
             setFormEnabled(true);
-            websocket.send(JSON.stringify({author: "internal", newcomer: document.getElementById("authorId").value}));
+            websocket.send(JSON.stringify({author: "internal", newcomer: user}));
         }
         websocket.onmessage = (event) => {
             const data = JSON.parse(event.data);
@@ -126,6 +127,9 @@
                 }
                 if (data.exiter) {
                     log = `${data.exiter} has left the room`;
+                }
+                if (data.liker_author && data.liked_author && data.liked_author === user){
+                    log = `${data.liker_author} liked your message "${data.message}"`;
                 }
             } else {
                 log = `[${author}] (${new Date().toLocaleTimeString()}): ${data.message}`
