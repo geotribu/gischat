@@ -37,6 +37,10 @@ logger.addHandler(handler)
 
 
 def available_rooms() -> list[str]:
+    """
+    Returns list of available rooms
+    :return: list of available rooms
+    """
     return os.environ.get("ROOMS", "QGIS,QField,Geotribu").split(",")
 
 
@@ -68,10 +72,21 @@ class WebsocketNotifier:
         await self.generator.asend(msg)
 
     async def connect(self, room: str, websocket: WebSocket) -> None:
+        """
+        Connects a new user to a room
+        :param room: room to connect the websocket to
+        :param websocket: new user's websocket connection
+        """
         await websocket.accept()
         self.connections[room].append(websocket)
 
     async def remove(self, room: str, websocket: WebSocket) -> None:
+        """
+        Removes a user from a room
+        Should be called when a websocket is disconnected
+        :param room: room to disconnect user from
+        :param websocket: user's websocket connection
+        """
         # remove websocket from connections
         if websocket in self.connections[room]:
             self.connections[room].remove(websocket)
@@ -82,6 +97,11 @@ class WebsocketNotifier:
             await self.notify_exiter(room, exiter)
 
     async def notify(self, room: str, message: str) -> None:
+        """
+        Sends a message to a room
+        :param room: room to notify
+        :param message: message to send, should be stringified JSON
+        """
         living_connections = []
         while len(self.connections[room]) > 0:
             # Looping like this is necessary in case a disconnection is handled
@@ -160,7 +180,7 @@ class WebsocketNotifier:
 
     def is_user_present(self, room: str, user: str) -> bool:
         """
-        Checks if a user given by the nickname is present in a room
+        Checks if a user given by the nickname is registered in a room
         :param room: room to check
         :param user: user to check
         :return: True if present, False otherwise
@@ -177,6 +197,7 @@ class WebsocketNotifier:
 notifier = WebsocketNotifier()
 
 
+# initialize sentry
 if "SENTRY_DSN" in os.environ and os.environ.get("SENTRY_DSN"):
     sentry_sdk.init(
         dsn=os.environ.get("SENTRY_DSN"),
@@ -188,7 +209,7 @@ if "SENTRY_DSN" in os.environ and os.environ.get("SENTRY_DSN"):
 
 app = FastAPI(
     title="gischat API",
-    summary="Chat with your GIS tribe in QGIS, QField and other clients !",
+    summary="Chat with your GIS tribe in QGIS, GIS mobile apps and other clients !",
     version=get_poetry_version(),
 )
 templates = Jinja2Templates(directory="gischat/templates")
