@@ -1,4 +1,4 @@
-# Gischat - API
+# GISChat - Backend API
 
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![flake8](https://img.shields.io/badge/linter-flake8-green)](https://flake8.pycqa.org/)
@@ -21,9 +21,9 @@ Gischat API backend for chatting with your tribe in GIS tools like QGIS (using [
 Following instances are up and running :
 
 | URL | Description | Location |
-|-----|-------------|----------|
-|https://gischat.geotribu.net|"official" international instance| Germany|
-|https://gischat.geotribu.fr|"official" french-speaking instance| Germany|
+| :-: | :---------- | :------- |
+| <https://gischat.geotribu.net> | "official" international instance | Germany |
+| <https://gischat.geotribu.fr> | "official" french-speaking instance | Germany |
 
 ## Developer information
 
@@ -40,171 +40,166 @@ Following instances are up and running :
 
 ### Setup Gischat backend
 
-- Install `docker` using [the official documentation](https://docs.docker.com/engine/install/)
 
-- Create a `docker-compose.yaml` file on your server :
+> [!NOTE]
+> `ROOMS` environment variable is a comma-separated list of strings which represent the available chat rooms.  
+> `RULES` environment variable describes the instance's rulesUseful information that users should know, even when skimming content.
 
-```sh
-services:
-  api:
-    image: gounux/gischat:latest
-    container_name: gischat-app
-    environment:
-      - ROOMS=QGIS,Field and mobile,GIS tribe, Living room,Kitchen,Garden
-      - RULES=Be kind and nice to this wonderful world
-      - MAIN_LANGUAGE=en
-      - ENVIRONMENT=production
-      - MIN_AUTHOR_LENGTH=3
-      - MAX_AUTHOR_LENGTH=32
-      - MAX_MESSAGE_LENGTH=255
-    ports:
-      - 8000:8000
-    restart: unless-stopped
-```
+1. Install `docker` using [the official documentation](https://docs.docker.com/engine/install/)
+1. Create a `docker-compose.yaml` file on your server:
+  
+    ```sh
+    services:
+      api:
+        image: gounux/gischat:latest
+        container_name: gischat-app
+        environment:
+          - ROOMS=QGIS,Field and mobile,GIS tribe, Living room,Kitchen,Garden
+          - RULES=Be kind and nice to this wonderful world
+          - MAIN_LANGUAGE=en
+          - ENVIRONMENT=production
+          - MIN_AUTHOR_LENGTH=3
+          - MAX_AUTHOR_LENGTH=32
+          - MAX_MESSAGE_LENGTH=255
+        ports:
+          - 8000:8000
+        restart: unless-stopped
+    ```
 
-`ROOMS` environment variable is a comma-separated list of strings which represent the available chat rooms  
-`RULES` environment variable describes the instance's rules
+1. Launch the app using `compose`:
+  
+    ```sh
+    docker compose up -d
+    ```
 
-
-- Launch the app using `compose` :
-
-```sh
-docker compose up -d
-```
-
-- Have a look at the logs :
-
-```sh
-docker compose logs -f
-```
+1. Have a look at the logs:
+  
+    ```sh
+    docker compose logs -f
+    ```
 
 ### Run behind a nginx proxy using HTTPS
 
-- Install nginx and certbot
+1. Install nginx and certbot:
 
-```sh
-apt install nginx certbot
-```
+    ```sh
+    apt install nginx certbot
+    ```
 
-- Get a Let's Encrypt SSL certificate for your domain :
+1. Get a Let's Encrypt SSL certificate for your domain:
 
-```sh
-# stop nginx service
-systemctl stop nginx
-# get the certificate
-certbot certonly --standalone -d DOMAIN
-# restart nginx service
-systemctl start nginx
-```
+    ```sh
+    # stop nginx service
+    systemctl stop nginx
+    # get the certificate
+    certbot certonly --standalone -d DOMAIN
+    # restart nginx service
+    systemctl start nginx
+    ```
 
-The Let's Encrypt SSL certificate should be saved to `/etc/letsencrypt/live/DOMAIN`
+    The Let's Encrypt SSL certificate should be saved to `/etc/letsencrypt/live/DOMAIN`
 
-- Create a nginx config file :
+1. Create a nginx config file:
 
-```sh
-touch /etc/nginx/sites-available/gischat.conf
-```
+    ```sh
+    touch /etc/nginx/sites-available/gischat.conf
+    ```
 
-- Edit the file and add the following content (using your domain):
+1. Edit the file and add the following content (using your domain):
 
-```sh
-upstream gischat_upstream {
-  server 127.0.0.1:8000;
-}
+    ```nginx
+    upstream gischat_upstream {
+      server 127.0.0.1:8000;
+    }
+  
+    server {
+      listen 80;
+      server_name <DOMAIN>;
+      return 301 https://$host$request_uri;
+    }
+  
+    server {
+  
+      listen 443 ssl;
+      server_name <DOMAIN>;
+  
+      ssl_certificate /etc/letsencrypt/live/<DOMAIN>/fullchain.pem;
+      ssl_certificate_key /etc/letsencrypt/live/<DOMAIN>/privkey.pem;
+  
+      location / {
+        proxy_pass http://gischat_upstream;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_read_timeout 86400;
+      }
+    }
+    ```
 
-server {
-  listen 80;
-  server_name <DOMAIN>;
-  return 301 https://$host$request_uri;
-}
+1. Create a symlink to enable the nginx config file :
 
-server {
+    ```sh
+    ln -s /etc/nginx/sites-available/gischat.conf /etc/nginx/sites-enabled/gischat.conf
+    ```
 
-  listen 443 ssl;
-  server_name <DOMAIN>;
+1. Check that the nginx config file is okey :
+  
+    ```sh
+    nginx -t
+    nginx: the configuration file /etc/nginx/nginx.conf syntax is ok
+    nginx: configuration file /etc/nginx/nginx.conf test is successful
+    ```
 
-  ssl_certificate /etc/letsencrypt/live/<DOMAIN>/fullchain.pem;
-  ssl_certificate_key /etc/letsencrypt/live/<DOMAIN>/privkey.pem;
-
-  location / {
-    proxy_pass http://gischat_upstream;
-    proxy_http_version 1.1;
-    proxy_set_header Upgrade $http_upgrade;
-    proxy_set_header Connection "upgrade";
-    proxy_read_timeout 86400;
-  }
-}
-```
-
-- Create a symlink to enable the nginx config file :
-
-```sh
-ln -s /etc/nginx/sites-available/gischat.conf /etc/nginx/sites-enabled/gischat.conf
-```
-
-- Check that the nginx config file is okey :
-
-```sh
-nginx -t
-```
-
-You should see something like this :
-
-```
-nginx: the configuration file /etc/nginx/nginx.conf syntax is ok
-nginx: configuration file /etc/nginx/nginx.conf test is successful
-```
-
-- Reload nginx configuration
-
-```sh
-systemctl reload nginx
-```
+1. Reload nginx configuration
+  
+    ```sh
+    systemctl reload nginx
+    ```
 
 That's it, you should be able to chat now with your fellow GIS mates !
 
 ## Development
 
-- Install [poetry](https://python-poetry.org/):
+1. Install [poetry](https://python-poetry.org/):
 
-```sh
-python -m pip install poetry
-```
+  ```sh
+  python -m pip install poetry
+  ```
 
-- Install project's dependencies using poetry:
+1. Install project's dependencies using poetry:
 
-```sh
-poetry install
-```
+  ```sh
+  poetry install
+  ```
 
-- Install pre-commit tools:
+1. Install pre-commit tools:
 
-```sh
-poetry run pre-commit install
-```
+  ```sh
+  poetry run pre-commit install
+  ```
 
-- Create local environment file and edit it:
+1. Create local environment file and edit it:
 
-```sh
-cp .env.example .env
-```
+  ```sh
+  cp .env.example .env
+  ```
 
-- Launch API:
+1. Launch API:
 
-```sh
-poetry run uvicorn gischat.app:app --reload --env-file .env --log-config=log_config.yaml
-```
+  ```sh
+  poetry run uvicorn gischat.app:app --reload --env-file .env --log-config=log_config.yaml
+  ```
 
 ## Build
 
-- Build docker image:
+1. Build docker image:
+  
+  ```sh
+  docker build . --tag geotribu/gischat:latest
+  ```
 
-```sh
-docker build . --tag geotribu/gischat:latest
-```
+1. Run docker image:
 
-- Run docker image:
-
-```sh
-docker run geotribu/gischat:latest --env ROOMS=QGIS,QField,Geotribu --env RULES="Those are the rules: ..."
-```
+  ```sh
+  docker run geotribu/gischat:latest --env ROOMS=QGIS,QField,Geotribu --env RULES="Those are the rules: ..."
+  ```
