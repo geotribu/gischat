@@ -40,14 +40,13 @@ Following instances are up and running :
 
 ### Setup Gischat backend
 
-
 > [!NOTE]
 > `ROOMS` environment variable is a comma-separated list of strings which represent the available chat rooms.  
 > `RULES` environment variable describes the instance's rulesUseful information that users should know, even when skimming content.
 
 1. Install `docker` using [the official documentation](https://docs.docker.com/engine/install/)
 1. Create a `docker-compose.yaml` file on your server:
-  
+
     ```sh
     services:
       api:
@@ -67,13 +66,13 @@ Following instances are up and running :
     ```
 
 1. Launch the app using `compose`:
-  
+
     ```sh
     docker compose up -d
     ```
 
 1. Have a look at the logs:
-  
+
     ```sh
     docker compose logs -f
     ```
@@ -111,21 +110,21 @@ Following instances are up and running :
     upstream gischat_upstream {
       server 127.0.0.1:8000;
     }
-  
+
     server {
       listen 80;
       server_name <DOMAIN>;
       return 301 https://$host$request_uri;
     }
-  
+
     server {
-  
+
       listen 443 ssl;
       server_name <DOMAIN>;
-  
+
       ssl_certificate /etc/letsencrypt/live/<DOMAIN>/fullchain.pem;
       ssl_certificate_key /etc/letsencrypt/live/<DOMAIN>/privkey.pem;
-  
+
       location / {
         proxy_pass http://gischat_upstream;
         proxy_http_version 1.1;
@@ -143,7 +142,7 @@ Following instances are up and running :
     ```
 
 1. Check that the nginx config file is okey :
-  
+
     ```sh
     nginx -t
     nginx: the configuration file /etc/nginx/nginx.conf syntax is ok
@@ -151,7 +150,7 @@ Following instances are up and running :
     ```
 
 1. Reload nginx configuration
-  
+
     ```sh
     systemctl reload nginx
     ```
@@ -193,7 +192,7 @@ That's it, you should be able to chat now with your fellow GIS mates !
 ## Build
 
 1. Build docker image:
-  
+
   ```sh
   docker build . --tag geotribu/gischat:latest
   ```
