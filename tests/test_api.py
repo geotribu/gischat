@@ -71,13 +71,23 @@ def test_put_message(client: TestClient, room: str):
 def test_put_message_wrong_room(client: TestClient):
     assert (
         client.put(
-            "/room/fromage/text", json={"text": "fromage", "author": "ws-tester"}
+            "/room/fromage/text",
+            json={
+                "type": GischatMessageTypeEnum.TEXT.value,
+                "author": "ws-tester",
+                "text": "fromage",
+            },
         ).status_code
         == 404
     )
     assert (
         client.put(
-            "/room/void/text", json={"text": "fromage", "author": "ws-tester"}
+            "/room/void/text",
+            json={
+                "type": GischatMessageTypeEnum.TEXT.value,
+                "author": "ws-tester",
+                "text": "fromage",
+            },
         ).status_code
         == 404
     )
@@ -126,13 +136,13 @@ def test_put_message_author_too_long(client: TestClient, room: str):
 
 @pytest.mark.parametrize("room", get_test_rooms())
 def test_put_message_too_long(client: TestClient, room: str):
-    message = "".join(["a" for _ in range(int(MAX_MESSAGE_LENGTH) + 1)])
+    text = "".join(["a" for _ in range(int(MAX_MESSAGE_LENGTH) + 1)])
     response = client.put(
         f"/room/{room}/text",
         json={
             "type": GischatMessageTypeEnum.TEXT.value,
             "author": "stephanie",
-            "text": message,
+            "text": text,
         },
     )
     assert response.status_code == 422
