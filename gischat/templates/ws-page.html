@@ -30,7 +30,7 @@
 </form>
 <br>
 <form>
-    <label>Author: <input type="text" id="authorId" class="text-input" autocomplete="off" value="Geotribu" disabled/></label>
+    <label>Author: <input type="text" id="authorId" class="text-input" autocomplete="off" value="Geotribu"/></label>
     <label>Avatar: <input type="text" id="avatarId" class="text-input" autocomplete="off" value="mGeoPackage.svg" disabled/></label>
 </form>
 <br>
@@ -86,7 +86,6 @@
         instance.disabled = enabled;
         ssl.disabled = enabled;
         document.getElementById("roomId").disabled = enabled;
-        document.getElementById("authorId").disabled = !enabled;
         document.getElementById("avatarId").disabled = !enabled;
         document.getElementById("messageText").disabled = !enabled;
         document.getElementById("sendButton").disabled = !enabled;
@@ -112,13 +111,25 @@
             displayMessage(`Connected to websocket in room ${room.value}`);
             connected = true;
             setFormEnabled(true);
+            websocket.send(JSON.stringify({author: "internal", newcomer: document.getElementById("authorId").value}));
         }
         websocket.onmessage = (event) => {
             const data = JSON.parse(event.data);
             const author = data.author;
-            const log = author === "internal" ?
-                `${data.nb_users} user${data.nb_users > 1 ? "s" : ""} connected in room` :
-                `[${author}] (${new Date().toLocaleTimeString()}): ${data.message}`;
+            let log;
+            if (author === "internal") {
+                if (data.nb_users) {
+                    log = `${data.nb_users} user${data.nb_users > 1 ? "s" : ""} connected in room`;
+                }
+                if (data.newcomer) {
+                    log = `${data.newcomer} has joined the room`;
+                }
+                if (data.exiter) {
+                    log = `${data.exiter} has left the room`;
+                }
+            } else {
+                log = `[${author}] (${new Date().toLocaleTimeString()}): ${data.message}`
+            }
             displayMessage(log);
         };
         websocket.onerror = (error) => {

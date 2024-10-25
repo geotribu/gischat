@@ -44,6 +44,13 @@ def test_get_rules(client: TestClient):
 
 
 @pytest.mark.parametrize("room", test_rooms())
+def test_get_users(client: TestClient, room: str):
+    response = client.get(f"/room/{room}/users")
+    assert response.status_code == 200
+    assert response.json() == []
+
+
+@pytest.mark.parametrize("room", test_rooms())
 def test_put_message(client: TestClient, room: str):
     response = client.put(
         f"/room/{room}/message",
