@@ -313,6 +313,8 @@ async def websocket_endpoint(websocket: WebSocket, room: str) -> None:
                 # image message
                 if message.type == GischatMessageTypeEnum.IMAGE:
                     message = GischatImageMessage(**payload)
+                    logger.info(f"Message (image) in room '{room}' by {message.author}")
+                    await notifier.notify_room(room, message)
 
                 # newcomer message
                 if message.type == GischatMessageTypeEnum.NEWCOMER:

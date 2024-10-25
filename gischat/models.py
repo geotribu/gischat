@@ -68,7 +68,7 @@ class GischatImageMessage(GischatMessageModel):
     type: GischatMessageTypeEnum = GischatMessageTypeEnum.IMAGE
     author: str = GISCHAT_NICKNAME_FIELD
     avatar: Optional[str] = Field()
-    image_data: bytes = Field()
+    image_data: str = Field(description="String of the encoded image")
 
 
 class GischatNbUsersMessage(GischatMessageModel):
