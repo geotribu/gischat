@@ -7,7 +7,7 @@ from fastapi.testclient import TestClient
 from tests import MAX_MESSAGE_LENGTH, MIN_AUTHOR_LENGTH, TEST_ROOMS, TEST_RULES
 
 
-def test_rooms() -> list[str]:
+def get_test_rooms() -> list[str]:
     return TEST_ROOMS
 
 

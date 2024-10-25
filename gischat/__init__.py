@@ -1,1 +1,0 @@
-INTERNAL_MESSAGE_AUTHOR = "internal"

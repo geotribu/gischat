@@ -12,13 +12,15 @@ from fastapi.templating import Jinja2Templates
 from pydantic import ValidationError
 from starlette.websockets import WebSocketDisconnect
 
-from gischat import INTERNAL_MESSAGE_AUTHOR
 from gischat.models import (
-    InternalExiterMessageModel,
-    InternalLikeMessageModel,
-    InternalNbUsersMessageModel,
-    InternalNewcomerMessageModel,
-    MessageModel,
+    GischatExiterMessage,
+    GischatImageMessage,
+    GischatLikeMessage,
+    GischatMessageModel,
+    GischatMessageTypeEnum,
+    GischatNbUsersMessage,
+    GischatNewcomerMessage,
+    GischatTextMessage,
     RulesModel,
     StatusModel,
     VersionModel,
@@ -42,7 +44,7 @@ def available_rooms() -> list[str]:
     Returns list of available rooms
     :return: list of available rooms
     """
-    return os.environ.get("ROOMS", "QGIS,QField,Geotribu").split(",")
+    return os.environ.get("ROOMS", "QGIS,Geotribu").split(",")
 
 
 class WebsocketNotifier:
@@ -128,9 +130,7 @@ class WebsocketNotifier:
         Notifies connected users in a room with the number of connected users
         :param room: room to notify
         """
-        message = InternalNbUsersMessageModel(
-            author=INTERNAL_MESSAGE_AUTHOR, nb_users=self.get_nb_connected_users(room)
-        )
+        message = GischatNbUsersMessage(nb_users=self.get_nb_connected_users(room))
         await self.notify(room, json.dumps(jsonable_encoder(message)))
 
     async def notify_newcomer(self, room: str, user: str) -> None:
@@ -139,9 +139,7 @@ class WebsocketNotifier:
         :param room: room to notify
         :param user: nickname of the newcomer
         """
-        message = InternalNewcomerMessageModel(
-            author=INTERNAL_MESSAGE_AUTHOR, newcomer=user
-        )
+        message = GischatNewcomerMessage(newcomer=user)
         await self.notify(room, json.dumps(jsonable_encoder(message)))
 
     async def notify_exiter(self, room: str, user: str) -> None:
@@ -150,9 +148,7 @@ class WebsocketNotifier:
         :param room: room to notify
         :param user: nickname of the exiter
         """
-        message = InternalExiterMessageModel(
-            author=INTERNAL_MESSAGE_AUTHOR, exiter=user
-        )
+        message = GischatExiterMessage(exiter=user)
         await self.notify(room, json.dumps(jsonable_encoder(message)))
 
     def register_user(self, websocket: WebSocket, user: str) -> None:
@@ -283,14 +279,16 @@ async def get_connected_users(room: str) -> list[str]:
 
 
 @app.put(
-    "/room/{room}/message",
-    response_model=MessageModel,
+    "/room/{room}/text",
+    response_model=GischatTextMessage,
 )
-async def put_message(room: str, message: MessageModel) -> MessageModel:
+async def put_text_message(
+    room: str, message: GischatTextMessage
+) -> GischatTextMessage:
     if room not in notifier.connections.keys():
         raise HTTPException(status_code=404, detail=f"Room '{room}' not registered")
-    logger.info(f"Message in room '{room}': {message}")
     await notifier.notify(room, json.dumps(jsonable_encoder(message)))
+    logger.info(f"Message in room '{room}': {message}")
     return message
 
 
@@ -310,19 +308,29 @@ async def websocket_endpoint(websocket: WebSocket, room: str) -> None:
             data = await websocket.receive_text()
             payload = json.loads(data)
 
-            # handle internal messages
-            if "author" in payload and payload["author"] == "internal":
+            try:
+                message = GischatMessageModel(**payload)
 
-                # registration messages
-                if "newcomer" in payload:
-                    newcomer = payload["newcomer"]
-                    notifier.register_user(websocket, newcomer)
-                    logger.info(f"Newcomer in room {room}: {newcomer}")
-                    await notifier.notify_newcomer(room, newcomer)
+                # text message
+                if message.type == GischatMessageTypeEnum.TEXT:
+                    message = GischatTextMessage(**payload)
+                    logger.info(f"Message in room '{room}': {message}")
+                    await notifier.notify(room, json.dumps(jsonable_encoder(message)))
 
-                # like messages
-                if "liked_author" in payload and "liker_author" in payload:
-                    message = InternalLikeMessageModel(**payload)
+                # image message
+                if message.type == GischatMessageTypeEnum.IMAGE:
+                    message = GischatImageMessage(**payload)
+
+                # newcomer message
+                if message.type == GischatMessageTypeEnum.NEWCOMER:
+                    message = GischatNewcomerMessage(**payload)
+                    notifier.register_user(websocket, message.newcomer)
+                    logger.info(f"Newcomer in room {room}: {message.newcomer}")
+                    await notifier.notify_newcomer(room, message.newcomer)
+
+                # like message
+                if message.type == GischatMessageTypeEnum.LIKE:
+                    message = GischatLikeMessage(**payload)
                     logger.info(
                         f"{message.liker_author} liked {message.liked_author}'s message ({message.message})"
                     )
@@ -331,14 +339,8 @@ async def websocket_endpoint(websocket: WebSocket, room: str) -> None:
                         message.liked_author,
                         json.dumps(jsonable_encoder(message)),
                     )
-            else:
-                try:
-                    message = MessageModel(**payload)
-                    logger.info(f"Message in room '{room}': {message}")
-                except ValidationError:
-                    logger.error("Invalid message in websocket")
-                    continue
-                await notifier.notify(room, json.dumps(jsonable_encoder(message)))
+            except ValidationError as e:
+                logger.error(f"Uncompliant message: {e}")
 
     except WebSocketDisconnect:
         await notifier.remove(room, websocket)
