@@ -64,15 +64,6 @@ class WebsocketNotifier:
             room: [] for room in available_rooms()
         }
         self.users = {}
-        self.generator = self.get_notification_generator()
-
-    async def get_notification_generator(self):
-        while True:
-            room, message = yield
-            await self.notify(room, message)
-
-    async def push(self, msg: str) -> None:
-        await self.generator.asend(msg)
 
     async def connect(self, room: str, websocket: WebSocket) -> None:
         """
@@ -99,19 +90,19 @@ class WebsocketNotifier:
             del self.users[websocket]
             await self.notify_exiter(room, exiter)
 
-    async def notify(self, room: str, message: str) -> None:
+    async def notify_room(self, room: str, message: GischatMessageModel) -> None:
         """
         Sends a message to a room
         :param room: room to notify
-        :param message: message to send, should be stringified JSON
+        :param message: message to send
         """
         living_connections = []
         while len(self.connections[room]) > 0:
             # Looping like this is necessary in case a disconnection is handled
-            # during await websocket.send_text(message)
+            # during await websocket.send_json(message)
             websocket = self.connections[room].pop()
             try:
-                await websocket.send_text(message)
+                await websocket.send_json(jsonable_encoder(message))
                 living_connections.append(websocket)
             except WebSocketDisconnect:
                 logger.error("Can not send message to disconnected websocket")
@@ -131,7 +122,7 @@ class WebsocketNotifier:
         :param room: room to notify
         """
         message = GischatNbUsersMessage(nb_users=self.get_nb_connected_users(room))
-        await self.notify(room, json.dumps(jsonable_encoder(message)))
+        await self.notify_room(room, message)
 
     async def notify_newcomer(self, room: str, user: str) -> None:
         """
@@ -140,7 +131,7 @@ class WebsocketNotifier:
         :param user: nickname of the newcomer
         """
         message = GischatNewcomerMessage(newcomer=user)
-        await self.notify(room, json.dumps(jsonable_encoder(message)))
+        await self.notify_room(room, message)
 
     async def notify_exiter(self, room: str, user: str) -> None:
         """
@@ -149,7 +140,7 @@ class WebsocketNotifier:
         :param user: nickname of the exiter
         """
         message = GischatExiterMessage(exiter=user)
-        await self.notify(room, json.dumps(jsonable_encoder(message)))
+        await self.notify_room(room, message)
 
     def register_user(self, websocket: WebSocket, user: str) -> None:
         """
@@ -190,7 +181,9 @@ class WebsocketNotifier:
                 continue
         return False
 
-    async def notify_user(self, room: str, user: str, message: str) -> None:
+    async def notify_user(
+        self, room: str, user: str, message: GischatMessageModel
+    ) -> None:
         """
         Notifies a user in a room with a "private" message
         Private means only this user is notified of the message
@@ -202,7 +195,7 @@ class WebsocketNotifier:
             try:
                 if self.users[ws] == user:
                     try:
-                        await ws.send_text(message)
+                        await ws.send_json(jsonable_encoder(message))
                     except WebSocketDisconnect:
                         logger.error("Can not send message to disconnected websocket")
             except KeyError:
@@ -287,7 +280,7 @@ async def put_text_message(
 ) -> GischatTextMessage:
     if room not in notifier.connections.keys():
         raise HTTPException(status_code=404, detail=f"Room '{room}' not registered")
-    await notifier.notify(room, json.dumps(jsonable_encoder(message)))
+    await notifier.notify_room(room, message)
     logger.info(f"Message in room '{room}': {message}")
     return message
 
@@ -315,7 +308,7 @@ async def websocket_endpoint(websocket: WebSocket, room: str) -> None:
                 if message.type == GischatMessageTypeEnum.TEXT:
                     message = GischatTextMessage(**payload)
                     logger.info(f"Message in room '{room}': {message}")
-                    await notifier.notify(room, json.dumps(jsonable_encoder(message)))
+                    await notifier.notify_room(room, message)
 
                 # image message
                 if message.type == GischatMessageTypeEnum.IMAGE:
@@ -337,7 +330,7 @@ async def websocket_endpoint(websocket: WebSocket, room: str) -> None:
                     await notifier.notify_user(
                         room,
                         message.liked_author,
-                        json.dumps(jsonable_encoder(message)),
+                        message,
                     )
             except ValidationError as e:
                 logger.error(f"Uncompliant message: {e}")
