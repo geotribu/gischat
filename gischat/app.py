@@ -15,6 +15,7 @@ from starlette.websockets import WebSocketDisconnect
 from gischat import INTERNAL_MESSAGE_AUTHOR
 from gischat.models import (
     InternalExiterMessageModel,
+    InternalLikeMessageModel,
     InternalNbUsersMessageModel,
     InternalNewcomerMessageModel,
     MessageModel,
@@ -193,6 +194,24 @@ class WebsocketNotifier:
                 continue
         return False
 
+    async def notify_user(self, room: str, user: str, message: str) -> None:
+        """
+        Notifies a user in a room with a "private" message
+        Private means only this user is notified of the message
+        :param room: room
+        :param user: user to notify
+        :param message: message to send
+        """
+        for ws in self.connections[room]:
+            try:
+                if self.users[ws] == user:
+                    try:
+                        await ws.send_text(message)
+                    except WebSocketDisconnect:
+                        logger.error("Can not send message to disconnected websocket")
+            except KeyError:
+                continue
+
 
 notifier = WebsocketNotifier()
 
@@ -290,13 +309,28 @@ async def websocket_endpoint(websocket: WebSocket, room: str) -> None:
         while True:
             data = await websocket.receive_text()
             payload = json.loads(data)
+
+            # handle internal messages
             if "author" in payload and payload["author"] == "internal":
+
+                # registration messages
                 if "newcomer" in payload:
                     newcomer = payload["newcomer"]
                     notifier.register_user(websocket, newcomer)
                     logger.info(f"Newcomer in room {room}: {newcomer}")
                     await notifier.notify_newcomer(room, newcomer)
 
+                # like messages
+                if "liked_author" in payload and "liker_author" in payload:
+                    message = InternalLikeMessageModel(**payload)
+                    logger.info(
+                        f"{message.liker_author} liked {message.liked_author}'s message ({message.message})"
+                    )
+                    await notifier.notify_user(
+                        room,
+                        message.liked_author,
+                        json.dumps(jsonable_encoder(message)),
+                    )
             else:
                 try:
                     message = MessageModel(**payload)

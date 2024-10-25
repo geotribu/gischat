@@ -151,6 +151,14 @@ def test_websocket_send_newcomer_multiple(client: TestClient, room: str):
                 "author": INTERNAL_MESSAGE_AUTHOR,
                 "newcomer": "user2",
             }
+        assert websocket1.receive_json() == {
+            "author": INTERNAL_MESSAGE_AUTHOR,
+            "exiter": "user2",
+        }
+        assert websocket1.receive_json() == {
+            "author": INTERNAL_MESSAGE_AUTHOR,
+            "nb_users": 1,
+        }
 
 
 @pytest.mark.parametrize("room", test_rooms())
@@ -163,3 +171,72 @@ def test_websocket_send_newcomer_api_call(client: TestClient, room: str):
                 {"author": INTERNAL_MESSAGE_AUTHOR, "newcomer": "Barnabe"}
             )
             assert client.get(f"/room/{room}/users").json() == ["Barnabe", "Isidore"]
+
+
+@pytest.mark.parametrize("room", test_rooms())
+def test_websocket_like_message(client: TestClient, room: str):
+    # register client 1 (Isidore)
+    with client.websocket_connect(f"/room/{room}/ws") as websocket1:
+        assert websocket1.receive_json() == {
+            "author": INTERNAL_MESSAGE_AUTHOR,
+            "nb_users": 1,
+        }
+        websocket1.send_json({"author": INTERNAL_MESSAGE_AUTHOR, "newcomer": "Isidore"})
+        assert websocket1.receive_json() == {
+            "author": INTERNAL_MESSAGE_AUTHOR,
+            "newcomer": "Isidore",
+        }
+
+        # register client 2 (Barnabe)
+        with client.websocket_connect(f"/room/{room}/ws") as websocket2:
+            assert websocket1.receive_json() == {
+                "author": INTERNAL_MESSAGE_AUTHOR,
+                "nb_users": 2,
+            }
+            assert websocket2.receive_json() == {
+                "author": INTERNAL_MESSAGE_AUTHOR,
+                "nb_users": 2,
+            }
+
+            websocket2.send_json(
+                {"author": INTERNAL_MESSAGE_AUTHOR, "newcomer": "Barnabe"}
+            )
+            assert websocket1.receive_json() == {
+                "author": INTERNAL_MESSAGE_AUTHOR,
+                "newcomer": "Barnabe",
+            }
+            assert websocket2.receive_json() == {
+                "author": INTERNAL_MESSAGE_AUTHOR,
+                "newcomer": "Barnabe",
+            }
+
+            # client 1 sends a message
+            websocket1.send_json(
+                {"author": "Isidore", "message": "hi", "avatar": "postgis"}
+            )
+            assert websocket1.receive_json() == {
+                "author": "Isidore",
+                "message": "hi",
+                "avatar": "postgis",
+            }
+            assert websocket2.receive_json() == {
+                "author": "Isidore",
+                "message": "hi",
+                "avatar": "postgis",
+            }
+
+            # client 2 likes client 1's message
+            websocket2.send_json(
+                {
+                    "author": INTERNAL_MESSAGE_AUTHOR,
+                    "message": "hi",
+                    "liker_author": "Barnabe",
+                    "liked_author": "Isidore",
+                }
+            )
+            assert websocket1.receive_json() == {
+                "author": INTERNAL_MESSAGE_AUTHOR,
+                "message": "hi",
+                "liker_author": "Barnabe",
+                "liked_author": "Isidore",
+            }
