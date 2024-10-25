@@ -151,6 +151,14 @@ def test_websocket_send_newcomer_multiple(client: TestClient, room: str):
                 "author": INTERNAL_MESSAGE_AUTHOR,
                 "newcomer": "user2",
             }
+        assert websocket1.receive_json() == {
+            "author": INTERNAL_MESSAGE_AUTHOR,
+            "exiter": "user2",
+        }
+        assert websocket1.receive_json() == {
+            "author": INTERNAL_MESSAGE_AUTHOR,
+            "nb_users": 1,
+        }
 
 
 @pytest.mark.parametrize("room", test_rooms())
