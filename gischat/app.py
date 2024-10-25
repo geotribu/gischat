@@ -1,7 +1,9 @@
+import base64
 import json
 import logging
 import os
 import sys
+from io import BytesIO
 
 import colorlog
 import sentry_sdk
@@ -9,6 +11,7 @@ from fastapi import FastAPI, HTTPException, Request, WebSocket
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
+from PIL import Image
 from pydantic import ValidationError
 from starlette.websockets import WebSocketDisconnect
 
@@ -314,6 +317,15 @@ async def websocket_endpoint(websocket: WebSocket, room: str) -> None:
                 if message.type == GischatMessageTypeEnum.IMAGE:
                     message = GischatImageMessage(**payload)
                     logger.info(f"Message (image) in room '{room}' by {message.author}")
+                    # resize image if needed using MAX_IMAGE_SIZE env var
+                    image = Image.open(BytesIO(base64.b64decode(message.image_data)))
+                    size = int(os.environ.get("MAX_IMAGE_SIZE", 1080))
+                    image.thumbnail((size, size), Image.Resampling.LANCZOS)
+                    img_byte_arr = BytesIO()
+                    image.save(img_byte_arr, format="PNG")
+                    message.image_data = base64.b64encode(
+                        img_byte_arr.getvalue()
+                    ).decode("utf-8")
                     await notifier.notify_room(room, message)
 
                 # newcomer message
