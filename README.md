@@ -37,7 +37,9 @@ Following instances are up and running :
 
 ### JSON message types
 
-Those are the messages that might transit throught the websocket, each of them has a `"type"` key based on which it is possible to parse them :
+Those are the messages that might transit through the websocket.
+
+Each of them has a `"type"` key based on which it is possible to parse them :
 
 1. `"text"`: basic text message send by someone in the room, e.g.:
 
