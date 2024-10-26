@@ -57,7 +57,7 @@ class GischatMessageModel(BaseModel):
 class GischatTextMessage(GischatMessageModel):
     type: GischatMessageTypeEnum = GischatMessageTypeEnum.TEXT
     author: str = GISCHAT_NICKNAME_FIELD
-    avatar: Optional[str] = None
+    avatar: Optional[str] = Field(default=None)
     text: str = GISCHAT_TEXT_MESSAGE_FIELD
 
     def __str__(self) -> str:
@@ -67,7 +67,7 @@ class GischatTextMessage(GischatMessageModel):
 class GischatImageMessage(GischatMessageModel):
     type: GischatMessageTypeEnum = GischatMessageTypeEnum.IMAGE
     author: str = GISCHAT_NICKNAME_FIELD
-    avatar: Optional[str] = Field()
+    avatar: Optional[str] = Field(default=None)
     image_data: str = Field(description="String of the encoded image")
 
 
