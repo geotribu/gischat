@@ -70,6 +70,8 @@ Each of them has a `"type"` key based on which it is possible to parse them :
    }
    ```
 
+   > The image will be resized by the backend before broadcast, using the `MAX_IMAGE_SIZE` environment variable value
+
 1. `"nb_users"`: notifies about the number of users connected to the room, e.g.:
 
    ```json
