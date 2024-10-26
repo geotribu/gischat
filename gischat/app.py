@@ -319,7 +319,7 @@ async def websocket_endpoint(websocket: WebSocket, room: str) -> None:
                     logger.info(f"Message (image) in room '{room}' by {message.author}")
                     # resize image if needed using MAX_IMAGE_SIZE env var
                     image = Image.open(BytesIO(base64.b64decode(message.image_data)))
-                    size = int(os.environ.get("MAX_IMAGE_SIZE", 1080))
+                    size = int(os.environ.get("MAX_IMAGE_SIZE", 800))
                     image.thumbnail((size, size), Image.Resampling.LANCZOS)
                     img_byte_arr = BytesIO()
                     image.save(img_byte_arr, format="PNG")
