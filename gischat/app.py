@@ -372,6 +372,8 @@ async def websocket_endpoint(websocket: WebSocket, room: str) -> None:
 
             except ValidationError as e:
                 logger.error(f"Uncompliant message: {e}")
+                message = GischatUncompliantMessage(reason=str(e))
+                await websocket.send_json(jsonable_encoder(message))
 
     except WebSocketDisconnect:
         await notifier.remove(room, websocket)

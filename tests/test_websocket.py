@@ -4,6 +4,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from gischat.models import GischatMessageTypeEnum
+from tests import MAX_AUTHOR_LENGTH, MAX_MESSAGE_LENGTH, MIN_AUTHOR_LENGTH
 from tests.conftest import get_test_rooms
 
 TEST_TEXT_MESSAGE = "Is this websocket working ?"
@@ -100,12 +101,13 @@ def test_websocket_nb_users_connected(client: TestClient, room: str):
 
 
 @pytest.mark.parametrize("room", get_test_rooms())
-def test_websocket_uncompliant_message(client: TestClient, room: str):
+def test_websocket_send_uncompliant(client: TestClient, room: str):
     with client.websocket_connect(f"/room/{room}/ws") as websocket1:
         assert websocket1.receive_json() == {
             "type": GischatMessageTypeEnum.NB_USERS.value,
             "nb_users": 1,
         }
+        # send author with unallowed chars
         websocket1.send_json(
             {
                 "type": GischatMessageTypeEnum.TEXT.value,
@@ -113,11 +115,58 @@ def test_websocket_uncompliant_message(client: TestClient, room: str):
                 "text": TEST_TEXT_MESSAGE,
             }
         )
-        with client.websocket_connect(f"/room/{room}/ws"):
-            assert websocket1.receive_json() == {
-                "type": GischatMessageTypeEnum.NB_USERS.value,
-                "nb_users": 2,
+        assert (
+            websocket1.receive_json()["type"]
+            == GischatMessageTypeEnum.UNCOMPLIANT.value
+        )
+        # send too short author
+        websocket1.send_json(
+            {
+                "type": GischatMessageTypeEnum.TEXT.value,
+                "author": "".join(["a" for _ in range(int(MIN_AUTHOR_LENGTH) - 1)]),
+                "text": TEST_TEXT_MESSAGE,
             }
+        )
+        assert (
+            websocket1.receive_json()["type"]
+            == GischatMessageTypeEnum.UNCOMPLIANT.value
+        )
+        # send too long author
+        websocket1.send_json(
+            {
+                "type": GischatMessageTypeEnum.TEXT.value,
+                "author": "".join(["a" for _ in range(int(MAX_AUTHOR_LENGTH) + 1)]),
+                "text": TEST_TEXT_MESSAGE,
+            }
+        )
+        assert (
+            websocket1.receive_json()["type"]
+            == GischatMessageTypeEnum.UNCOMPLIANT.value
+        )
+        # send too long message
+        websocket1.send_json(
+            {
+                "type": GischatMessageTypeEnum.TEXT.value,
+                "author": "Thierry_le_0uf",
+                "text": "".join(["a" for _ in range(int(MAX_MESSAGE_LENGTH) + 1)]),
+            }
+        )
+        assert (
+            websocket1.receive_json()["type"]
+            == GischatMessageTypeEnum.UNCOMPLIANT.value
+        )
+        # send unknown message type
+        websocket1.send_json(
+            {
+                "type": "fr0mage",
+                "author": "Thierry_le_0uf",
+                "text": "cc",
+            }
+        )
+        assert (
+            websocket1.receive_json()["type"]
+            == GischatMessageTypeEnum.UNCOMPLIANT.value
+        )
 
 
 @pytest.mark.parametrize("room", get_test_rooms())
