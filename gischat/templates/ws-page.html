@@ -118,6 +118,9 @@
             const type = data.type;
 
             switch (type) {
+                case "uncompliant":
+                    displayMessage(`Uncompliant message: ${message.reason}`);
+                    break;
                 case "text":
                     displayMessage(`[${data.author}] (${new Date().toLocaleTimeString()}): ${data.text}`);
                     break;
@@ -135,6 +138,9 @@
                     break;
                 case "like":
                     displayMessage(`${data.liker_author} liked your message "${data.message}"`);
+                    break;
+                case "geojson":
+                    displayMessage(`${data.author} sent the "${data.layer_name}" geojson layer (${data.geojson.features.length} features using ${data.crs_authid})`);
                     break;
                 default:
                     displayMessage(`Unknown message received: ${data}`);

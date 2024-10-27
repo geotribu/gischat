@@ -5,6 +5,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from tests import (
+    MAX_GEOJSON_FEATURES,
     MAX_IMAGE_SIZE,
     MAX_MESSAGE_LENGTH,
     MIN_AUTHOR_LENGTH,
@@ -24,6 +25,7 @@ def client() -> Generator[TestClient, None, None]:
     os.environ["MIN_AUTHOR_LENGTH"] = MIN_AUTHOR_LENGTH
     os.environ["MAX_MESSAGE_LENGTH"] = MAX_MESSAGE_LENGTH
     os.environ["MAX_IMAGE_SIZE"] = MAX_IMAGE_SIZE
+    os.environ["MAX_GEOJSON_FEATURES"] = MAX_GEOJSON_FEATURES
     from gischat.app import app
 
     yield TestClient(app)

@@ -17,6 +17,7 @@ from starlette.websockets import WebSocketDisconnect
 
 from gischat.models import (
     GischatExiterMessage,
+    GischatGeojsonLayerMessage,
     GischatImageMessage,
     GischatLikeMessage,
     GischatMessageModel,
@@ -24,6 +25,7 @@ from gischat.models import (
     GischatNbUsersMessage,
     GischatNewcomerMessage,
     GischatTextMessage,
+    GischatUncompliantMessage,
     RulesModel,
     StatusModel,
     VersionModel,
@@ -346,6 +348,28 @@ async def websocket_endpoint(websocket: WebSocket, room: str) -> None:
                         message.liked_author,
                         message,
                     )
+
+                # geojson layer message
+                if message.type == GischatMessageTypeEnum.GEOJSON:
+                    message = GischatGeojsonLayerMessage(**payload)
+                    # check if the number of features is compliant with the MAX_GEOJSON_FEATURES env variable
+                    nb_features = len(message.geojson["features"])
+                    max_nb_features = int(os.environ.get("MAX_GEOJSON_FEATURES", 500))
+                    if nb_features > max_nb_features:
+                        logger.error(
+                            f"{message.author} sent a geojson layer ('{message.layer_name}') with too many features ({nb_features}"
+                        )
+                        # notify user with an uncompliant message
+                        message = GischatUncompliantMessage(
+                            reason=f"Too many geojson features : {nb_features} vs max {max_nb_features} allowed"
+                        )
+                        await websocket.send_json(jsonable_encoder(message))
+                        continue
+                    logger.info(
+                        f"{message.author} sent a geojson layer ('{message.layer_name}'): {nb_features} features using crs '{message.crs_authid}'"
+                    )
+                    await notifier.notify_room(room, message)
+
             except ValidationError as e:
                 logger.error(f"Uncompliant message: {e}")
 
