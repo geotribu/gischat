@@ -354,14 +354,16 @@ async def websocket_endpoint(websocket: WebSocket, room: str) -> None:
                     message = GischatGeojsonLayerMessage(**payload)
                     # check if the number of features is compliant with the MAX_GEOJSON_FEATURES env variable
                     nb_features = len(message.geojson["features"])
-                    if nb_features > int(os.environ.get("MAX_GEOJSON_FEATURES", 500)):
+                    max_nb_features = int(os.environ.get("MAX_GEOJSON_FEATURES", 500))
+                    if nb_features > max_nb_features:
                         logger.error(
                             f"{message.author} sent a geojson layer ('{message.layer_name}') with too many features ({nb_features}"
                         )
                         # notify user with an uncompliant message
-                        await websocket.send_json(
-                            jsonable_encoder(GischatUncompliantMessage())
+                        message = GischatUncompliantMessage(
+                            reason=f"Too many geojson features : {nb_features} vs max {max_nb_features} allowed"
                         )
+                        await websocket.send_json(jsonable_encoder(message))
                         return
                     logger.info(
                         f"{message.author} sent a geojson layer ('{message.layer_name}'): {nb_features} features using crs '{message.crs_authid}'"

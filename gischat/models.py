@@ -58,6 +58,7 @@ class GischatMessageModel(BaseModel):
 
 class GischatUncompliantMessage(GischatMessageModel):
     type: GischatMessageTypeEnum = GischatMessageTypeEnum.UNCOMPLIANT
+    reason: str = Field(description="Reason of the uncompliant message")
 
 
 class GischatTextMessage(GischatMessageModel):
