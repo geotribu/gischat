@@ -52,12 +52,9 @@ Each of them has a `"type"` key based on which it is possible to parse them :
    }
    ```
 
-   > `"author"` value must be alphanumeric (or `_` or `-`) and have min / max length set by `MIN_AUTHOR_LENGTH` / `MAX_AUTHOR_LENGTH` environment variables
-
-   > `avatar` value is optional and usually points to [a QGIS resource icon](https://github.com/qgis/QGIS/blob/master/images/images.qrc) (see the ones [available in the QChat/QTribu plugin](https://github.com/geotribu/qtribu/blob/e07012628a6c03f2c4ee664025ece0bf7672d245/qtribu/constants.py#L200))
-
+   > `"author"` value must be alphanumeric (or `_` or `-`) and have min / max length set by `MIN_AUTHOR_LENGTH` / `MAX_AUTHOR_LENGTH` environment variables  
+   > `avatar` value is optional and usually points to [a QGIS resource icon](https://github.com/qgis/QGIS/blob/master/images/images.qrc) (see the ones [available in the QChat/QTribu plugin](https://github.com/geotribu/qtribu/blob/e07012628a6c03f2c4ee664025ece0bf7672d245/qtribu/constants.py#L200))  
    > `"text"` value must have max length set by `MAX_MESSAGE_LENGTH` environment variable
-
 
 1. `"image"`: image message send by someone in the room, e.g.:
 
@@ -167,9 +164,9 @@ Each of them has a `"type"` key based on which it is possible to parse them :
 
 > [!NOTE]
 > `ROOMS` environment variable is a comma-separated list of strings which represent the available chat rooms.  
-> `RULES` environment variable describes the instance's rules. Useful information that users should know, even when skimming content.
-> `MAX_IMAGE_SIZE` environment variable describes the max size of image in pixels. The server will resize images based on this value.
-> `MAX_GEOJSON_FEATURES` environment variable describes the max number of features allowed in a `geojson` message. If there is more feature, the message will not be considered and the server will respond with a `uncompliant` message.
+> `RULES` environment variable describes the instance's rules. Useful information that users should know, even when skimming content.  
+> `MAX_IMAGE_SIZE` environment variable describes the max size of image in pixels. The server will resize images based on this value.  
+> `MAX_GEOJSON_FEATURES` environment variable describes the max number of features allowed in a `geojson` message. If there is more feature, the message will not be considered and the server will respond with a `uncompliant` message.  
 
 1. Install `docker` using [the official documentation](https://docs.docker.com/engine/install/)
 1. Create a `docker-compose.yaml` file on your server:
