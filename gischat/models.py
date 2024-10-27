@@ -26,6 +26,8 @@ class RulesModel(BaseModel):
     min_author_length: int
     max_author_length: int
     max_message_length: int
+    max_image_size: int
+    max_geojson_features: int
 
 
 GISCHAT_NICKNAME_FIELD = Field(

@@ -3,7 +3,14 @@ from fastapi.testclient import TestClient
 
 from gischat.models import GischatMessageTypeEnum
 from gischat.utils import get_poetry_version
-from tests import MAX_AUTHOR_LENGTH, MAX_MESSAGE_LENGTH, MIN_AUTHOR_LENGTH, TEST_RULES
+from tests import (
+    MAX_AUTHOR_LENGTH,
+    MAX_GEOJSON_FEATURES,
+    MAX_IMAGE_SIZE,
+    MAX_MESSAGE_LENGTH,
+    MIN_AUTHOR_LENGTH,
+    TEST_RULES,
+)
 from tests.conftest import get_test_rooms
 
 
@@ -42,6 +49,8 @@ def test_get_rules(client: TestClient):
     assert response.json()["min_author_length"] == int(MIN_AUTHOR_LENGTH)
     assert response.json()["max_author_length"] == int(MAX_AUTHOR_LENGTH)
     assert response.json()["max_message_length"] == int(MAX_MESSAGE_LENGTH)
+    assert response.json()["max_image_size"] == int(MAX_IMAGE_SIZE)
+    assert response.json()["max_geojson_features"] == int(MAX_GEOJSON_FEATURES)
 
 
 @pytest.mark.parametrize("room", get_test_rooms())
