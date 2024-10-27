@@ -49,6 +49,7 @@ class GischatMessageTypeEnum(Enum):
     EXITER = "exiter"
     LIKE = "like"
     GEOJSON = "geojson"
+    CRS = "crs"
 
     def __str__(self) -> str:
         return self.value
@@ -110,3 +111,11 @@ class GischatGeojsonLayerMessage(GischatMessageModel):
     crs_wkt: str = Field(description="WKT string of the CRS")
     crs_authid: str = Field(description="Auth id of the crs, e.g.: 'EPSG:4326'")
     geojson: dict = Field(description="Geo data as geojson")
+
+
+class GischatCrsMessage(GischatMessageModel):
+    type: GischatMessageTypeEnum = GischatMessageTypeEnum.CRS
+    author: str = GISCHAT_NICKNAME_FIELD
+    avatar: Optional[str] = Field(default=None)
+    crs_wkt: str = Field(description="WKT string of the CRS")
+    crs_authid: str = Field(description="Auth id of the crs, e.g.: 'EPSG:4326'")

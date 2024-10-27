@@ -4,13 +4,11 @@ import pytest
 from starlette.testclient import TestClient
 
 from gischat.models import GischatMessageTypeEnum
-from tests import MAX_GEOJSON_FEATURES
+from tests import MAX_GEOJSON_FEATURES, WGS84_AUTHID, WGS84_WKT
 from tests.conftest import get_test_rooms
 
 GEOJSON_PATH_OK = "tests/data/tissot.geojson"
 GEOJSON_PATH_NOK = "tests/data/points.geojson"
-WGS84_WKT = 'GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.0174532925199433,AUTHORITY["EPSG","9122"]],AUTHORITY["EPSG","4326"]]'
-WGS84_AUTHID = "EPSG:4326"
 
 
 @pytest.mark.parametrize("room", get_test_rooms())

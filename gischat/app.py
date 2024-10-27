@@ -1,5 +1,4 @@
 import base64
-import json
 import logging
 import os
 import sys
@@ -16,6 +15,7 @@ from pydantic import ValidationError
 from starlette.websockets import WebSocketDisconnect
 
 from gischat.models import (
+    GischatCrsMessage,
     GischatExiterMessage,
     GischatGeojsonLayerMessage,
     GischatImageMessage,
@@ -305,8 +305,7 @@ async def websocket_endpoint(websocket: WebSocket, room: str) -> None:
 
     try:
         while True:
-            data = await websocket.receive_text()
-            payload = json.loads(data)
+            payload = await websocket.receive_json()
 
             try:
                 message = GischatMessageModel(**payload)
@@ -354,7 +353,8 @@ async def websocket_endpoint(websocket: WebSocket, room: str) -> None:
                 # geojson layer message
                 if message.type == GischatMessageTypeEnum.GEOJSON:
                     message = GischatGeojsonLayerMessage(**payload)
-                    # check if the number of features is compliant with the MAX_GEOJSON_FEATURES env variable
+                    # check if the number of features is compliant
+                    # must not be greater than the MAX_GEOJSON_FEATURES env variable
                     nb_features = len(message.geojson["features"])
                     max_nb_features = int(os.environ.get("MAX_GEOJSON_FEATURES", 500))
                     if nb_features > max_nb_features:
@@ -369,6 +369,14 @@ async def websocket_endpoint(websocket: WebSocket, room: str) -> None:
                         continue
                     logger.info(
                         f"{message.author} sent a geojson layer ('{message.layer_name}'): {nb_features} features using crs '{message.crs_authid}'"
+                    )
+                    await notifier.notify_room(room, message)
+
+                # crs message
+                if message.type == GischatMessageTypeEnum.CRS:
+                    message = GischatCrsMessage(**payload)
+                    logger.info(
+                        f"{message.author} shared the crs '{message.crs_authid}'"
                     )
                     await notifier.notify_room(room, message)
 
