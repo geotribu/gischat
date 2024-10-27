@@ -167,7 +167,9 @@ Each of them has a `"type"` key based on which it is possible to parse them :
 
 > [!NOTE]
 > `ROOMS` environment variable is a comma-separated list of strings which represent the available chat rooms.  
-> `RULES` environment variable describes the instance's rulesUseful information that users should know, even when skimming content.
+> `RULES` environment variable describes the instance's rules. Useful information that users should know, even when skimming content.
+> `MAX_IMAGE_SIZE` environment variable describes the max size of image in pixels. The server will resize images based on this value.
+> `MAX_GEOJSON_FEATURES` environment variable describes the max number of features allowed in a `geojson` message. If there is more feature, the message will not be considered and the server will respond with a `uncompliant` message.
 
 1. Install `docker` using [the official documentation](https://docs.docker.com/engine/install/)
 1. Create a `docker-compose.yaml` file on your server:
@@ -185,6 +187,8 @@ Each of them has a `"type"` key based on which it is possible to parse them :
           - MIN_AUTHOR_LENGTH=3
           - MAX_AUTHOR_LENGTH=32
           - MAX_MESSAGE_LENGTH=255
+          - MAX_IMAGE_SIZE=800
+          - MAX_GEOJSON_FEATURES=500
         ports:
           - 8000:8000
         restart: unless-stopped
