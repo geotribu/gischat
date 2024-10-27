@@ -266,6 +266,8 @@ async def get_rules() -> RulesModel:
         min_author_length=int(os.environ.get("MIN_AUTHOR_LENGTH", 3)),
         max_author_length=int(os.environ.get("MAX_AUTHOR_LENGTH", 32)),
         max_message_length=int(os.environ.get("MAX_MESSAGE_LENGTH", 255)),
+        max_image_size=int(os.environ.get("MAX_IMAGE_SIZE", 800)),
+        max_geojson_features=int(os.environ.get("MAX_GEOJSON_FEATURES", 500)),
     )
 
 
