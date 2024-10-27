@@ -364,7 +364,7 @@ async def websocket_endpoint(websocket: WebSocket, room: str) -> None:
                             reason=f"Too many geojson features : {nb_features} vs max {max_nb_features} allowed"
                         )
                         await websocket.send_json(jsonable_encoder(message))
-                        return
+                        continue
                     logger.info(
                         f"{message.author} sent a geojson layer ('{message.layer_name}'): {nb_features} features using crs '{message.crs_authid}'"
                     )

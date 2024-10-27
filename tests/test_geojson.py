@@ -4,6 +4,7 @@ import pytest
 from starlette.testclient import TestClient
 
 from gischat.models import GischatMessageTypeEnum
+from tests import MAX_GEOJSON_FEATURES
 from tests.conftest import get_test_rooms
 
 GEOJSON_PATH_OK = "tests/data/tissot.geojson"
@@ -42,29 +43,26 @@ def test_send_and_receive_geojson(client: TestClient, room: str):
         assert len(data["geojson"]["features"]) == 60
 
 
-### this test makes all the tests fail after :s with running `pytest tests`
-### even if running `pytest tests/test_geojson.py` is okay
-### even if running individual other tests files is okay
-### maybe the websocket is not closed and the user is still present
-# @pytest.mark.parametrize("room", get_test_rooms())
-# def test_send_wrong_geojson(client: TestClient, room: str):
-#     with client.websocket_connect(f"/room/{room}/ws") as websocket:
-#         assert websocket.receive_json() == {
-#             "type": GischatMessageTypeEnum.NB_USERS.value,
-#             "nb_users": 1,
-#         }
-#         with open(GEOJSON_PATH_NOK) as file:
-#             websocket.send_json(
-#                 {
-#                     "type": GischatMessageTypeEnum.GEOJSON.value,
-#                     "author": f"ws-tester-{room}",
-#                     "avatar": "cat",
-#                     "layer_name": "points",
-#                     "crs_wkt": WGS84_WKT,
-#                     "crs_authid": WGS84_AUTHID,
-#                     "geojson": json.load(file),
-#                 }
-#             )
-#         assert websocket.receive_json() == {
-#             "type": GischatMessageTypeEnum.UNCOMPLIANT.value,
-#         }
+@pytest.mark.parametrize("room", get_test_rooms())
+def test_send_wrong_geojson(client: TestClient, room: str):
+    with client.websocket_connect(f"/room/{room}/ws") as websocket:
+        assert websocket.receive_json() == {
+            "type": GischatMessageTypeEnum.NB_USERS.value,
+            "nb_users": 1,
+        }
+        with open(GEOJSON_PATH_NOK) as file:
+            websocket.send_json(
+                {
+                    "type": GischatMessageTypeEnum.GEOJSON.value,
+                    "author": f"ws-tester-{room}",
+                    "avatar": "cat",
+                    "layer_name": "points",
+                    "crs_wkt": WGS84_WKT,
+                    "crs_authid": WGS84_AUTHID,
+                    "geojson": json.load(file),
+                }
+            )
+        assert websocket.receive_json() == {
+            "type": GischatMessageTypeEnum.UNCOMPLIANT.value,
+            "reason": f"Too many geojson features : 501 vs max {int(MAX_GEOJSON_FEATURES)} allowed",
+        }
