@@ -30,15 +30,91 @@ Following instances are up and running :
 - Rooms can be fetched using [the `/rooms` endpoint](https://gischat.geotribu.net/docs#/default/get_rooms_rooms_get)
 - Rules can be fetched using [the `/rules` endpoint](https://gischat.geotribu.net/docs#/default/get_rules_rules_get)
 - Number of connected users can be fetched using [the `/status` endpoint](https://gischat.geotribu.net/docs#/default/get_status_status_get)
+- List of connected and registered users can be fetched using [the `/room/{room}/users` endpoint](https://gischat.geotribu.net/docs)
 - New users must connect a websocket to the `/room/{room_name}/ws` endpoint
-- Messages passing through the websocket are simple JSON dicts like this: `{"message": "hello", "author": "Hans Hibbel", "avatar": "mGeoPackage.svg"}`
-- :warning: Messages having the `"internal"` author are internal messages and should not be printed, they contain technical information:
-  - `{"author": "internal", "nb_users": 36}` -> there are now 36 users in the room
-  - `{"author": "internal", "newcomer": "Jane"}` -> Jane has joined the room
-  - `{"author": "internal", "exiter": "Jane"}` -> Jane has left the room
-- `"author"` value must be alphanumeric (or `_` or `-`) and have min / max length set by `MIN_AUTHOR_LENGTH` / `MAX_AUTHOR_LENGTH` environment variables
-- `"message"` value must have max length set by `MAX_MESSAGE_LENGTH` environment variable
-- Once the websocket is connected, it might be polite to send a registration message like : `{"author": "internal", "newcomer": "Jane"}`
+- After connecting to the websocket, it is possible to register the user in the room by sending a `newcomer` message (see below)
+- Messages passing through the websocket are strings with a JSON structure, they have a `type` key which represent which kind of message it is
+
+### JSON message types
+
+Those are the messages that might transit through the websocket.
+
+Each of them has a `"type"` key based on which it is possible to parse them :
+
+1. `"text"`: basic text message send by someone in the room, e.g.:
+
+   ```json
+   {
+     "type": "text",
+     "author": "jane_doe",
+     "avatar": "mGeoPackage.svg",
+     "text": "Hi @all how are you doing ?"
+   }
+   ```
+
+   > `"author"` value must be alphanumeric (or `_` or `-`) and have min / max length set by `MIN_AUTHOR_LENGTH` / `MAX_AUTHOR_LENGTH` environment variables
+
+   > `avatar` value is optional and usually points to [a QGIS resource icon](https://github.com/qgis/QGIS/blob/master/images/images.qrc) (see the ones [available in the QChat/QTribu plugin](https://github.com/geotribu/qtribu/blob/e07012628a6c03f2c4ee664025ece0bf7672d245/qtribu/constants.py#L200))
+
+   > `"text"` value must have max length set by `MAX_MESSAGE_LENGTH` environment variable
+
+
+1. `"image"`: image message send by someone in the room, e.g.:
+
+   ```json
+   {
+     "type": "image",
+     "author": "jane_doe",
+     "avatar": "mIconPostgis.svg",
+     "image_data": "utf-8 string of the image encoded in base64"
+   }
+   ```
+
+   > The image will be resized by the backend before broadcast, using the `MAX_IMAGE_SIZE` environment variable value
+
+1. `"nb_users"`: notifies about the number of users connected to the room, e.g.:
+
+   ```json
+   {
+     "type": "nb_users",
+     "nb_users": 36
+   }
+   ```
+
+1. `"newcomer"`: someone has just registered in the room, e.g.:
+
+   ```json
+   {
+     "type": "newcomer",
+     "newcomer": "jane_doe"
+   }
+   ```
+
+   > After having connected to the websocket, it is possible to register a user by sending a `newcomer` message
+
+1. `"exiter"`: someone registered has left the room, e.g.:
+
+   ```json
+   {
+     "type": "exiter",
+     "exiter": "jane_doe"
+   }
+   ```
+
+1. `"like"`: someone has liked a message, e.g.:
+
+   ```json
+   {
+     "type": "like",
+     "liker_author": "john_doe",
+     "liked_author": "jane_doe",
+     "message": "Hi @john_doe how are you doing ?"
+   }
+   ```
+
+   means that `john_doe` liked `jane_doe`'s message (`"Hi @john_doe how are you doing ?"`)
+
+   > The messages of the `like` type are sent only to the liked author, if this user is registered. If this user is not registered, it won't be notified
 
 ## Deploy a self-hosted instance
 

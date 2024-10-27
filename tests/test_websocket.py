@@ -3,55 +3,64 @@ from typing import Any
 import pytest
 from fastapi.testclient import TestClient
 
-from gischat import INTERNAL_MESSAGE_AUTHOR
-from tests.conftest import test_rooms
+from gischat.models import GischatMessageTypeEnum
+from tests.conftest import get_test_rooms
 
-TEST_MESSAGE = "Is this websocket working ?"
+TEST_TEXT_MESSAGE = "Is this websocket working ?"
 
 
-@pytest.mark.parametrize("room", test_rooms())
+@pytest.mark.parametrize("room", get_test_rooms())
 def test_websocket_connection(client: TestClient, room: str):
     with client.websocket_connect(f"/room/{room}/ws") as websocket:
         data = websocket.receive_json()
-        assert data == {"author": INTERNAL_MESSAGE_AUTHOR, "nb_users": 1}
+        assert data == {"type": GischatMessageTypeEnum.NB_USERS.value, "nb_users": 1}
 
 
-@pytest.mark.parametrize("room", test_rooms())
+@pytest.mark.parametrize("room", get_test_rooms())
 def test_websocket_put_message(client: TestClient, room: str):
     with client.websocket_connect(f"/room/{room}/ws") as websocket:
         assert websocket.receive_json() == {
-            "author": INTERNAL_MESSAGE_AUTHOR,
+            "type": GischatMessageTypeEnum.NB_USERS.value,
             "nb_users": 1,
         }
         client.put(
-            f"/room/{room}/message",
+            f"/room/{room}/text",
             json={
-                "message": TEST_MESSAGE,
+                "type": GischatMessageTypeEnum.TEXT.value,
                 "author": f"ws-tester-{room}",
                 "avatar": "postgis",
+                "text": TEST_TEXT_MESSAGE,
             },
         )
         data = websocket.receive_json()
         assert data == {
-            "message": TEST_MESSAGE,
+            "type": GischatMessageTypeEnum.TEXT.value,
             "author": f"ws-tester-{room}",
             "avatar": "postgis",
+            "text": TEST_TEXT_MESSAGE,
         }
 
 
-@pytest.mark.parametrize("room", test_rooms())
+@pytest.mark.parametrize("room", get_test_rooms())
 def test_websocket_send_message(client: TestClient, room: str):
     with client.websocket_connect(f"/room/{room}/ws") as websocket:
         assert websocket.receive_json() == {
-            "author": INTERNAL_MESSAGE_AUTHOR,
+            "type": GischatMessageTypeEnum.NB_USERS.value,
             "nb_users": 1,
         }
-        websocket.send_json({"message": TEST_MESSAGE, "author": f"ws-tester-{room}"})
+        websocket.send_json(
+            {
+                "type": GischatMessageTypeEnum.TEXT.value,
+                "author": f"ws-tester-{room}",
+                "text": TEST_TEXT_MESSAGE,
+            }
+        )
         data = websocket.receive_json()
         assert data == {
-            "message": TEST_MESSAGE,
+            "type": GischatMessageTypeEnum.TEXT.value,
             "author": f"ws-tester-{room}",
             "avatar": None,
+            "text": TEST_TEXT_MESSAGE,
         }
 
 
@@ -63,180 +72,201 @@ def nb_connected_users(json: dict[str, Any], room: str) -> bool:
     return rooms_dict[room]
 
 
-@pytest.mark.parametrize("room", test_rooms())
+@pytest.mark.parametrize("room", get_test_rooms())
 def test_websocket_nb_users_connected(client: TestClient, room: str):
     assert nb_connected_users(client.get("/status").json(), room) == 0
     with client.websocket_connect(f"/room/{room}/ws") as websocket1:
         assert websocket1.receive_json() == {
-            "author": INTERNAL_MESSAGE_AUTHOR,
+            "type": GischatMessageTypeEnum.NB_USERS.value,
             "nb_users": 1,
         }
         assert nb_connected_users(client.get("/status").json(), room) == 1
         with client.websocket_connect(f"/room/{room}/ws") as websocket2:
             assert websocket1.receive_json() == {
-                "author": INTERNAL_MESSAGE_AUTHOR,
+                "type": GischatMessageTypeEnum.NB_USERS.value,
                 "nb_users": 2,
             }
             assert websocket2.receive_json() == {
-                "author": INTERNAL_MESSAGE_AUTHOR,
+                "type": GischatMessageTypeEnum.NB_USERS.value,
                 "nb_users": 2,
             }
             assert nb_connected_users(client.get("/status").json(), room) == 2
         assert websocket1.receive_json() == {
-            "author": INTERNAL_MESSAGE_AUTHOR,
+            "type": GischatMessageTypeEnum.NB_USERS.value,
             "nb_users": 1,
         }
         assert nb_connected_users(client.get("/status").json(), room) == 1
     assert nb_connected_users(client.get("/status").json(), room) == 0
 
 
-@pytest.mark.parametrize("room", test_rooms())
+@pytest.mark.parametrize("room", get_test_rooms())
 def test_websocket_uncompliant_message(client: TestClient, room: str):
     with client.websocket_connect(f"/room/{room}/ws") as websocket1:
         assert websocket1.receive_json() == {
-            "author": INTERNAL_MESSAGE_AUTHOR,
+            "type": GischatMessageTypeEnum.NB_USERS.value,
             "nb_users": 1,
         }
-        websocket1.send_json({"message": TEST_MESSAGE, "author": "chri$tian"})
+        websocket1.send_json(
+            {
+                "type": GischatMessageTypeEnum.TEXT.value,
+                "author": "chri$tian",
+                "text": TEST_TEXT_MESSAGE,
+            }
+        )
         with client.websocket_connect(f"/room/{room}/ws"):
             assert websocket1.receive_json() == {
-                "author": INTERNAL_MESSAGE_AUTHOR,
+                "type": GischatMessageTypeEnum.NB_USERS.value,
                 "nb_users": 2,
             }
 
 
-@pytest.mark.parametrize("room", test_rooms())
+@pytest.mark.parametrize("room", get_test_rooms())
 def test_websocket_send_newcomer(client: TestClient, room: str):
     with client.websocket_connect(f"/room/{room}/ws") as websocket:
-        websocket.send_json({"author": INTERNAL_MESSAGE_AUTHOR, "newcomer": "Isidore"})
+        websocket.send_json(
+            {"type": GischatMessageTypeEnum.NEWCOMER.value, "newcomer": "Isidore"}
+        )
         assert websocket.receive_json() == {
-            "author": INTERNAL_MESSAGE_AUTHOR,
+            "type": GischatMessageTypeEnum.NB_USERS.value,
             "nb_users": 1,
         }
         assert websocket.receive_json() == {
-            "author": INTERNAL_MESSAGE_AUTHOR,
+            "type": GischatMessageTypeEnum.NEWCOMER.value,
             "newcomer": "Isidore",
         }
 
 
-@pytest.mark.parametrize("room", test_rooms())
+@pytest.mark.parametrize("room", get_test_rooms())
 def test_websocket_send_newcomer_multiple(client: TestClient, room: str):
     with client.websocket_connect(f"/room/{room}/ws") as websocket1:
-        websocket1.send_json({"author": INTERNAL_MESSAGE_AUTHOR, "newcomer": "user1"})
+        websocket1.send_json(
+            {"type": GischatMessageTypeEnum.NEWCOMER.value, "newcomer": "user1"}
+        )
         with client.websocket_connect(f"/room/{room}/ws") as websocket2:
             websocket2.send_json(
-                {"author": INTERNAL_MESSAGE_AUTHOR, "newcomer": "user2"}
+                {"type": GischatMessageTypeEnum.NEWCOMER.value, "newcomer": "user2"}
             )
             assert websocket1.receive_json() == {
-                "author": INTERNAL_MESSAGE_AUTHOR,
+                "type": GischatMessageTypeEnum.NB_USERS.value,
                 "nb_users": 1,
             }
             assert websocket1.receive_json() == {
-                "author": INTERNAL_MESSAGE_AUTHOR,
+                "type": GischatMessageTypeEnum.NEWCOMER.value,
                 "newcomer": "user1",
             }
             assert websocket1.receive_json() == {
-                "author": INTERNAL_MESSAGE_AUTHOR,
+                "type": GischatMessageTypeEnum.NB_USERS.value,
                 "nb_users": 2,
             }
             assert websocket1.receive_json() == {
-                "author": INTERNAL_MESSAGE_AUTHOR,
+                "type": GischatMessageTypeEnum.NEWCOMER.value,
                 "newcomer": "user2",
             }
             assert websocket2.receive_json() == {
-                "author": INTERNAL_MESSAGE_AUTHOR,
+                "type": GischatMessageTypeEnum.NB_USERS.value,
                 "nb_users": 2,
             }
             assert websocket2.receive_json() == {
-                "author": INTERNAL_MESSAGE_AUTHOR,
+                "type": GischatMessageTypeEnum.NEWCOMER.value,
                 "newcomer": "user2",
             }
         assert websocket1.receive_json() == {
-            "author": INTERNAL_MESSAGE_AUTHOR,
+            "type": GischatMessageTypeEnum.EXITER.value,
             "exiter": "user2",
         }
         assert websocket1.receive_json() == {
-            "author": INTERNAL_MESSAGE_AUTHOR,
+            "type": GischatMessageTypeEnum.NB_USERS.value,
             "nb_users": 1,
         }
 
 
-@pytest.mark.parametrize("room", test_rooms())
+@pytest.mark.parametrize("room", get_test_rooms())
 def test_websocket_send_newcomer_api_call(client: TestClient, room: str):
     with client.websocket_connect(f"/room/{room}/ws") as websocket1:
-        websocket1.send_json({"author": INTERNAL_MESSAGE_AUTHOR, "newcomer": "Isidore"})
+        websocket1.send_json(
+            {"type": GischatMessageTypeEnum.NEWCOMER.value, "newcomer": "Isidore"}
+        )
         assert client.get(f"/room/{room}/users").json() == ["Isidore"]
         with client.websocket_connect(f"/room/{room}/ws") as websocket2:
             websocket2.send_json(
-                {"author": INTERNAL_MESSAGE_AUTHOR, "newcomer": "Barnabe"}
+                {"type": GischatMessageTypeEnum.NEWCOMER.value, "newcomer": "Barnabe"}
             )
             assert client.get(f"/room/{room}/users").json() == ["Barnabe", "Isidore"]
 
 
-@pytest.mark.parametrize("room", test_rooms())
+@pytest.mark.parametrize("room", get_test_rooms())
 def test_websocket_like_message(client: TestClient, room: str):
     # register client 1 (Isidore)
     with client.websocket_connect(f"/room/{room}/ws") as websocket1:
         assert websocket1.receive_json() == {
-            "author": INTERNAL_MESSAGE_AUTHOR,
+            "type": GischatMessageTypeEnum.NB_USERS.value,
             "nb_users": 1,
         }
-        websocket1.send_json({"author": INTERNAL_MESSAGE_AUTHOR, "newcomer": "Isidore"})
+        websocket1.send_json(
+            {"type": GischatMessageTypeEnum.NEWCOMER.value, "newcomer": "Isidore"}
+        )
         assert websocket1.receive_json() == {
-            "author": INTERNAL_MESSAGE_AUTHOR,
+            "type": GischatMessageTypeEnum.NEWCOMER.value,
             "newcomer": "Isidore",
         }
 
         # register client 2 (Barnabe)
         with client.websocket_connect(f"/room/{room}/ws") as websocket2:
             assert websocket1.receive_json() == {
-                "author": INTERNAL_MESSAGE_AUTHOR,
+                "type": GischatMessageTypeEnum.NB_USERS.value,
                 "nb_users": 2,
             }
             assert websocket2.receive_json() == {
-                "author": INTERNAL_MESSAGE_AUTHOR,
+                "type": GischatMessageTypeEnum.NB_USERS.value,
                 "nb_users": 2,
             }
 
             websocket2.send_json(
-                {"author": INTERNAL_MESSAGE_AUTHOR, "newcomer": "Barnabe"}
+                {"type": GischatMessageTypeEnum.NEWCOMER.value, "newcomer": "Barnabe"}
             )
             assert websocket1.receive_json() == {
-                "author": INTERNAL_MESSAGE_AUTHOR,
+                "type": GischatMessageTypeEnum.NEWCOMER.value,
                 "newcomer": "Barnabe",
             }
             assert websocket2.receive_json() == {
-                "author": INTERNAL_MESSAGE_AUTHOR,
+                "type": GischatMessageTypeEnum.NEWCOMER.value,
                 "newcomer": "Barnabe",
             }
 
             # client 1 sends a message
             websocket1.send_json(
-                {"author": "Isidore", "message": "hi", "avatar": "postgis"}
+                {
+                    "type": GischatMessageTypeEnum.TEXT.value,
+                    "author": "Isidore",
+                    "avatar": "postgis",
+                    "text": "hi",
+                }
             )
             assert websocket1.receive_json() == {
+                "type": GischatMessageTypeEnum.TEXT.value,
                 "author": "Isidore",
-                "message": "hi",
                 "avatar": "postgis",
+                "text": "hi",
             }
             assert websocket2.receive_json() == {
+                "type": GischatMessageTypeEnum.TEXT.value,
                 "author": "Isidore",
-                "message": "hi",
                 "avatar": "postgis",
+                "text": "hi",
             }
 
             # client 2 likes client 1's message
             websocket2.send_json(
                 {
-                    "author": INTERNAL_MESSAGE_AUTHOR,
-                    "message": "hi",
+                    "type": GischatMessageTypeEnum.LIKE.value,
                     "liker_author": "Barnabe",
                     "liked_author": "Isidore",
+                    "message": "hi",
                 }
             )
             assert websocket1.receive_json() == {
-                "author": INTERNAL_MESSAGE_AUTHOR,
-                "message": "hi",
+                "type": GischatMessageTypeEnum.LIKE.value,
                 "liker_author": "Barnabe",
                 "liked_author": "Isidore",
+                "message": "hi",
             }

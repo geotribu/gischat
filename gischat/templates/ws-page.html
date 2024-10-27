@@ -52,7 +52,6 @@
     function displayMessage(msg) {
         const messages = document.getElementById('messages');
         const message = document.createElement('li');
-        console.log(msg);
         const content = document.createTextNode(msg);
         message.appendChild(content);
         messages.appendChild(message);
@@ -112,29 +111,34 @@
             displayMessage(`Connected to websocket in room ${room.value}`);
             connected = true;
             setFormEnabled(true);
-            websocket.send(JSON.stringify({author: "internal", newcomer: user}));
+            websocket.send(JSON.stringify({type: "newcomer", newcomer: user}));
         }
         websocket.onmessage = (event) => {
             const data = JSON.parse(event.data);
-            const author = data.author;
-            let log;
-            if (author === "internal") {
-                if (data.nb_users) {
-                    log = `${data.nb_users} user${data.nb_users > 1 ? "s" : ""} connected in room`;
-                }
-                if (data.newcomer) {
-                    log = `${data.newcomer} has joined the room`;
-                }
-                if (data.exiter) {
-                    log = `${data.exiter} has left the room`;
-                }
-                if (data.liker_author && data.liked_author && data.liked_author === user){
-                    log = `${data.liker_author} liked your message "${data.message}"`;
-                }
-            } else {
-                log = `[${author}] (${new Date().toLocaleTimeString()}): ${data.message}`
+            const type = data.type;
+
+            switch (type) {
+                case "text":
+                    displayMessage(`[${data.author}] (${new Date().toLocaleTimeString()}): ${data.text}`);
+                    break;
+                case "image":
+                    displayMessage(`${data.author} sent an image`);
+                    break;
+                case "nb_users":
+                    displayMessage(`${data.nb_users} user(s) present in the room`);
+                    break;
+                case "newcomer":
+                    displayMessage(`${data.newcomer} has joined the room`);
+                    break;
+                case "exiter":
+                    displayMessage(`${data.exiter} has left the room`);
+                    break;
+                case "like":
+                    displayMessage(`${data.liker_author} liked your message "${data.message}"`);
+                    break;
+                default:
+                    displayMessage(`Unknown message received: ${data}`);
             }
-            displayMessage(log);
         };
         websocket.onerror = (error) => {
             displayMessage(`Websocket error ${JSON.stringify(error)}`);
@@ -162,7 +166,7 @@
             event.preventDefault();
             return;
         }
-        websocket.send(JSON.stringify({message: message.value, author: author.value, avatar: avatar.value}));
+        websocket.send(JSON.stringify({type: "text", text: message.value, author: author.value, avatar: avatar.value}));
         message.value = '';
         event.preventDefault();
     }
