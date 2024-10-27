@@ -150,6 +150,17 @@ Each of them has a `"type"` key based on which it is possible to parse them :
 
    > The coordinates of the `geojson` features must be expressed using the provided `crs_wkt` and `crs_authid`
 
+1. `"uncompliant"`: someone sent an uncompliant message and the server answers with such a message, e.g.:
+
+   ```json
+   {
+      "type": "uncompliant",
+      "reason": "Too many geojson features : 600 vs max 500 allowed"
+   }
+   ```
+
+   > This example is the server response if sending a `ŋeojson` message with too many features
+
 ## Deploy a self-hosted instance
 
 ### Setup Gischat backend
