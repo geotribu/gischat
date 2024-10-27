@@ -39,12 +39,14 @@ GISCHAT_TEXT_MESSAGE_FIELD = Field(
 
 
 class GischatMessageTypeEnum(Enum):
+    UNCOMPLIANT = "uncompliant"
     TEXT = "text"
     IMAGE = "image"
     NB_USERS = "nb_users"
     NEWCOMER = "newcomer"
     EXITER = "exiter"
     LIKE = "like"
+    GEOJSON = "geojson"
 
     def __str__(self) -> str:
         return self.value
@@ -52,6 +54,10 @@ class GischatMessageTypeEnum(Enum):
 
 class GischatMessageModel(BaseModel):
     type: GischatMessageTypeEnum = Field(frozen=True, description="Type of message")
+
+
+class GischatUncompliantMessage(GischatMessageModel):
+    type: GischatMessageTypeEnum = GischatMessageTypeEnum.UNCOMPLIANT
 
 
 class GischatTextMessage(GischatMessageModel):
@@ -91,3 +97,13 @@ class GischatLikeMessage(GischatMessageModel):
     liker_author: str = GISCHAT_NICKNAME_FIELD
     liked_author: str = GISCHAT_NICKNAME_FIELD
     message: str = GISCHAT_TEXT_MESSAGE_FIELD
+
+
+class GischatGeojsonLayerMessage(GischatMessageModel):
+    type: GischatMessageTypeEnum = GischatMessageTypeEnum.GEOJSON
+    author: str = GISCHAT_NICKNAME_FIELD
+    avatar: Optional[str] = Field(default=None)
+    layer_name: str = Field(description="Name of the layer")
+    crs_wkt: str = Field(description="WKT string of the CRS")
+    crs_authid: str = Field(description="Auth id of the crs, e.g.: 'EPSG:4326'")
+    geojson: dict = Field(description="Geo data as geojson")
