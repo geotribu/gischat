@@ -116,6 +116,40 @@ Each of them has a `"type"` key based on which it is possible to parse them :
 
    > The messages of the `like` type are sent only to the liked author, if this user is registered. If this user is not registered, it won't be notified
 
+1. `"geojson"`: someone shared a geojson layer, e.g.:
+
+   ```json
+   {
+      "type": "geojson",
+      "author": "jane_doe",
+      "avatar": "mIconPostgis.svg",
+      "layer_name": "my_geojson_layer",
+      "crs_wkt": 'GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.0174532925199433,AUTHORITY["EPSG","9122"]],AUTHORITY["EPSG","4326"]]',
+      "crs_authid": "EPSG:4326",
+      "geojson": {
+         "type": "FeatureCollection",
+         "features": [
+            {
+               "type": "Feature",
+               "properties": {
+                  "attribute_1": "something"
+               },
+               "geometry": {
+                  "type": "Point",
+                  "coordinates": [
+                     1,
+                     2
+                  ]
+               }
+            },
+            ...
+         ]
+      }
+   }
+   ```
+
+   > The coordinates of the `geojson` features must be expressed using the provided `crs_wkt` and `crs_authid`
+
 ## Deploy a self-hosted instance
 
 ### Setup Gischat backend
