@@ -198,6 +198,31 @@ def test_websocket_send_newcomer(client: TestClient, room: str):
 
 
 @pytest.mark.parametrize("room", get_test_rooms())
+def test_websocket_send_newcomer_twice(client: TestClient, room: str):
+    with client.websocket_connect(f"/room/{room}/ws") as websocket:
+        # Isidore sends first registration
+        websocket.send_json(
+            {"type": GischatMessageTypeEnum.NEWCOMER.value, "newcomer": "Isidore"}
+        )
+        assert websocket.receive_json() == {
+            "type": GischatMessageTypeEnum.NB_USERS.value,
+            "nb_users": 1,
+        }
+        assert websocket.receive_json() == {
+            "type": GischatMessageTypeEnum.NEWCOMER.value,
+            "newcomer": "Isidore",
+        }
+        # Isidore sends second registration -> forbidden
+        websocket.send_json(
+            {"type": GischatMessageTypeEnum.NEWCOMER.value, "newcomer": "Isidore"}
+        )
+        assert websocket.receive_json() == {
+            "type": GischatMessageTypeEnum.UNCOMPLIANT.value,
+            "reason": f"User 'Isidore' already registered in room {room}",
+        }
+
+
+@pytest.mark.parametrize("room", get_test_rooms())
 def test_websocket_send_newcomer_multiple(client: TestClient, room: str):
     with client.websocket_connect(f"/room/{room}/ws") as websocket1:
         websocket1.send_json(

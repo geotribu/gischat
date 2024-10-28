@@ -371,6 +371,16 @@ async def websocket_endpoint(websocket: WebSocket, room: str) -> None:
                 # newcomer message
                 if message.type == GischatMessageTypeEnum.NEWCOMER:
                     message = GischatNewcomerMessage(**payload)
+                    # check if user is already registered
+                    if notifier.is_user_present(room, message.newcomer):
+                        logger.info(
+                            f"User '{message.newcomer}' wants to register but there is already a '{message.newcomer}' in room {room}"
+                        )
+                        message = GischatUncompliantMessage(
+                            reason=f"User '{message.newcomer}' already registered in room {room}"
+                        )
+                        await websocket.send_json(jsonable_encoder(message))
+                        continue
                     notifier.register_user(websocket, message.newcomer)
                     logger.info(f"Newcomer in room {room}: {message.newcomer}")
                     await notifier.notify_newcomer(room, message.newcomer)
