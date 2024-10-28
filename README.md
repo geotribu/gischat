@@ -147,6 +147,19 @@ Each of them has a `"type"` key based on which it is possible to parse them :
 
    > The coordinates of the `geojson` features must be expressed using the provided `crs_wkt` and `crs_authid`
 
+1. `"crs"`: someone shared a [CRS](https://en.wikipedia.org/wiki/Spatial_reference_system), e.g.:
+
+   ```json
+   {
+      "type": "geojson",
+      "author": "jane_doe",
+      "avatar": "mIconPostgis.svg",
+      "crs_wkt": 'GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.0174532925199433,AUTHORITY["EPSG","9122"]],AUTHORITY["EPSG","4326"]]',
+      "crs_authid": "EPSG:4326",
+   }
+
+   ```
+
 1. `"uncompliant"`: someone sent an uncompliant message and the server answers with such a message, e.g.:
 
    ```json
