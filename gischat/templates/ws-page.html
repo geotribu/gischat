@@ -142,6 +142,9 @@
                 case "geojson":
                     displayMessage(`${data.author} sent the "${data.layer_name}" geojson layer (${data.geojson.features.length} features using ${data.crs_authid})`);
                     break;
+                case "crs":
+                    displayMessage(`${data.author} shared the crs '${data.crs_authid}'`);
+                    break;
                 default:
                     displayMessage(`Unknown message received: ${data}`);
             }
