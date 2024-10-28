@@ -2,6 +2,7 @@ from typing import Any
 
 import pytest
 from fastapi.testclient import TestClient
+from starlette.websockets import WebSocketDisconnect
 
 from gischat.models import GischatMessageTypeEnum
 from tests import (
@@ -20,6 +21,12 @@ def test_websocket_connection(client: TestClient, room: str):
     with client.websocket_connect(f"/room/{room}/ws") as websocket:
         data = websocket.receive_json()
         assert data == {"type": GischatMessageTypeEnum.NB_USERS.value, "nb_users": 1}
+
+
+def test_websocket_connection_wrong_room(client: TestClient):
+    with pytest.raises(WebSocketDisconnect):
+        with client.websocket_connect("/room/fr0mage/ws") as websocket:
+            websocket.receive_json()
 
 
 @pytest.mark.parametrize("room", get_test_rooms())

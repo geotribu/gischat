@@ -326,8 +326,9 @@ async def put_text_message(
 async def websocket_endpoint(websocket: WebSocket, room: str) -> None:
 
     # check if room is registered
-    if room not in notifier.connections.keys():
-        raise HTTPException(status_code=404, detail=f"Room '{room}' not registered")
+    if room not in notifier.rooms:
+        await websocket.close(reason=f"Room '{room}' not registered")
+        return
 
     await notifier.connect(room, websocket)
     await notifier.notify_nb_users(room)
