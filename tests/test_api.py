@@ -8,6 +8,7 @@ from tests import (
     MAX_GEOJSON_FEATURES,
     MAX_IMAGE_SIZE,
     MAX_MESSAGE_LENGTH,
+    MAX_STORED_MESSAGES,
     MIN_AUTHOR_LENGTH,
     TEST_RULES,
 )
@@ -155,3 +156,40 @@ def test_put_message_too_long(client: TestClient, room: str):
         },
     )
     assert response.status_code == 422
+
+
+@pytest.mark.parametrize("room", get_test_rooms())
+def test_stored_message(client: TestClient, room: str):
+    response = client.get(f"/room/{room}/last")
+    assert response.status_code == 200
+    assert response.json() == []
+    client.put(
+        f"/room/{room}/text",
+        json={
+            "type": GischatMessageTypeEnum.TEXT.value,
+            "author": f"ws-tester-{room}",
+            "avatar": "raster",
+            "text": "fromage",
+        },
+    )
+    response = client.get(f"/room/{room}/last")
+    assert response.status_code == 200
+    assert len(response.json()) == 1
+
+
+@pytest.mark.parametrize("room", get_test_rooms())
+def test_stored_multiple(client: TestClient, room: str):
+    for i in range(int(MAX_STORED_MESSAGES) * 2):
+        response = client.put(
+            f"/room/{room}/text",
+            json={
+                "type": GischatMessageTypeEnum.TEXT.value,
+                "author": f"ws-tester-{room}",
+                "avatar": "raster",
+                "text": f"message {i}",
+            },
+        )
+        assert response.status_code == 200
+    response = client.get(f"/room/{room}/last")
+    assert response.status_code == 200
+    assert len(response.json()) == int(MAX_STORED_MESSAGES)
