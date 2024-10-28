@@ -44,14 +44,6 @@ handler.setFormatter(formatter)
 logger.addHandler(handler)
 
 
-def available_rooms() -> list[str]:
-    """
-    Returns list of available rooms
-    :return: list of available rooms
-    """
-    return os.environ.get("ROOMS", "QGIS,Geotribu").split(",")
-
-
 class WebsocketNotifier:
     """
     Class used to broadcast messages to registered websockets
@@ -63,12 +55,15 @@ class WebsocketNotifier:
     # list of user nicknames associated to their websocket
     users: dict[WebSocket, str]
 
-    def __init__(self):
+    # store last sent messages in lists
+    last_messages: dict[str, list[GischatMessageModel]]
+
+    def __init__(self, rooms: list[str]):
+        self.rooms = rooms
         # registered websockets for rooms
-        self.connections: dict[str, list[WebSocket]] = {
-            room: [] for room in available_rooms()
-        }
+        self.connections: dict[str, list[WebSocket]] = {room: [] for room in rooms}
         self.users = {}
+        self.last_messages = {room: [] for room in rooms}
 
     async def connect(self, room: str, websocket: WebSocket) -> None:
         """
@@ -206,8 +201,35 @@ class WebsocketNotifier:
             except KeyError:
                 continue
 
+    def store_message(self, room: str, message: GischatMessageModel) -> None:
+        """
+        Stores a message sent in a room
+        Will keep only the last MAX_STORED_MESSAGES (env var)
+        :param room: room to store the message
+        :param message: message to store
+        """
+        room_messages = self.last_messages[room]
+        room_messages.append(message)
+        nb_max = int(os.environ.get("MAX_STORED_MESSAGES", 5))
+        if len(room_messages) > nb_max:
+            self.last_messages[room] = room_messages[nb_max:]
 
-notifier = WebsocketNotifier()
+    def get_stored_messages(self, room: str) -> list[GischatMessageModel]:
+        """
+        Returns the last messages sent and stored in a room
+        :param room: room with stored messages
+        :return: list of last messages sent and stored in the room
+        """
+        return self.last_messages[room]
+
+    def clear_stored_messages(self) -> None:
+        """
+        Clears the stored messages
+        """
+        self.last_messages = {room: [] for room in self.rooms}
+
+
+notifier = WebsocketNotifier(os.environ.get("ROOMS", "QGIS,Geotribu").split(","))
 
 
 # initialize sentry
@@ -255,7 +277,7 @@ async def get_status() -> StatusModel:
 
 @app.get("/rooms", response_model=list[str])
 async def get_rooms() -> list[str]:
-    return available_rooms()
+    return notifier.rooms
 
 
 @app.get("/rules", response_model=RulesModel)
@@ -273,9 +295,16 @@ async def get_rules() -> RulesModel:
 
 @app.get("/room/{room}/users")
 async def get_connected_users(room: str) -> list[str]:
-    if room not in notifier.connections.keys():
+    if room not in notifier.rooms:
         raise HTTPException(status_code=404, detail=f"Room '{room}' not registered")
     return sorted(notifier.get_registered_users(room), key=str.casefold)
+
+
+@app.get("/room/{room}/last")
+async def get_last_messages(room: str) -> list[GischatMessageModel]:
+    if room not in notifier.rooms:
+        raise HTTPException(status_code=404, detail=f"Room '{room}' not registered")
+    return notifier.get_stored_messages(room)
 
 
 @app.put(
@@ -285,10 +314,11 @@ async def get_connected_users(room: str) -> list[str]:
 async def put_text_message(
     room: str, message: GischatTextMessage
 ) -> GischatTextMessage:
-    if room not in notifier.connections.keys():
+    if room not in notifier.rooms:
         raise HTTPException(status_code=404, detail=f"Room '{room}' not registered")
     await notifier.notify_room(room, message)
     logger.info(f"Message in room '{room}': {message}")
+    notifier.store_message(room, message)
     return message
 
 
@@ -303,6 +333,10 @@ async def websocket_endpoint(websocket: WebSocket, room: str) -> None:
     await notifier.notify_nb_users(room)
     logger.info(f"New websocket connected in room '{room}'")
 
+    # send room's last stored message
+    for message in notifier.get_stored_messages(room):
+        await websocket.send_json(jsonable_encoder(message))
+
     try:
         while True:
             payload = await websocket.receive_json()
@@ -315,6 +349,7 @@ async def websocket_endpoint(websocket: WebSocket, room: str) -> None:
                     message = GischatTextMessage(**payload)
                     logger.info(f"Message in room '{room}': {message}")
                     await notifier.notify_room(room, message)
+                    notifier.store_message(room, message)
 
                 # image message
                 if message.type == GischatMessageTypeEnum.IMAGE:
@@ -330,6 +365,7 @@ async def websocket_endpoint(websocket: WebSocket, room: str) -> None:
                         img_byte_arr.getvalue()
                     ).decode("utf-8")
                     await notifier.notify_room(room, message)
+                    notifier.store_message(room, message)
 
                 # newcomer message
                 if message.type == GischatMessageTypeEnum.NEWCOMER:
@@ -371,6 +407,7 @@ async def websocket_endpoint(websocket: WebSocket, room: str) -> None:
                         f"{message.author} sent a geojson layer ('{message.layer_name}'): {nb_features} features using crs '{message.crs_authid}'"
                     )
                     await notifier.notify_room(room, message)
+                    notifier.store_message(room, message)
 
                 # crs message
                 if message.type == GischatMessageTypeEnum.CRS:
@@ -379,6 +416,7 @@ async def websocket_endpoint(websocket: WebSocket, room: str) -> None:
                         f"{message.author} shared the crs '{message.crs_authid}'"
                     )
                     await notifier.notify_room(room, message)
+                    notifier.store_message(room, message)
 
             except ValidationError as e:
                 logger.error(f"Uncompliant message: {e}")

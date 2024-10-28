@@ -4,6 +4,7 @@ from collections.abc import Generator
 import pytest
 from fastapi.testclient import TestClient
 
+from gischat.app import notifier
 from tests import (
     MAX_GEOJSON_FEATURES,
     MAX_IMAGE_SIZE,
@@ -29,3 +30,12 @@ def client() -> Generator[TestClient, None, None]:
     from gischat.app import app
 
     yield TestClient(app)
+
+
+@pytest.fixture(autouse=True)
+def run_around_tests() -> Generator:
+    """
+    Runs around each test
+    """
+    notifier.clear_stored_messages()
+    yield

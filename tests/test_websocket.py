@@ -4,7 +4,12 @@ import pytest
 from fastapi.testclient import TestClient
 
 from gischat.models import GischatMessageTypeEnum
-from tests import MAX_AUTHOR_LENGTH, MAX_MESSAGE_LENGTH, MIN_AUTHOR_LENGTH
+from tests import (
+    MAX_AUTHOR_LENGTH,
+    MAX_MESSAGE_LENGTH,
+    MAX_STORED_MESSAGES,
+    MIN_AUTHOR_LENGTH,
+)
 from tests.conftest import get_test_rooms
 
 TEST_TEXT_MESSAGE = "Is this websocket working ?"
@@ -241,3 +246,40 @@ def test_websocket_send_newcomer_api_call(client: TestClient, room: str):
                 {"type": GischatMessageTypeEnum.NEWCOMER.value, "newcomer": "Barnabe"}
             )
             assert client.get(f"/room/{room}/users").json() == ["Barnabe", "Isidore"]
+
+
+@pytest.mark.parametrize("room", get_test_rooms())
+def test_websocket_stored_message(client: TestClient, room: str):
+    with client.websocket_connect(f"/room/{room}/ws") as websocket:
+        websocket.send_json(
+            {"type": GischatMessageTypeEnum.NEWCOMER.value, "newcomer": "Isidore"}
+        )
+        assert websocket.receive_json() == {
+            "type": GischatMessageTypeEnum.NB_USERS.value,
+            "nb_users": 1,
+        }
+        assert websocket.receive_json() == {
+            "type": GischatMessageTypeEnum.NEWCOMER.value,
+            "newcomer": "Isidore",
+        }
+        for i in range(int(MAX_STORED_MESSAGES) * 2):
+            websocket.send_json(
+                {
+                    "type": GischatMessageTypeEnum.TEXT.value,
+                    "author": f"ws-tester-{room}",
+                    "avatar": "dog",
+                    "text": str(i),
+                }
+            )
+    with client.websocket_connect(f"/room/{room}/ws") as websocket:
+        assert websocket.receive_json() == {
+            "type": GischatMessageTypeEnum.NB_USERS.value,
+            "nb_users": 1,
+        }
+        for i in range(int(MAX_STORED_MESSAGES)):
+            assert websocket.receive_json() == {
+                "type": GischatMessageTypeEnum.TEXT.value,
+                "author": f"ws-tester-{room}",
+                "avatar": "dog",
+                "text": str(i + int(MAX_STORED_MESSAGES)),
+            }
