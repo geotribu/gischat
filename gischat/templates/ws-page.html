@@ -145,6 +145,9 @@
                 case "crs":
                     displayMessage(`${data.author} shared the crs '${data.crs_authid}'`);
                     break;
+                case "bbox":
+                    displayMessage(`${data.author} shared a bbox using '${data.crs_authid}'`);
+                    break;
                 default:
                     displayMessage(`Unknown message received: ${data}`);
             }
