@@ -1,0 +1,25 @@
+ci-cd:
+  - changed-files:
+      - any-glob-to-any-file: .github/**
+
+dependencies:
+  - changed-files:
+      - any-glob-to-any-file:
+          - pyproject.toml
+          - poetry.lock
+
+documentation:
+  - changed-files:
+      - any-glob-to-any-file:
+          - docs/**
+          - README.md
+
+enhancement:
+  - head-branch: ["^feature", "feature"]
+
+tooling:
+  - head-branch: ["^tooling", "tooling"]
+  - changed-files:
+      - any-glob-to-any-file:
+          - codecov.yml
+          - .pre-commit-config.yaml
