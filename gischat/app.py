@@ -30,7 +30,7 @@ from gischat.models import (
     StatusModel,
     VersionModel,
 )
-from gischat.utils import get_poetry_version
+from gischat.utils import QCHAT_CHEATCODES, get_poetry_version
 
 # logger
 logger = logging.getLogger()
@@ -350,7 +350,8 @@ async def websocket_endpoint(websocket: WebSocket, room: str) -> None:
                     message = GischatTextMessage(**payload)
                     logger.info(f"Message in room '{room}': {message}")
                     await notifier.notify_room(room, message)
-                    notifier.store_message(room, message)
+                    if message.text not in QCHAT_CHEATCODES:
+                        notifier.store_message(room, message)
 
                 # image message
                 if message.type == GischatMessageTypeEnum.IMAGE:
