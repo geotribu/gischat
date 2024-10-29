@@ -174,7 +174,14 @@ def test_stored_message(client: TestClient, room: str):
     )
     response = client.get(f"/room/{room}/last")
     assert response.status_code == 200
-    assert len(response.json()) == 1
+    assert response.json() == [
+        {
+            "type": GischatMessageTypeEnum.TEXT.value,
+            "author": f"ws-tester-{room}",
+            "avatar": "raster",
+            "text": "fromage",
+        }
+    ]
 
 
 @pytest.mark.parametrize("room", get_test_rooms())

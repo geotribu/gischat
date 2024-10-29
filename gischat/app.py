@@ -15,6 +15,7 @@ from pydantic import ValidationError
 from starlette.websockets import WebSocketDisconnect
 
 from gischat.models import (
+    GischatBboxMessage,
     GischatCrsMessage,
     GischatExiterMessage,
     GischatGeojsonLayerMessage,
@@ -301,7 +302,7 @@ async def get_connected_users(room: str) -> list[str]:
 
 
 @app.get("/room/{room}/last")
-async def get_last_messages(room: str) -> list[GischatMessageModel]:
+async def get_last_messages(room: str) -> list:
     if room not in notifier.rooms:
         raise HTTPException(status_code=404, detail=f"Room '{room}' not registered")
     return notifier.get_stored_messages(room)
@@ -426,6 +427,15 @@ async def websocket_endpoint(websocket: WebSocket, room: str) -> None:
                     message = GischatCrsMessage(**payload)
                     logger.info(
                         f"{message.author} shared the crs '{message.crs_authid}'"
+                    )
+                    await notifier.notify_room(room, message)
+                    notifier.store_message(room, message)
+
+                # bbox message
+                if message.type == GischatMessageTypeEnum.BBOX:
+                    message = GischatBboxMessage(**payload)
+                    logger.info(
+                        f"{message.author} shared a bbox using '{message.crs_authid}'"
                     )
                     await notifier.notify_room(room, message)
                     notifier.store_message(room, message)
