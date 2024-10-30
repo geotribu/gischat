@@ -160,6 +160,22 @@ Each of them has a `"type"` key based on which it is possible to parse them :
 
    ```
 
+1. `"bbox"`: someone shared a bbox, e.g.:
+
+   ```json
+   {
+      "type": "geojson",
+      "author": "jane_doe",
+      "avatar": "mIconPostgis.svg",
+      "crs_wkt": 'GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.0174532925199433,AUTHORITY["EPSG","9122"]],AUTHORITY["EPSG","4326"]]',
+      "crs_authid": "EPSG:4326",
+      "xmin": -1.1,
+      "xmax": 1.1,
+      "ymin": -1.1,
+      "ymax": 1.1
+   }
+   ```
+
 1. `"uncompliant"`: someone sent an uncompliant message and the server answers with such a message, e.g.:
 
    ```json

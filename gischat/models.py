@@ -39,6 +39,9 @@ GISCHAT_TEXT_MESSAGE_FIELD = Field(
     max_length=int(os.environ.get("MAX_MESSAGE_LENGTH", 255))
 )
 
+CRS_WKT_FIELD = Field(description="WKT string of the CRS")
+CRS_AUTHID_FIELD = Field(description="Auth id of the crs, e.g.: 'EPSG:4326'")
+
 
 class GischatMessageTypeEnum(Enum):
     UNCOMPLIANT = "uncompliant"
@@ -50,6 +53,7 @@ class GischatMessageTypeEnum(Enum):
     LIKE = "like"
     GEOJSON = "geojson"
     CRS = "crs"
+    BBOX = "bbox"
 
     def __str__(self) -> str:
         return self.value
@@ -108,8 +112,8 @@ class GischatGeojsonLayerMessage(GischatMessageModel):
     author: str = GISCHAT_NICKNAME_FIELD
     avatar: Optional[str] = Field(default=None)
     layer_name: str = Field(description="Name of the layer")
-    crs_wkt: str = Field(description="WKT string of the CRS")
-    crs_authid: str = Field(description="Auth id of the crs, e.g.: 'EPSG:4326'")
+    crs_wkt: str = CRS_WKT_FIELD
+    crs_authid: str = CRS_AUTHID_FIELD
     geojson: dict = Field(description="Geo data as geojson")
 
 
@@ -117,5 +121,17 @@ class GischatCrsMessage(GischatMessageModel):
     type: GischatMessageTypeEnum = GischatMessageTypeEnum.CRS
     author: str = GISCHAT_NICKNAME_FIELD
     avatar: Optional[str] = Field(default=None)
-    crs_wkt: str = Field(description="WKT string of the CRS")
-    crs_authid: str = Field(description="Auth id of the crs, e.g.: 'EPSG:4326'")
+    crs_wkt: str = CRS_WKT_FIELD
+    crs_authid: str = CRS_AUTHID_FIELD
+
+
+class GischatBboxMessage(GischatMessageModel):
+    type: GischatMessageTypeEnum = GischatMessageTypeEnum.CRS
+    author: str = GISCHAT_NICKNAME_FIELD
+    avatar: Optional[str] = Field(default=None)
+    crs_wkt: str = CRS_WKT_FIELD
+    crs_authid: str = CRS_AUTHID_FIELD
+    xmin: float
+    xmax: float
+    ymin: float
+    ymax: float
