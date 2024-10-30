@@ -213,7 +213,7 @@ class WebsocketNotifier:
         room_messages.append(message)
         nb_max = int(os.environ.get("MAX_STORED_MESSAGES", 5))
         if len(room_messages) > nb_max:
-            self.last_messages[room] = room_messages[nb_max:]
+            self.last_messages[room] = room_messages[-nb_max:]
 
     def get_stored_messages(self, room: str) -> list[GischatMessageModel]:
         """
