@@ -164,7 +164,7 @@ Each of them has a `"type"` key based on which it is possible to parse them :
 
    ```json
    {
-      "type": "geojson",
+      "type": "bbox",
       "author": "jane_doe",
       "avatar": "mIconPostgis.svg",
       "crs_wkt": 'GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.0174532925199433,AUTHORITY["EPSG","9122"]],AUTHORITY["EPSG","4326"]]',

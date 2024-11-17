@@ -126,7 +126,7 @@ class GischatCrsMessage(GischatMessageModel):
 
 
 class GischatBboxMessage(GischatMessageModel):
-    type: GischatMessageTypeEnum = GischatMessageTypeEnum.CRS
+    type: GischatMessageTypeEnum = GischatMessageTypeEnum.BBOX
     author: str = GISCHAT_NICKNAME_FIELD
     avatar: Optional[str] = Field(default=None)
     crs_wkt: str = CRS_WKT_FIELD
