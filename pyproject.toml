@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "gischat"
-version = "2.0.0"
+version = "2.1.0"
 description = "GIS chat backend for QGIS and QField"
 authors = ["Guilhem Allaman <contact@guilhemallaman.net>"]
 readme = "README.md"
