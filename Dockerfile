@@ -13,6 +13,7 @@ WORKDIR /gischat
 COPY ./pyproject.toml /gischat/pyproject.toml
 COPY ./poetry.lock /gischat/poetry.lock
 COPY ./log_config.yaml /gischat/log_config.yaml
+COPY ./README.md /gischat/README.md
 
 COPY gischat /gischat/gischat
 
