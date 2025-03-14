@@ -25,6 +25,8 @@ pytest = "^8.3.4"
 pytest-cov = "^6.0.0"
 codecov = "^2.1.13"
 black = "^25.1.0"
+isort = "^6.0.1"
+flake8 = "^7.1.2"
 
 [tool.pytest]
 addopts = "--junitxml=junit/test-results.xml --cov=gischat --cov-report=html --cov-report=term --cov-report=xml"
