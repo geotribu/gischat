@@ -115,6 +115,9 @@ class GischatGeojsonLayerMessage(GischatMessageModel):
     crs_wkt: str = CRS_WKT_FIELD
     crs_authid: str = CRS_AUTHID_FIELD
     geojson: dict = Field(description="Geo data as geojson")
+    style: Optional[str] = Field(
+        default=None, description="QML style of the layer (AllStyleCategories)"
+    )
 
 
 class GischatCrsMessage(GischatMessageModel):

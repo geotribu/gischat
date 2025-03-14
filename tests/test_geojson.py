@@ -28,6 +28,7 @@ def test_send_and_receive_geojson(client: TestClient, room: str):
                     "crs_wkt": WGS84_WKT,
                     "crs_authid": WGS84_AUTHID,
                     "geojson": json.load(file),
+                    "style": "<xml>Some QML style</xml>",
                 }
             )
         data = websocket.receive_json()
@@ -38,6 +39,7 @@ def test_send_and_receive_geojson(client: TestClient, room: str):
         assert data["crs_wkt"] == WGS84_WKT
         assert data["crs_authid"] == WGS84_AUTHID
         assert data["geojson"]["type"] == "FeatureCollection"
+        assert data["style"] == "<xml>Some QML style</xml>"
         assert len(data["geojson"]["features"]) == 60
 
 
