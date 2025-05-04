@@ -25,6 +25,7 @@ from gischat.models import (
     GischatMessageTypeEnum,
     GischatNbUsersMessage,
     GischatNewcomerMessage,
+    GischatPositionMessage,
     GischatTextMessage,
     GischatUncompliantMessage,
     RulesModel,
@@ -436,6 +437,15 @@ async def websocket_endpoint(websocket: WebSocket, room: str) -> None:
                     message = GischatBboxMessage(**payload)
                     logger.info(
                         f"{message.author} shared a bbox using '{message.crs_authid}'"
+                    )
+                    await notifier.notify_room(room, message)
+                    notifier.store_message(room, message)
+
+                # position message
+                if message.type == GischatMessageTypeEnum.POSITION:
+                    message = GischatPositionMessage(**payload)
+                    logger.info(
+                        f"{message.author} shared a position '{message.x} x {message.y}' using '{message.crs_authid}'"
                     )
                     await notifier.notify_room(room, message)
                     notifier.store_message(room, message)
