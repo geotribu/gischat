@@ -54,6 +54,7 @@ class GischatMessageTypeEnum(Enum):
     GEOJSON = "geojson"
     CRS = "crs"
     BBOX = "bbox"
+    POSITION = "position"
 
     def __str__(self) -> str:
         return self.value
@@ -138,3 +139,13 @@ class GischatBboxMessage(GischatMessageModel):
     xmax: float
     ymin: float
     ymax: float
+
+
+class GischatPositionMessage(GischatMessageModel):
+    type: GischatMessageTypeEnum = GischatMessageTypeEnum.POSITION
+    author: str = GISCHAT_NICKNAME_FIELD
+    avatar: Optional[str] = Field(default=None)
+    crs_wkt: str = CRS_WKT_FIELD
+    crs_authid: str = CRS_AUTHID_FIELD
+    x: float
+    y: float
