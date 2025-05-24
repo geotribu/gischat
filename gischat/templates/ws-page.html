@@ -73,8 +73,9 @@
 <div class="card">
 
     <div class="card-body">
+        <h5 id="roomCardTitle" class="card-title" style="display: none;">💬 Room</h5>
         <ul id="messages" class="list-group">
-        </ul>
+        </ul><span class="badge badge-light">4</span>
     </div>
 </div>
 
@@ -86,6 +87,8 @@
     instance.value = window.location.host;
     const ssl = document.getElementById("ssl");
     ssl.checked = window.location.protocol.startsWith("https");
+    const room = document.getElementById("roomId");
+    const roomCardTitle = document.getElementById("roomCardTitle");
 
     function displayMessage(msg) {
         const messages = document.getElementById('messages');
@@ -131,13 +134,17 @@
         document.getElementById("connectButton").innerText = enabled ? "Disconnect" : "Connect";
     }
 
+    function setRoomText(room, nbUsers) {
+        roomCardTitle.innerText = `💬 Room ${room} (${nbUsers})`;
+        roomCardTitle.style.display = "inline-block";
+    }
+
     function onConnectButtonClick(event) {
         if (connected) {
             websocket.close();
             event.preventDefault();
             return;
         }
-        const room = document.getElementById("roomId");
         if (!room.value) {
             alert("Room must be set");
             return;
@@ -150,6 +157,7 @@
             displayMessage(`Connected to websocket in room ${room.value}`);
             connected = true;
             setFormEnabled(true);
+            setRoomText(room.value, "-");
             websocket.send(JSON.stringify({type: "newcomer", newcomer: user}));
         }
         websocket.onmessage = (event) => {
@@ -167,13 +175,14 @@
                     displayMessage(`${data.author} sent an image`);
                     break;
                 case "nb_users":
-                    displayMessage(`${data.nb_users} user(s) present in the room`);
+                    console.log(`${data.nb_users} user(s) present in the room`);
+                    setRoomText(room.value, data.nb_users);
                     break;
                 case "newcomer":
-                    displayMessage(`${data.newcomer} has joined the room`);
+                    console.log(`${data.newcomer} has joined the room`);
                     break;
                 case "exiter":
-                    displayMessage(`${data.exiter} has left the room`);
+                    console.log(`${data.exiter} has left the room`);
                     break;
                 case "like":
                     displayMessage(`${data.liker_author} liked your message "${data.message}"`);
@@ -187,6 +196,9 @@
                 case "bbox":
                     displayMessage(`${data.author} shared a bbox using '${data.crs_authid}'`);
                     break;
+                case "position":
+                    displayMessage(`${data.author} shared the ${data.x}-${data.y} position using '${data.crs_authid}'`);
+                    break;
                 default:
                     displayMessage(`Unknown message received: ${data}`);
             }
@@ -199,6 +211,7 @@
             connected = false;
             displayMessage("Disconnected from websocket");
             setFormEnabled(false);
+            roomCardTitle.style.display = "none";
         }
         event.preventDefault();
     }
