@@ -10,17 +10,19 @@ ARG PIP_NO_CACHE_DIR 1
 
 WORKDIR /gischat
 
-COPY ./pyproject.toml /gischat/pyproject.toml
-COPY ./poetry.lock /gischat/poetry.lock
-COPY ./log_config.yaml /gischat/log_config.yaml
-COPY ./README.md /gischat/README.md
+COPY pyproject.toml /gischat/pyproject.toml
+COPY poetry.lock /gischat/poetry.lock
+COPY log_config.yaml /gischat/log_config.yaml
+COPY entrypoint.sh /gischat/entrypoint.sh
+COPY README.md /gischat/README.md
 
 COPY gischat /gischat/gischat
 
-RUN pip install poetry
+RUN chmod +x entrypoint.sh \
+&& pip install poetry
 
 RUN poetry install
 
 EXPOSE 8000
 
-CMD ["poetry", "run", "uvicorn", "gischat.app:app", "--host", "0.0.0.0", "--port", "8000", "--proxy-headers", "--log-config=log_config.yaml"]
+CMD ["./entrypoint.sh"]

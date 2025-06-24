@@ -206,6 +206,7 @@ Each of them has a `"type"` key based on which it is possible to parse them :
 ### Setup Gischat backend
 
 > [!NOTE]
+> `NB_UVICORN_WORKERS` refers to the number of async workers. A usual convenient value would be : (nb_cpu * 2) + 1.
 > `ROOMS` environment variable is a comma-separated list of strings which represent the available chat rooms.  
 > `RULES` environment variable describes the instance's rules. Useful information that users should know, even when skimming content.  
 > `MAX_IMAGE_SIZE` environment variable describes the max size of image in pixels. The server will resize images based on this value.  
@@ -220,6 +221,7 @@ Each of them has a `"type"` key based on which it is possible to parse them :
         image: gounux/gischat:latest
         container_name: gischat-app
         environment:
+          - NB_UVICORN_WORKERS=9
           - ROOMS=QGIS,Field and mobile,GIS tribe, Living room,Kitchen,Garden
           - RULES=Be kind and nice to this wonderful world
           - MAIN_LANGUAGE=en
@@ -369,5 +371,5 @@ That's it, you should be able to chat now with your fellow GIS mates !
 1. Run docker image:
 
   ```sh
-  docker run geotribu/gischat:latest --env ROOMS=QGIS,QField,Geotribu --env RULES="Those are the rules: ..."
+  docker run --env ROOMS=QGIS,QField,Geotribu --env RULES="Those are the rules: ..." geotribu/gischat:latest
   ```
