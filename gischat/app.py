@@ -23,6 +23,7 @@ from gischat.models import (
     GischatLikeMessage,
     GischatMessageModel,
     GischatMessageTypeEnum,
+    GischatModelMessage,
     GischatNbUsersMessage,
     GischatNewcomerMessage,
     GischatPositionMessage,
@@ -446,6 +447,15 @@ async def websocket_endpoint(websocket: WebSocket, room: str) -> None:
                     message = GischatPositionMessage(**payload)
                     logger.info(
                         f"{message.author} shared a position '{message.x} x {message.y}' using '{message.crs_authid}'"
+                    )
+                    await notifier.notify_room(room, message)
+                    notifier.store_message(room, message)
+
+                # graphic model message
+                if message.type == GischatMessageTypeEnum.MODEL:
+                    message = GischatModelMessage(**payload)
+                    logger.info(
+                        f"{message.author} shared a graphic model named '{message.model_name}'"
                     )
                     await notifier.notify_room(room, message)
                     notifier.store_message(room, message)

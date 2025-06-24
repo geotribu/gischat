@@ -55,6 +55,7 @@ class GischatMessageTypeEnum(Enum):
     CRS = "crs"
     BBOX = "bbox"
     POSITION = "position"
+    MODEL = "model"
 
     def __str__(self) -> str:
         return self.value
@@ -149,3 +150,14 @@ class GischatPositionMessage(GischatMessageModel):
     crs_authid: str = CRS_AUTHID_FIELD
     x: float
     y: float
+
+
+class GischatModelMessage(GischatMessageModel):
+    type: GischatMessageTypeEnum = GischatMessageTypeEnum.MODEL
+    author: str = GISCHAT_NICKNAME_FIELD
+    avatar: Optional[str] = Field(default=None)
+    model_name: str = Field(description="Name of the QGIS graphic model")
+    model_group: Optional[str] = Field(
+        default=None, description="Group of the QGIS graphic model"
+    )
+    raw_xml: str = Field(description="Raw XML of the QGIS graphic model")
