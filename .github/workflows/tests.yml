@@ -56,6 +56,11 @@ jobs:
       - name: Install requirements
         run: poetry install
 
+      - name: Set up Redis
+        uses: shogo82148/actions-setup-redis@v1
+        with:
+          redis-version: "7.4"
+
       - name: Unit tests
         run: poetry run pytest -v --cov --cov-report xml:coverage.xml
 

@@ -221,20 +221,24 @@ Each of them has a `"type"` key based on which it is possible to parse them :
         image: gounux/gischat:latest
         container_name: gischat-app
         environment:
-          - NB_UVICORN_WORKERS=9
+          - NB_UVICORN_WORKERS=5
           - ROOMS=QGIS,Field and mobile,GIS tribe, Living room,Kitchen,Garden
           - RULES=Be kind and nice to this wonderful world
-          - MAIN_LANGUAGE=en
+          - MAIN_LANG=en
+          - INSTANCE_ID=abcdefghijklmnopqrstuvwxyz
           - ENVIRONMENT=production
           - MIN_AUTHOR_LENGTH=3
           - MAX_AUTHOR_LENGTH=32
           - MAX_MESSAGE_LENGTH=255
           - MAX_IMAGE_SIZE=800
           - MAX_GEOJSON_FEATURES=500
+          - MAX_STORED_MESSAGES=5
         ports:
           - 8000:8000
         restart: unless-stopped
     ```
+
+1. Install [`redis`](https://redis.io/) by adding a service to the compose file, or via `apt install redis-server`.
 
 1. Launch the app using `compose`:
 
@@ -330,10 +334,11 @@ That's it, you should be able to chat now with your fellow GIS mates !
 
 ## Development
 
-1. Install [poetry](https://python-poetry.org/):
+1. Install [poetry](https://python-poetry.org/) and redis:
 
   ```sh
   python -m pip install poetry
+  sudo apt install redis-server
   ```
 
 1. Install project's dependencies using poetry:
@@ -373,3 +378,17 @@ That's it, you should be able to chat now with your fellow GIS mates !
   ```sh
   docker run --env ROOMS=QGIS,QField,Geotribu --env RULES="Those are the rules: ..." geotribu/gischat:latest
   ```
+
+## Testing
+
+1. Install dev dependencies:
+
+   ```sh
+   poetry install --with=dev
+   ```
+
+1. Run unit tests:
+
+   ```sh
+   poetry run pytest tests
+   ```

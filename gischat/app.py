@@ -1,7 +1,9 @@
 import base64
+import json
 import logging
 import os
 import sys
+import uuid
 from io import BytesIO
 
 import colorlog
@@ -12,6 +14,7 @@ from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from PIL import Image
 from pydantic import ValidationError
+from redis import Redis
 from starlette.websockets import WebSocketDisconnect
 
 from gischat.models import (
@@ -32,6 +35,7 @@ from gischat.models import (
     RulesModel,
     StatusModel,
     VersionModel,
+    parse_gischat_message,
 )
 from gischat.utils import QCHAT_CHEATCODES, get_poetry_version
 
@@ -47,10 +51,29 @@ handler.setFormatter(formatter)
 logger.addHandler(handler)
 
 
+instance_id = os.environ.get("INSTANCE_ID", uuid.uuid4())
+
+redis = Redis(
+    host=os.environ.get("REDIS_HOST", "127.0.0.1"),
+    port=int(os.environ.get("REDIS_PORT", "6379")),
+    decode_responses=True,
+)
+
+
 class WebsocketNotifier:
     """
     Class used to broadcast messages to registered websockets
     """
+
+    _instance = None
+
+    @classmethod
+    def instance(cls) -> "WebsocketNotifier":
+        if cls._instance is None:
+            cls._instance = WebsocketNotifier(
+                os.environ.get("ROOMS", "QGIS,Geotribu").split(",")
+            )
+        return cls._instance
 
     # list of websockets connection associated to room
     connections: dict[str, list[WebSocket]]
@@ -204,6 +227,15 @@ class WebsocketNotifier:
             except KeyError:
                 continue
 
+    def _room_storage_key(self, room: str) -> str:
+        """
+        Returns a key for the room name.
+        Typically used for redis cache.
+        :param room: room name
+        :return: storage key for the room
+        """
+        return f"iid:{instance_id};room:{room};messages"
+
     def store_message(self, room: str, message: GischatMessageModel) -> None:
         """
         Stores a message sent in a room
@@ -211,11 +243,11 @@ class WebsocketNotifier:
         :param room: room to store the message
         :param message: message to store
         """
-        room_messages = self.last_messages[room]
-        room_messages.append(message)
+        storage_key = self._room_storage_key(room)
+        text_value = message.model_dump_json()
+        redis.lpush(storage_key, text_value)
         nb_max = int(os.environ.get("MAX_STORED_MESSAGES", 5))
-        if len(room_messages) > nb_max:
-            self.last_messages[room] = room_messages[-nb_max:]
+        redis.ltrim(storage_key, 0, nb_max - 1)
 
     def get_stored_messages(self, room: str) -> list[GischatMessageModel]:
         """
@@ -223,16 +255,23 @@ class WebsocketNotifier:
         :param room: room with stored messages
         :return: list of last messages sent and stored in the room
         """
-        return self.last_messages[room]
+        storage_key = self._room_storage_key(room)
+        raw_stored = redis.lrange(storage_key, 0, -1)
+
+        messages = []
+        for raw in reversed(raw_stored):
+            message = parse_gischat_message(json.loads(raw))
+
+            messages.append(message)
+
+        return messages
 
     def clear_stored_messages(self) -> None:
         """
         Clears the stored messages
         """
-        self.last_messages = {room: [] for room in self.rooms}
-
-
-notifier = WebsocketNotifier(os.environ.get("ROOMS", "QGIS,Geotribu").split(","))
+        for room in self.rooms:
+            redis.delete(self._room_storage_key(room))
 
 
 # initialize sentry
@@ -268,6 +307,7 @@ async def get_version() -> VersionModel:
 
 @app.get("/status", response_model=StatusModel)
 async def get_status() -> StatusModel:
+    notifier = WebsocketNotifier.instance()
     return StatusModel(
         status="ok",
         healthy=True,
@@ -280,7 +320,7 @@ async def get_status() -> StatusModel:
 
 @app.get("/rooms", response_model=list[str])
 async def get_rooms() -> list[str]:
-    return notifier.rooms
+    return WebsocketNotifier.instance().rooms
 
 
 @app.get("/rules", response_model=RulesModel)
@@ -298,6 +338,7 @@ async def get_rules() -> RulesModel:
 
 @app.get("/room/{room}/users")
 async def get_connected_users(room: str) -> list[str]:
+    notifier = WebsocketNotifier.instance()
     if room not in notifier.rooms:
         raise HTTPException(status_code=404, detail=f"Room '{room}' not registered")
     return sorted(notifier.get_registered_users(room), key=str.casefold)
@@ -305,6 +346,7 @@ async def get_connected_users(room: str) -> list[str]:
 
 @app.get("/room/{room}/last")
 async def get_last_messages(room: str) -> list:
+    notifier = WebsocketNotifier.instance()
     if room not in notifier.rooms:
         raise HTTPException(status_code=404, detail=f"Room '{room}' not registered")
     return notifier.get_stored_messages(room)
@@ -317,6 +359,7 @@ async def get_last_messages(room: str) -> list:
 async def put_text_message(
     room: str, message: GischatTextMessage
 ) -> GischatTextMessage:
+    notifier = WebsocketNotifier.instance()
     if room not in notifier.rooms:
         raise HTTPException(status_code=404, detail=f"Room '{room}' not registered")
     await notifier.notify_room(room, message)
@@ -327,6 +370,8 @@ async def put_text_message(
 
 @app.websocket("/room/{room}/ws")
 async def websocket_endpoint(websocket: WebSocket, room: str) -> None:
+
+    notifier = WebsocketNotifier.instance()
 
     # check if room is registered
     if room not in notifier.rooms:

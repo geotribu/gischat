@@ -4,7 +4,7 @@ from collections.abc import Generator
 import pytest
 from fastapi.testclient import TestClient
 
-from gischat.app import notifier
+from gischat.app import WebsocketNotifier
 from tests import (
     MAX_GEOJSON_FEATURES,
     MAX_IMAGE_SIZE,
@@ -27,6 +27,7 @@ def client() -> Generator[TestClient, None, None]:
     os.environ["MAX_MESSAGE_LENGTH"] = MAX_MESSAGE_LENGTH
     os.environ["MAX_IMAGE_SIZE"] = MAX_IMAGE_SIZE
     os.environ["MAX_GEOJSON_FEATURES"] = MAX_GEOJSON_FEATURES
+    os.environ["REDIS_PORT"] = "16379"
     from gischat.app import app
 
     yield TestClient(app)
@@ -37,5 +38,6 @@ def run_around_tests() -> Generator:
     """
     Runs around each test
     """
+    notifier = WebsocketNotifier.instance()
     notifier.clear_stored_messages()
     yield

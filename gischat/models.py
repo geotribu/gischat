@@ -1,8 +1,8 @@
 import os
 from enum import Enum
-from typing import Optional
+from typing import Any, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ValidationError
 
 
 class VersionModel(BaseModel):
@@ -161,3 +161,42 @@ class GischatModelMessage(GischatMessageModel):
         default=None, description="Group of the QGIS graphic model"
     )
     raw_xml: str = Field(description="Raw XML of the QGIS graphic model")
+
+
+def build_message_type_mapping(
+    base_cls: type[GischatMessageModel],
+) -> dict[GischatMessageTypeEnum, type[GischatMessageModel]]:
+    mapping = {}
+    for subclass in base_cls.__subclasses__():
+        fields = getattr(subclass, "model_fields", {})
+        type_field = fields.get("type")
+        if type_field is None:
+            continue
+
+        default = type_field.default
+        if isinstance(default, GischatMessageTypeEnum):
+            mapping[default] = subclass
+    return mapping
+
+
+message_type_mapping = build_message_type_mapping(GischatMessageModel)
+
+
+def parse_gischat_message(data: dict[str, Any]) -> GischatMessageModel:
+    """
+    Gischat message factory.
+    """
+    if "type" not in data:
+        return GischatUncompliantMessage(reason="Missing 'type' field")
+
+    try:
+        msg_type = GischatMessageTypeEnum(data["type"])
+    except ValueError:
+        return GischatUncompliantMessage(reason=f"Unknown type: {data['type']}")
+
+    cls = message_type_mapping.get(msg_type, GischatMessageModel)
+
+    try:
+        return cls(**data)
+    except ValidationError as e:
+        return GischatUncompliantMessage(reason=f"Validation error: {e}")
