@@ -1,3 +1,5 @@
+from time import sleep
+
 import pytest
 from starlette.testclient import TestClient
 
@@ -35,11 +37,11 @@ def test_websocket_like_message(client: TestClient, room: str):
             websocket2.send_json(
                 {"type": GischatMessageTypeEnum.NEWCOMER.value, "newcomer": "Barnabe"}
             )
-            assert websocket1.receive_json() == {
+            assert websocket2.receive_json() == {
                 "type": GischatMessageTypeEnum.NEWCOMER.value,
                 "newcomer": "Barnabe",
             }
-            assert websocket2.receive_json() == {
+            assert websocket1.receive_json() == {
                 "type": GischatMessageTypeEnum.NEWCOMER.value,
                 "newcomer": "Barnabe",
             }
@@ -75,6 +77,7 @@ def test_websocket_like_message(client: TestClient, room: str):
                     "message": "hi",
                 }
             )
+            sleep(1)
             assert websocket1.receive_json() == {
                 "type": GischatMessageTypeEnum.LIKE.value,
                 "liker_author": "Barnabe",
