@@ -217,6 +217,7 @@ Each of them has a `"type"` key based on which it is possible to parse them :
 
     ```sh
     services:
+
       api:
         image: gounux/gischat:latest
         container_name: gischat-app
@@ -233,12 +234,21 @@ Each of them has a `"type"` key based on which it is possible to parse them :
           - MAX_IMAGE_SIZE=800
           - MAX_GEOJSON_FEATURES=500
           - MAX_STORED_MESSAGES=5
+          - REDIS_HOST=redis
         ports:
           - 8000:8000
         restart: unless-stopped
-    ```
 
-1. Install [`redis`](https://redis.io/) by adding a service to the compose file, or via `apt install redis-server`.
+     redis:
+       image: redis:latest
+       container_name: gischat-redis
+       restart: unless-stopped
+       volumes:
+         - redis-data:/data
+
+   volumes:
+     redis-data:
+    ```
 
 1. Launch the app using `compose`:
 
@@ -334,10 +344,15 @@ That's it, you should be able to chat now with your fellow GIS mates !
 
 ## Development
 
-1. Install [poetry](https://python-poetry.org/) and redis:
+1. Install [poetry](https://python-poetry.org/):
 
   ```sh
   python -m pip install poetry
+  ```
+
+1. Install [`redis`](https://redis.io/) on your local machine:
+
+   ```sh
   sudo apt install redis-server
   ```
 
