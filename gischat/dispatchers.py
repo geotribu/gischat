@@ -5,7 +5,7 @@ from fastapi.encoders import jsonable_encoder
 from redis import Redis as RedisObject
 from starlette.websockets import WebSocketDisconnect
 
-from gischat.env import INSTANCE_ID, MAX_STORED_MESSAGES
+from gischat.env import INSTANCE_ID, INSTANCE_ROOMS, MAX_STORED_MESSAGES
 from gischat.logging import logger
 from gischat.models import (
     GischatExiterMessage,
@@ -33,6 +33,15 @@ def get_redis_users_key(room: str) -> str:
 
 
 class RedisWebsocketDispatcher:
+
+    # singleton implementation
+    _instance = None
+
+    @classmethod
+    def instance(cls) -> "RedisWebsocketDispatcher":
+        if cls._instance is None:
+            cls._instance = RedisWebsocketDispatcher(INSTANCE_ROOMS)
+        return cls._instance
 
     # redis PubSub clients
     redis_pub: RedisObject

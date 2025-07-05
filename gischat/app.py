@@ -48,7 +48,7 @@ if os.getenv("SENTRY_DSN", None):
     )
 
 
-dispatcher = RedisWebsocketDispatcher(rooms=INSTANCE_ROOMS)
+dispatcher = RedisWebsocketDispatcher.instance()
 
 
 @asynccontextmanager
@@ -81,8 +81,8 @@ async def lifespan(app: FastAPI):
     # shutdown
     for listener_task in app.state.listener_tasks:
         listener_task.cancel()
-    await app.state.redis_pub.close()
-    await app.state.redis_sub.close()
+    await app.state.redis_pub.aclose()
+    await app.state.redis_sub.aclose()
     logger.info("👋 Lifespan shutdown done.")
 
 
@@ -208,7 +208,7 @@ async def websocket_endpoint(websocket: WebSocket, room: str) -> None:
         return
 
     await dispatcher.accept_websocket(room, websocket)
-    logger.info(f"🧑‍🚀 New websocket client joined room {room}")
+    logger.info(f"🤝 New websocket client joined room {room}")
 
     dispatcher.increment_nb_connected_users(room)
     await dispatcher.notify_nb_users(room)
@@ -260,7 +260,7 @@ async def websocket_endpoint(websocket: WebSocket, room: str) -> None:
                     # check if user is already registered
                     if dispatcher.is_user_present(room, message.newcomer):
                         logger.info(
-                            f"User '{message.newcomer}' wants to register but there is already a '{message.newcomer}' in room {room}"
+                            f"❌ User '{message.newcomer}' wants to register but there is already a '{message.newcomer}' in room {room}"
                         )
                         message = GischatUncompliantMessage(
                             reason=f"User '{message.newcomer}' already registered in room {room}"
@@ -291,7 +291,7 @@ async def websocket_endpoint(websocket: WebSocket, room: str) -> None:
                     max_nb_features = int(os.environ.get("MAX_GEOJSON_FEATURES", 500))
                     if nb_features > max_nb_features:
                         logger.error(
-                            f"{message.author} sent a geojson layer ('{message.layer_name}') with too many features ({nb_features}"
+                            f"❌ {message.author} sent a geojson layer ('{message.layer_name}') with too many features ({nb_features}"
                         )
                         # notify user with an uncompliant message
                         message = GischatUncompliantMessage(
