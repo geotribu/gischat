@@ -2,9 +2,11 @@ import os
 from collections.abc import Generator
 
 import pytest
+from fastapi import FastAPI
 from redis import Redis as RedisObject
 from starlette.testclient import TestClient
 
+from gischat.app import app
 from gischat.dispatchers import RedisWebsocketDispatcher
 from gischat.env import REDIS_HOST, REDIS_PORT
 from tests import (
@@ -14,6 +16,12 @@ from tests import (
     MIN_AUTHOR_LENGTH,
     TEST_ROOMS,
     TEST_RULES,
+)
+
+redis_connection = RedisObject(
+    host=REDIS_HOST,
+    port=REDIS_PORT,
+    decode_responses=True,
 )
 
 
@@ -26,32 +34,9 @@ def anyio_backend() -> str:
     return "asyncio"
 
 
-@pytest.fixture
-def client() -> Generator[TestClient, None, None]:
-    os.environ["ROOMS"] = ",".join(TEST_ROOMS)
-    os.environ["RULES"] = TEST_RULES
-    os.environ["MIN_AUTHOR_LENGTH"] = MIN_AUTHOR_LENGTH
-    os.environ["MAX_MESSAGE_LENGTH"] = MAX_MESSAGE_LENGTH
-    os.environ["MAX_IMAGE_SIZE"] = MAX_IMAGE_SIZE
-    os.environ["MAX_GEOJSON_FEATURES"] = MAX_GEOJSON_FEATURES
-    from gischat.app import app
-
-    with TestClient(app=app) as test_client:
-        yield test_client
-
-
-@pytest.fixture(autouse=True)
-def run_around_tests() -> Generator:
-    """
-    Runs around each test
-    """
+@pytest.fixture(scope="session")
+def fastapi_app() -> FastAPI:
     dispatcher = RedisWebsocketDispatcher.instance()
-
-    redis_connection = RedisObject(
-        host=REDIS_HOST,
-        port=REDIS_PORT,
-        decode_responses=True,
-    )
 
     dispatcher.init_redis(
         pub=redis_connection,
@@ -59,5 +44,24 @@ def run_around_tests() -> Generator:
         connection=redis_connection,
     )
 
-    dispatcher.clear_stored_messages()
+    return app
+
+
+@pytest.fixture(scope="session")
+def client(fastapi_app: FastAPI) -> Generator[TestClient, None, None]:
+
+    os.environ["ROOMS"] = ",".join(TEST_ROOMS)
+    os.environ["RULES"] = TEST_RULES
+    os.environ["MIN_AUTHOR_LENGTH"] = MIN_AUTHOR_LENGTH
+    os.environ["MAX_MESSAGE_LENGTH"] = MAX_MESSAGE_LENGTH
+    os.environ["MAX_IMAGE_SIZE"] = MAX_IMAGE_SIZE
+    os.environ["MAX_GEOJSON_FEATURES"] = MAX_GEOJSON_FEATURES
+
+    with TestClient(app=fastapi_app) as test_client:
+        yield test_client
+
+
+@pytest.fixture(scope="function", autouse=True)
+def run_around_tests() -> Generator:
+    redis_connection.flushdb()
     yield
