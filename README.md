@@ -352,7 +352,7 @@ That's it, you should be able to chat now with your fellow GIS mates !
 
 1. Install [`redis`](https://redis.io/) on your local machine:
 
-   ```sh
+  ```sh
   sudo apt install redis-server
   ```
 
