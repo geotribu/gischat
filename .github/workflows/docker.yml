@@ -8,9 +8,17 @@ on:
   workflow_dispatch:
 
 jobs:
+
   push-store-image:
+
     runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      pull-requests: write
+
     steps:
+
       - name: Checkout GitHub Action
         uses: actions/checkout@main
 
