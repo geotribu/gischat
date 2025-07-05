@@ -1,7 +1,7 @@
 import os
 from collections.abc import Generator
 
-import pytest
+import pytest_asyncio
 from fastapi import FastAPI
 from redis import Redis as RedisObject
 from starlette.testclient import TestClient
@@ -29,13 +29,21 @@ def get_test_rooms() -> list[str]:
     return TEST_ROOMS
 
 
-@pytest.fixture(scope="session")
+@pytest_asyncio.fixture(scope="session")
 def anyio_backend() -> str:
     return "asyncio"
 
 
-@pytest.fixture(scope="session")
+@pytest_asyncio.fixture(scope="session")
 def fastapi_app() -> FastAPI:
+    os.environ["ROOMS"] = ",".join(TEST_ROOMS)
+    os.environ["RULES"] = TEST_RULES
+    os.environ["MIN_AUTHOR_LENGTH"] = MIN_AUTHOR_LENGTH
+    os.environ["MAX_MESSAGE_LENGTH"] = MAX_MESSAGE_LENGTH
+    os.environ["MAX_IMAGE_SIZE"] = MAX_IMAGE_SIZE
+    os.environ["MAX_GEOJSON_FEATURES"] = MAX_GEOJSON_FEATURES
+    os.environ["INSTANCE_ID"] = "abcdefg"
+
     dispatcher = RedisWebsocketDispatcher.instance()
 
     dispatcher.init_redis(
@@ -47,21 +55,13 @@ def fastapi_app() -> FastAPI:
     return app
 
 
-@pytest.fixture(scope="session")
+@pytest_asyncio.fixture(scope="session")
 def client(fastapi_app: FastAPI) -> Generator[TestClient, None, None]:
-
-    os.environ["ROOMS"] = ",".join(TEST_ROOMS)
-    os.environ["RULES"] = TEST_RULES
-    os.environ["MIN_AUTHOR_LENGTH"] = MIN_AUTHOR_LENGTH
-    os.environ["MAX_MESSAGE_LENGTH"] = MAX_MESSAGE_LENGTH
-    os.environ["MAX_IMAGE_SIZE"] = MAX_IMAGE_SIZE
-    os.environ["MAX_GEOJSON_FEATURES"] = MAX_GEOJSON_FEATURES
-
-    with TestClient(app=fastapi_app) as test_client:
+    with TestClient(app=fastapi_app, base_url="http://testserver") as test_client:
         yield test_client
 
 
-@pytest.fixture(scope="function", autouse=True)
+@pytest_asyncio.fixture(scope="function", autouse=True)
 def run_around_tests() -> Generator:
     redis_connection.flushdb()
     yield
