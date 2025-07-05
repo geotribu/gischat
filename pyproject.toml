@@ -19,6 +19,7 @@ sentry-sdk = {extras = ["fastapi"], version = "^2.22.0"}
 pillow = "^11.3.0"
 httpx = "^0.28.1"
 redis = "^6.2.0"
+asyncio = "^3.4.3"
 
 [tool.poetry.group.dev.dependencies]
 pre-commit = "^4.1.0"

@@ -1,12 +1,15 @@
+import asyncio
 import base64
 import json
 import logging
 import os
 import sys
 import uuid
+from contextlib import asynccontextmanager
 from io import BytesIO
 
 import colorlog
+import redis.asyncio as redis
 import sentry_sdk
 from fastapi import FastAPI, HTTPException, Request, WebSocket
 from fastapi.encoders import jsonable_encoder
@@ -14,7 +17,7 @@ from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from PIL import Image
 from pydantic import ValidationError
-from redis import Redis
+from redis import Redis as RedisObject
 from starlette.websockets import WebSocketDisconnect
 
 from gischat.models import (
@@ -33,7 +36,6 @@ from gischat.models import (
     GischatTextMessage,
     GischatUncompliantMessage,
     RulesModel,
-    StatusModel,
     VersionModel,
     parse_gischat_message,
 )
@@ -51,11 +53,18 @@ handler.setFormatter(formatter)
 logger.addHandler(handler)
 
 
-instance_id = os.environ.get("INSTANCE_ID", uuid.uuid4())
+INSTANCE_ID = os.getenv("INSTANCE_ID", uuid.uuid4())
+INSTANCE_ROOMS = os.getenv("ROOMS", "QGIS,Geotribu").split(",")
 
-redis = Redis(
-    host=os.environ.get("REDIS_HOST", "127.0.0.1"),
-    port=int(os.environ.get("REDIS_PORT", "6379")),
+MAX_STORED_MESSAGES = int(os.getenv("MAX_STORED_MESSAGES", 5))
+
+REDIS_HOST = os.getenv("REDIS_HOST", "localhost")
+REDIS_PORT = int(os.getenv("REDIS_PORT", "6379"))
+REDIS_URL = f"redis://{REDIS_HOST}:{REDIS_PORT}"
+
+redis_connection = RedisObject(
+    host=REDIS_HOST,
+    port=REDIS_PORT,
     decode_responses=True,
 )
 
@@ -70,9 +79,7 @@ class WebsocketNotifier:
     @classmethod
     def instance(cls) -> "WebsocketNotifier":
         if cls._instance is None:
-            cls._instance = WebsocketNotifier(
-                os.environ.get("ROOMS", "QGIS,Geotribu").split(",")
-            )
+            cls._instance = WebsocketNotifier(INSTANCE_ROOMS)
         return cls._instance
 
     # list of websockets connection associated to room
@@ -234,7 +241,7 @@ class WebsocketNotifier:
         :param room: room name
         :return: storage key for the room
         """
-        return f"iid:{instance_id};room:{room};messages"
+        return f"iid:{INSTANCE_ID};room:{room};messages"
 
     def store_message(self, room: str, message: GischatMessageModel) -> None:
         """
@@ -245,9 +252,9 @@ class WebsocketNotifier:
         """
         storage_key = self._room_storage_key(room)
         text_value = message.model_dump_json()
-        redis.lpush(storage_key, text_value)
-        nb_max = int(os.environ.get("MAX_STORED_MESSAGES", 5))
-        redis.ltrim(storage_key, 0, nb_max - 1)
+
+        redis_connection.lpush(storage_key, text_value)
+        redis_connection.ltrim(storage_key, 0, MAX_STORED_MESSAGES - 1)
 
     def get_stored_messages(self, room: str) -> list[GischatMessageModel]:
         """
@@ -256,7 +263,7 @@ class WebsocketNotifier:
         :return: list of last messages sent and stored in the room
         """
         storage_key = self._room_storage_key(room)
-        raw_stored = redis.lrange(storage_key, 0, -1)
+        raw_stored = redis_connection.lrange(storage_key, 0, -1)
 
         messages = []
         for raw in reversed(raw_stored):
@@ -271,25 +278,91 @@ class WebsocketNotifier:
         Clears the stored messages
         """
         for room in self.rooms:
-            redis.delete(self._room_storage_key(room))
+            redis_connection.delete(self._room_storage_key(room))
 
 
 # initialize sentry
-if "SENTRY_DSN" in os.environ and os.environ.get("SENTRY_DSN"):
+if os.getenv("SENTRY_DSN", None):
     sentry_sdk.init(
-        dsn=os.environ.get("SENTRY_DSN"),
-        environment=os.environ.get("ENVIRONMENT", "production"),
-        traces_sample_rate=float(os.environ.get("SENTRY_TRACES_SAMPLE_RATE", 1)),
-        profiles_sample_rate=float(os.environ.get("SENTRY_PROFILES_SAMPLE_RATE", 1)),
+        dsn=os.getenv("SENTRY_DSN"),
+        environment=os.getenv("ENVIRONMENT", "production"),
+        traces_sample_rate=float(os.getenv("SENTRY_TRACES_SAMPLE_RATE", 1)),
+        profiles_sample_rate=float(os.getenv("SENTRY_PROFILES_SAMPLE_RATE", 1)),
     )
+
+active_connections = {}
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # startup
+    logger.info("🚀 Starting lifespan, connecting to Redis...")
+    app.state.redis_pub = await redis.from_url(REDIS_URL, decode_responses=True)
+    app.state.redis_sub = await redis.from_url(REDIS_URL, decode_responses=True)
+
+    # register room listeners
+    app.state.listener_tasks = []
+    for room in INSTANCE_ROOMS:
+        listener_task = asyncio.create_task(redis_listener(app, room))
+        app.state.listener_tasks.append(listener_task)
+
+    # let the app run
+    yield
+
+    # shutdown
+    for listener_task in app.state.listener_tasks:
+        listener_task.cancel()
+    await app.state.redis_pub.close()
+    await app.state.redis_sub.close()
+    logger.info("👋 Lifespan shutdown done.")
 
 
 app = FastAPI(
     title="gischat API",
     summary="Chat with your GIS tribe in QGIS, GIS mobile apps and other clients !",
     version=get_poetry_version(),
+    lifespan=lifespan,
 )
 templates = Jinja2Templates(directory="gischat/templates")
+
+
+def get_redis_channel(room: str) -> str:
+    return f"{INSTANCE_ID}_{room}"
+
+
+async def redis_listener(app: FastAPI, room: str) -> None:
+    """
+    Listens to redis pub/sub events and publishes messages to room.
+    :param app: FastAPI app.
+    :param room: name of the room to list to.
+    """
+
+    pubsub = app.state.redis_sub.pubsub()
+    redis_channel = get_redis_channel(room)
+    await pubsub.subscribe(redis_channel)
+    logger.info(f"✅ Listener running for room: {room} ({redis_channel})")
+
+    async for message in pubsub.listen():
+        if message["type"] == "message":
+            await broadcast(room, message["data"])
+
+
+async def broadcast(room: str, message: str) -> None:
+    """
+    Broadcast a message to a rooms.
+    :param room: room to broadcast the message to.
+    :param message: message to broadcast.
+    """
+    connections = active_connections.get(room, [])
+    for ws in connections:
+        try:
+            await ws.send_text(message)
+        except Exception as e:
+            logger.error(f"❌ Error sending message to {ws}: {e}")
+            connections.remove(ws)
+
+
+# region API endpoints
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -303,19 +376,6 @@ async def get_ws_page(request: Request):
 @app.get("/version", response_model=VersionModel)
 async def get_version() -> VersionModel:
     return VersionModel(version=get_poetry_version())
-
-
-@app.get("/status", response_model=StatusModel)
-async def get_status() -> StatusModel:
-    notifier = WebsocketNotifier.instance()
-    return StatusModel(
-        status="ok",
-        healthy=True,
-        rooms=[
-            {"name": k, "nb_connected_users": len(v)}
-            for k, v in notifier.connections.items()
-        ],
-    )
 
 
 @app.get("/rooms", response_model=list[str])
@@ -368,19 +428,34 @@ async def put_text_message(
     return message
 
 
+# endregion
+
+
 @app.websocket("/room/{room}/ws")
 async def websocket_endpoint(websocket: WebSocket, room: str) -> None:
+
+    # check if the room is registered.
+    if room not in INSTANCE_ROOMS:
+        await websocket.close(
+            code=1008, reason=f"Room '{room}' does not exist."
+        )  # Policy Violation
+        return
 
     notifier = WebsocketNotifier.instance()
 
     # check if room is registered
     if room not in notifier.rooms:
-        await websocket.close(reason=f"Room '{room}' not registered")
+        await websocket.close(
+            code=1008, reason=f"Room '{room}' does not exist."
+        )  # Policy Violation
         return
 
-    await notifier.connect(room, websocket)
-    await notifier.notify_nb_users(room)
-    logger.info(f"New websocket connected in room '{room}'")
+    await websocket.accept()
+    active_connections.setdefault(room, []).append(websocket)
+    logger.info(f"🧑‍🚀 New websocket client joined room {room}")
+
+    # id of the redis channel
+    redis_channel = get_redis_channel(room)
 
     # send room's last stored message
     for message in notifier.get_stored_messages(room):
@@ -396,15 +471,19 @@ async def websocket_endpoint(websocket: WebSocket, room: str) -> None:
                 # text message
                 if message.type == GischatMessageTypeEnum.TEXT:
                     message = GischatTextMessage(**payload)
-                    logger.info(f"Message in room '{room}': {message}")
-                    await notifier.notify_room(room, message)
+
+                    logger.info(f"💬 [{room}]: ({message.author}): '{message.text}'")
+                    await app.state.redis_pub.publish(
+                        redis_channel, message.model_dump_json()
+                    )
+
                     if message.text not in QCHAT_CHEATCODES:
                         notifier.store_message(room, message)
 
                 # image message
                 if message.type == GischatMessageTypeEnum.IMAGE:
                     message = GischatImageMessage(**payload)
-                    logger.info(f"Message (image) in room '{room}' by {message.author}")
+
                     # resize image if needed using MAX_IMAGE_SIZE env var
                     image = Image.open(BytesIO(base64.b64decode(message.image_data)))
                     size = int(os.environ.get("MAX_IMAGE_SIZE", 800))
@@ -414,41 +493,38 @@ async def websocket_endpoint(websocket: WebSocket, room: str) -> None:
                     message.image_data = base64.b64encode(
                         img_byte_arr.getvalue()
                     ).decode("utf-8")
-                    await notifier.notify_room(room, message)
+
+                    logger.info(f"🖼️ [{room}]: ({message.author}): shared an image")
+                    await app.state.redis_pub.publish(
+                        redis_channel, message.model_dump_json()
+                    )
+
                     notifier.store_message(room, message)
 
                 # newcomer message
                 if message.type == GischatMessageTypeEnum.NEWCOMER:
                     message = GischatNewcomerMessage(**payload)
-                    # check if user is already registered
-                    if notifier.is_user_present(room, message.newcomer):
-                        logger.info(
-                            f"User '{message.newcomer}' wants to register but there is already a '{message.newcomer}' in room {room}"
-                        )
-                        message = GischatUncompliantMessage(
-                            reason=f"User '{message.newcomer}' already registered in room {room}"
-                        )
-                        await websocket.send_json(jsonable_encoder(message))
-                        continue
-                    notifier.register_user(websocket, message.newcomer)
-                    logger.info(f"Newcomer in room {room}: {message.newcomer}")
-                    await notifier.notify_newcomer(room, message.newcomer)
+
+                    logger.info(f"🤝 [{room}]: Welcome to {message.newcomer} !")
+                    await app.state.redis_pub.publish(
+                        redis_channel, message.model_dump_json()
+                    )
 
                 # like message
                 if message.type == GischatMessageTypeEnum.LIKE:
                     message = GischatLikeMessage(**payload)
+
                     logger.info(
-                        f"{message.liker_author} liked {message.liked_author}'s message ({message.message})"
+                        f"🤝 [{room}]: {message.liker_author} liked {message.liked_author}'s message ({message.message})"
                     )
-                    await notifier.notify_user(
-                        room,
-                        message.liked_author,
-                        message,
+                    await app.state.redis_pub.publish(
+                        redis_channel, message.model_dump_json()
                     )
 
                 # geojson layer message
                 if message.type == GischatMessageTypeEnum.GEOJSON:
                     message = GischatGeojsonLayerMessage(**payload)
+
                     # check if the number of features is compliant
                     # must not be greater than the MAX_GEOJSON_FEATURES env variable
                     nb_features = len(message.geojson["features"])
@@ -463,54 +539,74 @@ async def websocket_endpoint(websocket: WebSocket, room: str) -> None:
                         )
                         await websocket.send_json(jsonable_encoder(message))
                         continue
+
                     logger.info(
-                        f"{message.author} sent a geojson layer ('{message.layer_name}'): {nb_features} features using crs '{message.crs_authid}'"
+                        f"🌍 [{room}]: ({message.author}): shared geojson layer '{message.layer_name}' ({nb_features} features, crs: '{message.crs_authid}')"
                     )
-                    await notifier.notify_room(room, message)
+                    await app.state.redis_pub.publish(
+                        redis_channel, message.model_dump_json()
+                    )
+
                     notifier.store_message(room, message)
 
                 # crs message
                 if message.type == GischatMessageTypeEnum.CRS:
                     message = GischatCrsMessage(**payload)
+
                     logger.info(
-                        f"{message.author} shared the crs '{message.crs_authid}'"
+                        f"📐 [{room}]: ({message.author}): shared crs '{message.crs_authid}'"
                     )
-                    await notifier.notify_room(room, message)
+                    await app.state.redis_pub.publish(
+                        redis_channel, message.model_dump_json()
+                    )
+
                     notifier.store_message(room, message)
 
                 # bbox message
                 if message.type == GischatMessageTypeEnum.BBOX:
                     message = GischatBboxMessage(**payload)
+
                     logger.info(
-                        f"{message.author} shared a bbox using '{message.crs_authid}'"
+                        f"🔳 [{room}]: ({message.author}): shared bbox using crs '{message.crs_authid}'"
                     )
-                    await notifier.notify_room(room, message)
+                    await app.state.redis_pub.publish(
+                        redis_channel, message.model_dump_json()
+                    )
+
                     notifier.store_message(room, message)
 
                 # position message
                 if message.type == GischatMessageTypeEnum.POSITION:
                     message = GischatPositionMessage(**payload)
+
                     logger.info(
-                        f"{message.author} shared a position '{message.x} x {message.y}' using '{message.crs_authid}'"
+                        f"📍 [{room}]: ({message.author}): shared position '{message.x} x {message.y}' using crs '{message.crs_authid}'"
                     )
-                    await notifier.notify_room(room, message)
+                    await app.state.redis_pub.publish(
+                        redis_channel, message.model_dump_json()
+                    )
+
                     notifier.store_message(room, message)
 
                 # graphic model message
                 if message.type == GischatMessageTypeEnum.MODEL:
                     message = GischatModelMessage(**payload)
                     logger.info(
-                        f"{message.author} shared a graphic model named '{message.model_name}'"
+                        f"🧮 [{room}]: ({message.author}): shared graphic model '{message.model_name}'"
                     )
                     await notifier.notify_room(room, message)
                     notifier.store_message(room, message)
 
             except ValidationError as e:
-                logger.error(f"Uncompliant message: {e}")
                 message = GischatUncompliantMessage(reason=str(e))
-                await websocket.send_json(jsonable_encoder(message))
+
+                logger.error(f"❌ Uncompliant message shared: {e}")
+                await app.state.redis_pub.publish(
+                    redis_channel, message.model_dump_json()
+                )
 
     except WebSocketDisconnect:
-        await notifier.remove(room, websocket)
         await notifier.notify_nb_users(room)
-        logger.info(f"Websocket disconnected from room '{room}'")
+
+        active_connections[room].remove(websocket)
+        logger.info(f"❌ Websocket client disconnected from {room}")
