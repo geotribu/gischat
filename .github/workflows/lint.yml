@@ -17,10 +17,17 @@ env:
   PYTHON_VERSION: "3.12"
 
 jobs:
+
   lint-ubuntu:
-    runs-on: ubuntu-22.04
+
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      pull-requests: write
 
     steps:
+
       - name: Get source code
         uses: actions/checkout@v4
 
