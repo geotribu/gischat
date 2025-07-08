@@ -29,14 +29,14 @@ repos:
       - id: rst-inline-touching-normal
 
   - repo: https://github.com/asottile/pyupgrade
-    rev: v3.19.1
+    rev: v3.20.0
     hooks:
       - id: pyupgrade
         args:
           - "--py39-plus"
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: "v0.11.4"
+    rev: "v0.12.2"
     hooks:
       - id: ruff
         args: ["--fix-only", "--target-version=py39"]
@@ -54,7 +54,7 @@ repos:
         args: ["--profile", "black", "--filter-files"]
 
   - repo: https://github.com/pycqa/flake8
-    rev: 7.2.0
+    rev: 7.3.0
     hooks:
       - id: flake8
         args: ["--select=E9,F401,F63,F7,F82,D103"]
