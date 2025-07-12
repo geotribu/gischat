@@ -14,10 +14,12 @@ GEOJSON_PATH_NOK = "tests/data/points.geojson"
 @pytest.mark.parametrize("room", get_test_rooms())
 def test_send_and_receive_geojson(client: TestClient, room: str):
     with client.websocket_connect(f"/room/{room}/ws") as websocket:
+
         assert websocket.receive_json() == {
             "type": GischatMessageTypeEnum.NB_USERS.value,
             "nb_users": 1,
         }
+
         with open(GEOJSON_PATH_OK) as file:
             websocket.send_json(
                 {
@@ -32,6 +34,7 @@ def test_send_and_receive_geojson(client: TestClient, room: str):
                 }
             )
         data = websocket.receive_json()
+
         assert data["type"] == GischatMessageTypeEnum.GEOJSON.value
         assert data["author"] == f"ws-tester-{room}"
         assert data["avatar"] == "cat"
@@ -46,10 +49,12 @@ def test_send_and_receive_geojson(client: TestClient, room: str):
 @pytest.mark.parametrize("room", get_test_rooms())
 def test_send_wrong_geojson(client: TestClient, room: str):
     with client.websocket_connect(f"/room/{room}/ws") as websocket:
+
         assert websocket.receive_json() == {
             "type": GischatMessageTypeEnum.NB_USERS.value,
             "nb_users": 1,
         }
+
         with open(GEOJSON_PATH_NOK) as file:
             websocket.send_json(
                 {
@@ -62,6 +67,7 @@ def test_send_wrong_geojson(client: TestClient, room: str):
                     "geojson": json.load(file),
                 }
             )
+
         assert websocket.receive_json() == {
             "type": GischatMessageTypeEnum.UNCOMPLIANT.value,
             "reason": f"Too many geojson features : 501 vs max {int(MAX_GEOJSON_FEATURES)} allowed",

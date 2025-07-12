@@ -11,13 +11,16 @@ from tests.conftest import get_test_rooms
 def test_websocket_like_message(client: TestClient, room: str):
     # register client 1 (Isidore)
     with client.websocket_connect(f"/room/{room}/ws") as websocket1:
+
         assert websocket1.receive_json() == {
             "type": GischatMessageTypeEnum.NB_USERS.value,
             "nb_users": 1,
         }
+
         websocket1.send_json(
             {"type": GischatMessageTypeEnum.NEWCOMER.value, "newcomer": "Isidore"}
         )
+
         assert websocket1.receive_json() == {
             "type": GischatMessageTypeEnum.NEWCOMER.value,
             "newcomer": "Isidore",
@@ -25,6 +28,7 @@ def test_websocket_like_message(client: TestClient, room: str):
 
         # register client 2 (Barnabe)
         with client.websocket_connect(f"/room/{room}/ws") as websocket2:
+
             assert websocket1.receive_json() == {
                 "type": GischatMessageTypeEnum.NB_USERS.value,
                 "nb_users": 2,
@@ -37,6 +41,7 @@ def test_websocket_like_message(client: TestClient, room: str):
             websocket2.send_json(
                 {"type": GischatMessageTypeEnum.NEWCOMER.value, "newcomer": "Barnabe"}
             )
+
             assert websocket2.receive_json() == {
                 "type": GischatMessageTypeEnum.NEWCOMER.value,
                 "newcomer": "Barnabe",
@@ -55,6 +60,7 @@ def test_websocket_like_message(client: TestClient, room: str):
                     "text": "hi",
                 }
             )
+
             assert websocket1.receive_json() == {
                 "type": GischatMessageTypeEnum.TEXT.value,
                 "author": "Isidore",
@@ -78,6 +84,7 @@ def test_websocket_like_message(client: TestClient, room: str):
                 }
             )
             sleep(1)
+
             assert websocket1.receive_json() == {
                 "type": GischatMessageTypeEnum.LIKE.value,
                 "liker_author": "Barnabe",

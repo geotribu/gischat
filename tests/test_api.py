@@ -17,6 +17,7 @@ from tests.conftest import get_test_rooms
 
 def test_get_version(client: TestClient):
     response = client.get("/version")
+
     assert response.status_code == 200
     assert response.json()["version"] == get_poetry_version()
 
@@ -24,13 +25,19 @@ def test_get_version(client: TestClient):
 @pytest.mark.parametrize("room", get_test_rooms())
 def test_get_status(client: TestClient, room: str):
     response = client.get("/status")
+
     assert response.status_code == 200
+
     data = response.json()
+
     assert data["status"] == "ok"
     assert data["healthy"]
     assert "rooms" in data
+
     rooms = [r["name"] for r in data["rooms"]]
+
     assert room in rooms
+
     for r in data["rooms"]:
         assert r["nb_connected_users"] == 0
 
@@ -38,12 +45,14 @@ def test_get_status(client: TestClient, room: str):
 @pytest.mark.parametrize("room", get_test_rooms())
 def test_get_rooms(client: TestClient, room: str):
     response = client.get("/rooms")
+
     assert response.status_code == 200
     assert room in response.json()
 
 
 def test_get_rules(client: TestClient):
     response = client.get("/rules")
+
     assert response.status_code == 200
     assert response.json()["rules"] == TEST_RULES
     assert response.json()["main_lang"] == "en"
@@ -57,6 +66,7 @@ def test_get_rules(client: TestClient):
 @pytest.mark.parametrize("room", get_test_rooms())
 def test_get_users(client: TestClient, room: str):
     response = client.get(f"/room/{room}/users")
+
     assert response.status_code == 200
     assert response.json() == []
 
@@ -72,6 +82,7 @@ def test_put_message(client: TestClient, room: str):
             "text": "fromage",
         },
     )
+
     assert response.status_code == 200
     assert response.json()["text"] == "fromage"
     assert response.json()["author"] == f"ws-tester-{room}"
@@ -90,6 +101,7 @@ def test_put_message_wrong_room(client: TestClient):
         ).status_code
         == 404
     )
+
     assert (
         client.put(
             "/room/void/text",
@@ -113,6 +125,7 @@ def test_put_message_author_not_alphanum(client: TestClient, room: str):
             "text": "fromage",
         },
     )
+
     assert response.status_code == 422
 
 
@@ -127,6 +140,7 @@ def test_put_message_author_too_short(client: TestClient, room: str):
             "text": "fromage",
         },
     )
+
     assert response.status_code == 422
 
 
@@ -141,6 +155,7 @@ def test_put_message_author_too_long(client: TestClient, room: str):
             "text": "fromage",
         },
     )
+
     assert response.status_code == 422
 
 
@@ -155,14 +170,17 @@ def test_put_message_too_long(client: TestClient, room: str):
             "text": text,
         },
     )
+
     assert response.status_code == 422
 
 
 @pytest.mark.parametrize("room", get_test_rooms())
 def test_stored_message(client: TestClient, room: str):
     response = client.get(f"/room/{room}/last")
+
     assert response.status_code == 200
     assert response.json() == []
+
     client.put(
         f"/room/{room}/text",
         json={
@@ -173,6 +191,7 @@ def test_stored_message(client: TestClient, room: str):
         },
     )
     response = client.get(f"/room/{room}/last")
+
     assert response.status_code == 200
     assert response.json() == [
         {
@@ -197,6 +216,8 @@ def test_stored_multiple(client: TestClient, room: str):
             },
         )
         assert response.status_code == 200
+
     response = client.get(f"/room/{room}/last")
+
     assert response.status_code == 200
     assert len(response.json()) == int(MAX_STORED_MESSAGES)
