@@ -3,6 +3,7 @@ import base64
 import os
 from contextlib import asynccontextmanager
 from io import BytesIO
+from uuid import UUID
 
 import redis.asyncio as redis
 import sentry_sdk
@@ -15,8 +16,18 @@ from pydantic import ValidationError
 from redis import Redis as RedisObject
 from starlette.websockets import WebSocketDisconnect
 
-from gischat.dispatchers import RedisWebsocketDispatcher, get_redis_channel_key
-from gischat.env import INSTANCE_ROOMS, REDIS_HOST, REDIS_PORT, REDIS_URL
+from gischat.dispatchers import (
+    MatrixDispatcher,
+    RedisDispatcher,
+    get_redis_channel_key,
+)
+from gischat.env import (
+    INSTANCE_ROOMS,
+    MATRIX_ENABLED,
+    REDIS_HOST,
+    REDIS_PORT,
+    REDIS_URL,
+)
 from gischat.logging import logger
 from gischat.models import (
     GischatBboxMessage,
@@ -31,6 +42,9 @@ from gischat.models import (
     GischatPositionMessage,
     GischatTextMessage,
     GischatUncompliantMessage,
+    MatrixRegisterRequest,
+    MatrixRegisterResponse,
+    QMatrixChatTextMessage,
     RoomStatusModel,
     RulesModel,
     StatusModel,
@@ -48,7 +62,7 @@ if os.getenv("SENTRY_DSN", None):
     )
 
 
-dispatcher = RedisWebsocketDispatcher.instance()
+redis_dispatcher = RedisDispatcher.instance()
 
 
 @asynccontextmanager
@@ -59,7 +73,7 @@ async def lifespan(app: FastAPI):
     app.state.redis_pub = await redis.from_url(REDIS_URL, decode_responses=True)
     app.state.redis_sub = await redis.from_url(REDIS_URL, decode_responses=True)
 
-    dispatcher.init_redis(
+    redis_dispatcher.init_redis(
         pub=app.state.redis_pub,
         sub=app.state.redis_sub,
         connection=RedisObject(
@@ -111,7 +125,7 @@ async def redis_listener(app: FastAPI, room: str) -> None:
 
     async for message in pubsub.listen():
         if message["type"] == "message":
-            await dispatcher.broadcast_to_active_websockets(room, message["data"])
+            await redis_dispatcher.broadcast_to_active_websockets(room, message["data"])
 
 
 # region API endpoints
@@ -121,7 +135,7 @@ async def redis_listener(app: FastAPI, room: str) -> None:
 async def get_ws_page(request: Request):
     return templates.TemplateResponse(
         request=request,
-        name="ws-page.html",
+        name="qchat.html",
     )
 
 
@@ -132,7 +146,7 @@ async def get_version() -> VersionModel:
 
 @app.get("/rooms", response_model=list[str])
 async def get_rooms() -> list[str]:
-    return dispatcher.rooms
+    return redis_dispatcher.rooms
 
 
 @app.get("/status", response_model=StatusModel)
@@ -142,9 +156,10 @@ async def get_status() -> StatusModel:
         healthy=True,
         rooms=[
             RoomStatusModel(
-                name=room, nb_connected_users=dispatcher.get_nb_connected_users(room)
+                name=room,
+                nb_connected_users=redis_dispatcher.get_nb_connected_users(room),
             )
-            for room in dispatcher.rooms
+            for room in redis_dispatcher.rooms
         ],
     )
 
@@ -164,16 +179,16 @@ async def get_rules() -> RulesModel:
 
 @app.get("/room/{room}/users")
 async def get_connected_users(room: str) -> list[str]:
-    if room not in dispatcher.rooms:
+    if room not in redis_dispatcher.rooms:
         raise HTTPException(status_code=404, detail=f"Room '{room}' not registered")
-    return sorted(dispatcher.get_registered_users(room), key=str.casefold)
+    return sorted(redis_dispatcher.get_registered_users(room), key=str.casefold)
 
 
 @app.get("/room/{room}/last")
 async def get_last_messages(room: str) -> list:
-    if room not in dispatcher.rooms:
+    if room not in redis_dispatcher.rooms:
         raise HTTPException(status_code=404, detail=f"Room '{room}' not registered")
-    return dispatcher.get_stored_messages(room)
+    return redis_dispatcher.get_stored_messages(room)
 
 
 @app.put(
@@ -184,13 +199,13 @@ async def put_text_message(
     room: str, message: GischatTextMessage
 ) -> GischatTextMessage:
 
-    if room not in dispatcher.rooms:
+    if room not in redis_dispatcher.rooms:
         raise HTTPException(status_code=404, detail=f"Room '{room}' not registered")
 
-    await dispatcher.broadcast_to_redis_channel(room, message)
+    await redis_dispatcher.broadcast_to_redis_channel(room, message)
 
     logger.info(f"Message in room '{room}': {message}")
-    dispatcher.store_message(room, message)
+    redis_dispatcher.store_message(room, message)
 
     return message
 
@@ -202,19 +217,19 @@ async def put_text_message(
 async def websocket_endpoint(websocket: WebSocket, room: str) -> None:
 
     # check if room is registered
-    if room not in dispatcher.rooms:
+    if room not in redis_dispatcher.rooms:
         # Policy Violation
         await websocket.close(code=1008, reason=f"Room '{room}' does not exist.")
         return
 
-    await dispatcher.accept_websocket(room, websocket)
+    await redis_dispatcher.accept_websocket(room, websocket)
     logger.info(f"🤝 New websocket client joined room {room}")
 
-    dispatcher.increment_nb_connected_users(room)
-    await dispatcher.notify_nb_users(room)
+    redis_dispatcher.increment_nb_connected_users(room)
+    await redis_dispatcher.notify_nb_users(room)
 
     # send room's last stored message
-    for message in dispatcher.get_stored_messages(room):
+    for message in redis_dispatcher.get_stored_messages(room):
         await websocket.send_json(jsonable_encoder(message))
 
     try:
@@ -229,10 +244,10 @@ async def websocket_endpoint(websocket: WebSocket, room: str) -> None:
                     message = GischatTextMessage(**payload)
 
                     logger.info(f"💬 [{room}]: ({message.author}): '{message.text}'")
-                    await dispatcher.broadcast_to_redis_channel(room, message)
+                    await redis_dispatcher.broadcast_to_redis_channel(room, message)
 
                     if message.text not in QCHAT_CHEATCODES:
-                        dispatcher.store_message(room, message)
+                        redis_dispatcher.store_message(room, message)
 
                 # image message
                 if message.type == GischatMessageTypeEnum.IMAGE:
@@ -249,16 +264,16 @@ async def websocket_endpoint(websocket: WebSocket, room: str) -> None:
                     ).decode("utf-8")
 
                     logger.info(f"🖼️ [{room}]: ({message.author}): shared an image")
-                    await dispatcher.broadcast_to_redis_channel(room, message)
+                    await redis_dispatcher.broadcast_to_redis_channel(room, message)
 
-                    dispatcher.store_message(room, message)
+                    redis_dispatcher.store_message(room, message)
 
                 # newcomer message
                 if message.type == GischatMessageTypeEnum.NEWCOMER:
                     message = GischatNewcomerMessage(**payload)
 
                     # check if user is already registered
-                    if dispatcher.is_user_present(room, message.newcomer):
+                    if redis_dispatcher.is_user_present(room, message.newcomer):
                         logger.info(
                             f"❌ User '{message.newcomer}' wants to register but there is already a '{message.newcomer}' in room {room}"
                         )
@@ -267,10 +282,10 @@ async def websocket_endpoint(websocket: WebSocket, room: str) -> None:
                         )
                         await websocket.send_json(jsonable_encoder(message))
                         continue
-                    dispatcher.register_user(room, websocket, message.newcomer)
+                    redis_dispatcher.register_user(room, websocket, message.newcomer)
 
                     logger.info(f"🤝 [{room}]: Welcome to {message.newcomer} !")
-                    await dispatcher.notify_newcomer(room, message.newcomer)
+                    await redis_dispatcher.notify_newcomer(room, message.newcomer)
 
                 # like message
                 if message.type == GischatMessageTypeEnum.LIKE:
@@ -279,7 +294,7 @@ async def websocket_endpoint(websocket: WebSocket, room: str) -> None:
                     logger.info(
                         f"👍 [{room}]: {message.liker_author} liked {message.liked_author}'s message ({message.message})"
                     )
-                    await dispatcher.broadcast_to_redis_channel(room, message)
+                    await redis_dispatcher.broadcast_to_redis_channel(room, message)
 
                 # geojson layer message
                 if message.type == GischatMessageTypeEnum.GEOJSON:
@@ -303,9 +318,9 @@ async def websocket_endpoint(websocket: WebSocket, room: str) -> None:
                     logger.info(
                         f"🌍 [{room}]: ({message.author}): shared geojson layer '{message.layer_name}' ({nb_features} features, crs: '{message.crs_authid}')"
                     )
-                    await dispatcher.broadcast_to_redis_channel(room, message)
+                    await redis_dispatcher.broadcast_to_redis_channel(room, message)
 
-                    dispatcher.store_message(room, message)
+                    redis_dispatcher.store_message(room, message)
 
                 # crs message
                 if message.type == GischatMessageTypeEnum.CRS:
@@ -314,9 +329,9 @@ async def websocket_endpoint(websocket: WebSocket, room: str) -> None:
                     logger.info(
                         f"📐 [{room}]: ({message.author}): shared crs '{message.crs_authid}'"
                     )
-                    await dispatcher.broadcast_to_redis_channel(room, message)
+                    await redis_dispatcher.broadcast_to_redis_channel(room, message)
 
-                    dispatcher.store_message(room, message)
+                    redis_dispatcher.store_message(room, message)
 
                 # bbox message
                 if message.type == GischatMessageTypeEnum.BBOX:
@@ -325,9 +340,9 @@ async def websocket_endpoint(websocket: WebSocket, room: str) -> None:
                     logger.info(
                         f"🔳 [{room}]: ({message.author}): shared bbox using crs '{message.crs_authid}'"
                     )
-                    await dispatcher.broadcast_to_redis_channel(room, message)
+                    await redis_dispatcher.broadcast_to_redis_channel(room, message)
 
-                    dispatcher.store_message(room, message)
+                    redis_dispatcher.store_message(room, message)
 
                 # position message
                 if message.type == GischatMessageTypeEnum.POSITION:
@@ -336,9 +351,9 @@ async def websocket_endpoint(websocket: WebSocket, room: str) -> None:
                     logger.info(
                         f"📍 [{room}]: ({message.author}): shared position '{message.x} x {message.y}' using crs '{message.crs_authid}'"
                     )
-                    await dispatcher.broadcast_to_redis_channel(room, message)
+                    await redis_dispatcher.broadcast_to_redis_channel(room, message)
 
-                    dispatcher.store_message(room, message)
+                    redis_dispatcher.store_message(room, message)
 
                 # graphic model message
                 if message.type == GischatMessageTypeEnum.MODEL:
@@ -347,20 +362,106 @@ async def websocket_endpoint(websocket: WebSocket, room: str) -> None:
                     logger.info(
                         f"🧮 [{room}]: ({message.author}): shared graphic model '{message.model_name}'"
                     )
-                    await dispatcher.broadcast_to_redis_channel(room, message)
+                    await redis_dispatcher.broadcast_to_redis_channel(room, message)
 
-                    dispatcher.store_message(room, message)
+                    redis_dispatcher.store_message(room, message)
 
             except ValidationError as e:
                 message = GischatUncompliantMessage(reason=str(e))
 
                 logger.error(f"❌ Uncompliant message shared: {e}")
-                await dispatcher.broadcast_to_redis_channel(room, message)
+                await redis_dispatcher.broadcast_to_redis_channel(room, message)
 
     except WebSocketDisconnect:
 
         logger.info(f"❌ Websocket client disconnected from {room}")
-        dispatcher.remove_websocket(room, websocket)
+        redis_dispatcher.remove_websocket(room, websocket)
 
-        dispatcher.decrement_nb_connected_users(room)
-        await dispatcher.notify_nb_users(room)
+        redis_dispatcher.decrement_nb_connected_users(room)
+        await redis_dispatcher.notify_nb_users(room)
+
+
+# region matrix
+
+matrix_dispatcher = MatrixDispatcher.instance()
+
+
+if MATRIX_ENABLED:
+
+    @app.get("/matrix", response_class=HTMLResponse)
+    async def get_matrix_ws_page(request: Request):
+        return templates.TemplateResponse(
+            request=request,
+            name="qmatrixchat.html",
+        )
+
+    @app.post(
+        "/matrix/register",
+        response_model=MatrixRegisterResponse,
+    )
+    async def post_matrix_registration_request(
+        body: MatrixRegisterRequest,
+    ) -> MatrixRegisterResponse:
+        request_id = matrix_dispatcher.register_request(body)
+        logger.info("🧑‍💻 Matrix registration request received.")
+        return MatrixRegisterResponse(request_id=request_id)
+
+    @app.websocket("/matrix/{request_id}/ws")
+    async def matrix_websocket_endpoint(websocket: WebSocket, request_id: UUID) -> None:
+
+        # check if request is registered.
+        if not matrix_dispatcher.has_registered_request(request_id):
+            # Policy Violation
+            await websocket.close(
+                code=1008, reason=f"Request '{request_id}' is not registered."
+            )
+            return
+
+        try:
+            async_client = await matrix_dispatcher.accept_websocket(
+                request_id, websocket
+            )
+        except Exception as e:
+            logger.error(f"❌ Error while accepting Matrix websocket: {e}")
+            await websocket.close(
+                code=1000, reason=f"Error while accepting websocket: {e}"
+            )
+            return
+
+        room_id = matrix_dispatcher.get_registration_request_room_id(request_id)
+
+        await async_client.sync(timeout=30000)
+
+        try:
+            while True:
+                payload = await websocket.receive_json()
+
+                try:
+                    message = GischatMessageModel(**payload)
+
+                    # text message
+                    if message.type == GischatMessageTypeEnum.TEXT:
+                        print("payload: ", payload)
+                        message = QMatrixChatTextMessage(**payload)
+
+                        logger.info(
+                            f"💬 [matrix]: ({message.author}): '{message.text}'"
+                        )
+                        await async_client.room_send(
+                            room_id=room_id,
+                            message_type="m.room.message",
+                            content={"msgtype": "m.text", "body": message.text},
+                        )
+
+                except ValidationError as e:
+                    message = GischatUncompliantMessage(reason=str(e))
+                    logger.error(f"❌ Uncompliant message shared: {e}")
+                    await websocket.send_json(jsonable_encoder(message))
+
+        except WebSocketDisconnect:
+
+            logger.info("❌ Matrix websocket client disconnected.")
+            await matrix_dispatcher.remove_websocket(request_id, websocket)
+
+
+# endregion

@@ -13,6 +13,13 @@
 
     </head>
 
+    <style>
+        th.fit, td.fit {
+        white-space: nowrap;
+        width: 1%;
+        }
+    </style>
+
 <body class="container">
 
 <div class="card mt-2">
@@ -38,22 +45,18 @@
 
             <form class="d-flex flex-column flex-md-row align-items-md-center gap-2 mb-2">
 
+                <label for="authorId">Nickname:</label>
+                <input type="text" class="form-control" id="authorId" aria-describedby="nickname" placeholder="Enter nickname" value="Geotribu">
+
+                <label for="avatarId">Avatar:</label>
+                <input type="text" class="form-control" id="avatarId" aria-describedby="avatar" placeholder="Enter avatar" value="mGeoPackage.svg">
+
                 <label for="room-dropdown" class="form-label">Room:</label>
                 <select id="room-dropdown" class="form-select"></select>
 
-                <button class="btn btn-primary mb-2 mr-sm-2" id="connectButton" onclick="onConnectButtonClick(event)">Connect</button>
-                <button class="btn btn-outline-primary mb-2 mr-sm-2" id="rulesButton" onclick="onRulesButtonClick(event)">Rules</button>
-                <button class="btn btn-outline-primary mb-2 mr-sm-2" id="statusButton" onclick="onStatusButtonClick(event)">Status</button>
-
-            </form>
-
-            <form class="d-flex flex-column flex-md-row align-items-md-center gap-2 mb-2">
-
-                <label for="authorId">Nickname:</label>
-                <input type="text" class="form-control mb-2 mr-sm-2" id="authorId" aria-describedby="nickname" placeholder="Enter nickname" value="Geotribu">
-
-                <label for="avatarId">Avatar:</label>
-                <input type="text" class="form-control mb-2 mr-sm-2" id="avatarId" aria-describedby="avatar" placeholder="Enter avatar" value="mGeoPackage.svg">
+                <button class="btn btn-primary" id="connectButton" onclick="onConnectButtonClick(event)">Connect</button>
+                <button class="btn btn-outline-primary" id="rulesButton" onclick="onRulesButtonClick(event)">Rules</button>
+                <button class="btn btn-outline-primary" id="statusButton" onclick="onStatusButtonClick(event)">Status</button>
 
             </form>
 
@@ -86,19 +89,19 @@
 
             <form class="d-flex flex-column flex-md-row align-items-md-center gap-2 mb-2">
 
-                <label for="messageText" class="me-2 mb-0">Message</label>
-                <input type="text" class="form-control mb-2 mr-sm-2" id="messageText" aria-describedby="textMessage" placeholder="Your message here" disabled>
+                <label for="messageText">Message:</label>
+                <input type="text" class="form-control" id="messageText" aria-describedby="textMessage" placeholder="Your message here" disabled>
 
-                <button class="btn btn-primary mb-2 mr-sm-2" onclick="sendMessage(event)" id="sendButton" disabled>Send</button>
+                <button class="btn btn-primary" onclick="sendMessage(event)" id="sendButton" disabled>Send</button>
 
             </form>
 
             <table class="table">
                 <thead>
                     <tr>
-                    <th scope="col">⌚<span class="visually-hidden">Time</span></th>
-                    <th scope="col">🖨️<span class="visually-hidden">Printer</span></th>
-                    <th scope="col">🧑<span class="visually-hidden">User</span></th>
+                    <th scope="col" class="fit">⌚<span class="visually-hidden">Time</span></th>
+                    <th scope="col" class="fit">🖨️<span class="visually-hidden">Printer</span></th>
+                    <th scope="col" class="fit">🧑<span class="visually-hidden">User</span></th>
                     <th scope="col">Message</th>
                     </tr>
                 </thead>
@@ -157,13 +160,13 @@
         hour12: false
     });
 
-    function clearMessages() {
+    const clearMessages = () => {
         while (qchatTableBodyElement.firstChild) {
             qchatTableBodyElement.removeChild(qchatTableBodyElement.firstChild);
         }
     }
 
-    function displayMessage(timestamp, messageType, author, message, rowClasses) {
+    const displayMessage = (timestamp, messageType, author, message, rowClasses) => {
         // received timestamp is in seconds.
         const messageDate = new Date(timestamp * 1000);
 
@@ -184,11 +187,11 @@
         qchatTableBodyElement.prepend(rowElement);
     }
 
-    function displayAdminMessage(message) {
+    const displayAdminMessage = (message) => {
         displayMessage(Math.floor(Date.now() / 1000), "🛠️", "Admin", message, "table-warning");
     }
 
-    function onRulesButtonClick(event) {
+    const onRulesButtonClick = (event) => {
         const protocol = ssl ? "https" : "http";
         fetch(`${protocol}://${instance}/rules`)
             .then(response => response.json())
@@ -196,7 +199,7 @@
         event.preventDefault()
     }
 
-    function onStatusButtonClick(event) {
+    const onStatusButtonClick = (event) => {
         const protocol = ssl ? "https" : "http";
         fetch(`${protocol}://${instance}/status`)
             .then(response => response.json())
@@ -204,7 +207,7 @@
         event.preventDefault()
     }
 
-    function setFormEnabled(enabled) {
+    const setFormEnabled = (enabled) => {
         roomDropdown.disabled = enabled;
         authorElement.disabled = enabled;
         avatarElement.disabled = enabled;
@@ -213,12 +216,12 @@
         document.getElementById("connectButton").innerText = enabled ? "Disconnect" : "Connect";
     }
 
-    function setRoomText(room, nbUsers) {
+    const setRoomText = (room, nbUsers) => {
         qchatHeaderElement.innerHTML = `💬 QChat - ${room} <span class="badge bg-primary">${nbUsers}</span>`;
         document.title = `💬 QChat - ${room} (${nbUsers})`;
     }
 
-    function onConnectButtonClick(event) {
+    const onConnectButtonClick = (event) => {
         if (connected) {
             websocket.close();
             event.preventDefault();
@@ -309,7 +312,7 @@
         event.preventDefault();
     }
 
-    function sendMessage(event) {
+    const sendMessage = (event) => {
         if (!connected) {
             displayAdminMessage("Not connected to websocket");
             event.preventDefault();
