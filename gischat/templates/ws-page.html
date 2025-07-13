@@ -2,141 +2,220 @@
 <html lang="en">
 
 <head>
-    <title>gischat</title>
+    <title>💬 QChat</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
-          integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
-    <style>
 
-        .card {
-            margin-top: .5rem;
-        }
-    </style>
-</head>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-LN+7fdVzj6u52u30Kp6M/trliBMCMKTyK833zpbD+pXdCLuTusPj697FH4R/5mcr" crossorigin="anonymous">
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-ndDqU0Gzau9qJ1lfW4pNLlhNTkCfHzAVBReH9diLvGRem5+R9g2FzA8ZGN954O5Q" crossorigin="anonymous"></script>
+
+    </head>
 
 <body class="container">
 
-<div class="card">
+<div class="card mt-2">
 
-    <div class="card-body">
+    <div id="qchat-settings-header" class="card-header">
 
-        <form class="form-inline">
-
-            <label for="instance">Instance URL</label>
-            <input type="text" class="form-control mb-2 mr-sm-2" id="instance" aria-describedby="instanceUrl" placeholder="Enter instance URL">
-
-            <input type="checkbox" class="form-check-input mb-2 mr-sm-2" value="" id="ssl" checked>
-            <label class="form-check-label" for="ssl">SSL</label>
-
-            <button class="btn btn-outline-primary mb-2 mr-sm-2" id="rulesButton" onclick="onRulesButtonClick(event)">Rules</button>
-            <button class="btn btn-outline-primary mb-2 mr-sm-2" id="statusButton" onclick="onStatusButtonClick(event)">Status</button>
-
-        </form>
-
-        <hr class="hr">
-
-        <form class="form-inline">
-
-            <label for="roomId">Room</label>
-            <input type="text" class="form-control mb-2 mr-sm-2" id="roomId" aria-describedby="room" placeholder="Enter Room" value="QGIS">
-
-            <button class="btn btn-outline-primary mb-2 mr-sm-2" id="listRoomsButton" onclick="onListRoomsButtonClick(event)">List available rooms</button>
-            <button class="btn btn-primary mb-2 mr-sm-2" id="connectButton" onclick="onConnectButtonClick(event)">Connect</button>
-
-        </form>
-
-        <form class="form-inline">
-
-            <label for="authorId">Nickname</label>
-            <input type="text" class="form-control mb-2 mr-sm-2" id="authorId" aria-describedby="nickname" placeholder="Enter nickname" value="Geotribu">
-
-            <label for="avatarId">Avatar</label>
-            <input type="text" class="form-control mb-2 mr-sm-2" id="avatarId" aria-describedby="avatar" placeholder="Enter avatar" value="mGeoPackage.svg">
-
-        </form>
-
-        <hr class="hr">
-
-        <form class="form-inline">
-
-            <label for="messageText">Message</label>
-            <input type="text" class="form-control mb-2 mr-sm-2" id="messageText" aria-describedby="textMessage" placeholder="Type message" disabled>
-
-            <button class="btn btn-primary mb-2 mr-sm-2" onclick="sendMessage(event)" id="sendButton" disabled>Send</button>
-
-        </form>
+        <h5 class="mb-0">
+            <button
+                class="btn"
+                data-bs-toggle="collapse"
+                data-bs-target="#qchat-settings"
+                aria-expanded="true"
+                aria-controls="qchat-settings"
+            >⚙️ QChat Settings
+            </button>
+        </h5>
 
     </div>
+
+    <div id="qchat-settings" class="collapse show" aria-labelledby="qchat-settings-header">
+
+        <div class="card-body">
+
+            <form class="d-flex flex-column flex-md-row align-items-md-center gap-2 mb-2">
+
+                <label for="room-dropdown" class="form-label">Room:</label>
+                <select id="room-dropdown" class="form-select"></select>
+
+                <button class="btn btn-primary mb-2 mr-sm-2" id="connectButton" onclick="onConnectButtonClick(event)">Connect</button>
+                <button class="btn btn-outline-primary mb-2 mr-sm-2" id="rulesButton" onclick="onRulesButtonClick(event)">Rules</button>
+                <button class="btn btn-outline-primary mb-2 mr-sm-2" id="statusButton" onclick="onStatusButtonClick(event)">Status</button>
+
+            </form>
+
+            <form class="d-flex flex-column flex-md-row align-items-md-center gap-2 mb-2">
+
+                <label for="authorId">Nickname:</label>
+                <input type="text" class="form-control mb-2 mr-sm-2" id="authorId" aria-describedby="nickname" placeholder="Enter nickname" value="Geotribu">
+
+                <label for="avatarId">Avatar:</label>
+                <input type="text" class="form-control mb-2 mr-sm-2" id="avatarId" aria-describedby="avatar" placeholder="Enter avatar" value="mGeoPackage.svg">
+
+            </form>
+
+        </div>
+    </div>
+
 </div>
 
+<div class="card mt-2">
 
-<div class="card">
+    <div id="qchat-header" class="card-header">
 
-    <div class="card-body">
-        <h5 id="roomCardTitle" class="card-title" style="display: none;">💬 Room</h5>
-        <ul id="messages" class="list-group">
-        </ul><span class="badge badge-light">4</span>
+        <h5 class="mb-0">
+            <button
+                id="qchat-header-button"
+                class="btn"
+                data-bs-toggle="collapse"
+                data-bs-target="#qchat"
+                aria-expanded="true"
+                aria-controls="qchat"
+            >💬 QChat
+            </button>
+        </h5>
+
     </div>
+
+    <div id="qchat" class="collapse" aria-labelledby="qchat-header">
+
+        <div class="card-body">
+
+            <form class="d-flex flex-column flex-md-row align-items-md-center gap-2 mb-2">
+
+                <label for="messageText" class="me-2 mb-0">Message</label>
+                <input type="text" class="form-control mb-2 mr-sm-2" id="messageText" aria-describedby="textMessage" placeholder="Your message here" disabled>
+
+                <button class="btn btn-primary mb-2 mr-sm-2" onclick="sendMessage(event)" id="sendButton" disabled>Send</button>
+
+            </form>
+
+            <table class="table">
+                <thead>
+                    <tr>
+                    <th scope="col">⌚<span class="visually-hidden">Time</span></th>
+                    <th scope="col">🖨️<span class="visually-hidden">Printer</span></th>
+                    <th scope="col">🧑<span class="visually-hidden">User</span></th>
+                    <th scope="col">Message</th>
+                    </tr>
+                </thead>
+                <tbody id="messages-table-body">
+                </tbody>
+            </table>
+        </div>
+
+    </div>
+
 </div>
 
 
 <script>
+
     let websocket = null;
     let connected = false;
-    const instance = document.getElementById('instance');
-    instance.value = window.location.host;
-    const ssl = document.getElementById("ssl");
-    ssl.checked = window.location.protocol.startsWith("https");
-    const room = document.getElementById("roomId");
-    const roomCardTitle = document.getElementById("roomCardTitle");
 
-    function displayMessage(msg) {
-        const messages = document.getElementById('messages');
-        const message = document.createElement('li');
-        message.classList.add("list-group-item");
-        const content = document.createTextNode(msg);
-        message.appendChild(content);
-        messages.insertBefore(message, messages.firstChild);
+    const qchatSettingsElement = document.getElementById("qchat-settings");
+    const qchatElement = document.getElementById("qchat");
+
+    const instance = window.location.host;
+    const ssl = window.location.protocol.startsWith("https");
+
+    const roomDropdown = document.getElementById("room-dropdown");
+
+    // populate rooms with API call
+    const protocol = ssl ? "https" : "http";
+    fetch(`${protocol}://${instance}/rooms`)
+        .then(response => response.json())
+        .then(data => {
+            data.forEach(room => {
+                const option = document.createElement("option");
+                option.value = room;        // Valeur à récupérer
+                option.text = room;       // Texte affiché
+                roomDropdown.appendChild(option);
+            });
+        })
+        .catch(error => {
+            console.error("Error when fetching room data:", error);
+        });
+
+    const qchatHeaderElement = document.getElementById("qchat-header-button");
+
+    const authorElement = document.getElementById("authorId");
+    authorElement.value = `jd_${(Math.random() * 10000).toFixed(0)}`;
+    const avatarElement = document.getElementById("avatarId");
+
+    const textMessageElement = document.getElementById("messageText");
+    const qchatTableBodyElement = document.getElementById("messages-table-body");
+
+    const timeFormatter = new Intl.DateTimeFormat("fr-FR", {
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: false
+    });
+
+    function clearMessages() {
+        while (qchatTableBodyElement.firstChild) {
+            qchatTableBodyElement.removeChild(qchatTableBodyElement.firstChild);
+        }
+    }
+
+    function displayMessage(timestamp, messageType, author, message, rowClasses) {
+        // received timestamp is in seconds.
+        const messageDate = new Date(timestamp * 1000);
+
+        const rowElement = document.createElement("tr");
+        rowElement.classList.add(rowClasses);
+
+        [
+            timeFormatter.format(messageDate),
+            messageType,
+            author,
+            message
+        ].forEach((text) => {
+            const cell = document.createElement("td");
+            cell.innerText = text;
+            rowElement.appendChild(cell);
+        });
+
+        qchatTableBodyElement.prepend(rowElement);
+    }
+
+    function displayAdminMessage(message) {
+        displayMessage(Math.floor(Date.now() / 1000), "🛠️", "Admin", message, "table-warning");
     }
 
     function onRulesButtonClick(event) {
-        const protocol = ssl.checked ? "https" : "http";
-        fetch(`${protocol}://${instance.value}/rules`)
+        const protocol = ssl ? "https" : "http";
+        fetch(`${protocol}://${instance}/rules`)
             .then(response => response.json())
-            .then(data => displayMessage(`Instance rules: ${data.rules}`));
+            .then(data => alert(`Instance rules:\n\n${data.rules}`));
         event.preventDefault()
     }
 
     function onStatusButtonClick(event) {
-        const protocol = ssl.checked ? "https" : "http";
-        fetch(`${protocol}://${instance.value}/status`)
+        const protocol = ssl ? "https" : "http";
+        fetch(`${protocol}://${instance}/status`)
             .then(response => response.json())
-            .then(data => displayMessage(`Instance status: ${data.status} - users in rooms: ${data.rooms.map(room => `'${room.name}': ${room.nb_connected_users}`).join(",")}`));
-        event.preventDefault()
-    }
-
-    function onListRoomsButtonClick(event) {
-        const protocol = ssl.checked ? "https" : "http";
-        fetch(`${protocol}://${instance.value}/rooms`)
-            .then(response => response.json())
-            .then(data => displayMessage(`Available rooms: ${data.join(',')}`));
+            .then(data => alert(`Instance status: ${data.status}\n\nUsers:\n${data.rooms.map(room => `${room.name}: ${room.nb_connected_users}`).join("\n")}`));
         event.preventDefault()
     }
 
     function setFormEnabled(enabled) {
-        instance.disabled = enabled;
-        ssl.disabled = enabled;
-        document.getElementById("roomId").disabled = enabled;
-        document.getElementById("avatarId").disabled = !enabled;
-        document.getElementById("messageText").disabled = !enabled;
-        document.getElementById("sendButton").disabled = !enabled;
+        roomDropdown.disabled = enabled;
+        authorElement.disabled = enabled;
+        avatarElement.disabled = enabled;
+        textMessageElement.disabled = !enabled;
         document.getElementById("sendButton").disabled = !enabled;
         document.getElementById("connectButton").innerText = enabled ? "Disconnect" : "Connect";
     }
 
     function setRoomText(room, nbUsers) {
-        roomCardTitle.innerText = `💬 Room ${room} (${nbUsers})`;
-        roomCardTitle.style.display = "inline-block";
+        qchatHeaderElement.innerHTML = `💬 QChat - ${room} <span class="badge bg-primary">${nbUsers}</span>`;
+        document.title = `💬 QChat - ${room} (${nbUsers})`;
     }
 
     function onConnectButtonClick(event) {
@@ -145,38 +224,45 @@
             event.preventDefault();
             return;
         }
-        if (!room.value) {
+
+        if (!roomDropdown.value) {
             alert("Room must be set");
             return;
         }
-        const ws_protocol = ssl.checked ? "wss" : "ws";
-        const ws_url = `${ws_protocol}://${instance.value}/room/${room.value}/ws`;
-        const user = document.getElementById("authorId").value;
+
+        const ws_protocol = ssl ? "wss" : "ws";
+        const ws_url = `${ws_protocol}://${instance}/room/${roomDropdown.value}/ws`;
+        const user = authorElement.value;
+
         websocket = new WebSocket(ws_url);
+
         websocket.onopen = (event) => {
-            displayMessage(`Connected to websocket in room ${room.value}`);
+            clearMessages();
+            displayAdminMessage(`Connected to room ${roomDropdown.value}`);
             connected = true;
             setFormEnabled(true);
-            setRoomText(room.value, "-");
+            setRoomText(roomDropdown.value, "-");
+            qchatSettingsElement.classList.remove("show");
+            qchatElement.classList.add("show");
             websocket.send(JSON.stringify({type: "newcomer", newcomer: user}));
         }
+
         websocket.onmessage = (event) => {
             const data = JSON.parse(event.data);
             const type = data.type;
 
             switch (type) {
                 case "uncompliant":
-                    displayMessage(`Uncompliant message: ${message.reason}`);
+                    displayMessage(data.timestamp, "🛠️", "Admin",`Uncompliant message: ${data.reason}`, "table-warning");
                     break;
                 case "text":
-                    displayMessage(`[${data.author}] (${new Date().toLocaleTimeString()}): ${data.text}`);
+                    displayMessage(data.timestamp, "💬", data.author, data.text);
                     break;
                 case "image":
-                    displayMessage(`${data.author} sent an image`);
+                    displayMessage(data.timestamp, "🖼️", data.author, `${data.author} sent an image`, "table-info");
                     break;
                 case "nb_users":
-                    console.log(`${data.nb_users} user(s) present in the room`);
-                    setRoomText(room.value, data.nb_users);
+                    setRoomText(roomDropdown.value, data.nb_users);
                     break;
                 case "newcomer":
                     console.log(`${data.newcomer} has joined the room`);
@@ -185,57 +271,64 @@
                     console.log(`${data.exiter} has left the room`);
                     break;
                 case "like":
-                    displayMessage(`${data.liker_author} liked your message "${data.message}"`);
+                    displayMessage(data.timestamp, "👍", data.liker_author, `Liked ${data.liked_author}'s message`, "table-success");
                     break;
                 case "geojson":
-                    displayMessage(`${data.author} sent the "${data.layer_name}" geojson layer (${data.geojson.features.length} features using ${data.crs_authid})`);
+                    displayMessage(data.timestamp, "🌍", data.author, `Shared the "${data.layer_name}" layer - ${data.geojson.features.length} features using ${data.crs_authid}`, "table-info");
                     break;
                 case "crs":
-                    displayMessage(`${data.author} shared the crs '${data.crs_authid}'`);
+                    displayMessage(data.timestamp, "📐", data.author, `Shared the CRS ${data.crs_authid}`, "table-info");
                     break;
                 case "bbox":
-                    displayMessage(`${data.author} shared a bbox using '${data.crs_authid}'`);
+                    displayMessage(data.timestamp, "🔳", data.author, `Shared a BBOX using ${data.crs_authid}`, "table-info");
                     break;
                 case "position":
-                    displayMessage(`${data.author} shared the ${data.x}-${data.y} position using '${data.crs_authid}'`);
+                    displayMessage(data.timestamp, "📍", data.author, `Shared the ${data.x}-${data.y} position using ${data.crs_authid}`, "table-info");
+                    break;
+                case "model":
+                    displayMessage(data.timestamp, "🧮", data.author, `Shared the model ${data.model_name}`, "table-info");
                     break;
                 default:
-                    displayMessage(`Unknown message received: ${data}`);
+                    displayAdminMessage(`Unknown message received: ${data}`);
             }
         };
+
         websocket.onerror = (error) => {
-            displayMessage(`Websocket error ${JSON.stringify(error)}`);
+            displayAdminMessage(`Websocket error ${JSON.stringify(error)}`);
             console.log("Websocket error", error);
         };
+
         websocket.onclose = (event) => {
             connected = false;
-            displayMessage("Disconnected from websocket");
+            displayAdminMessage("Disconnected from websocket");
             setFormEnabled(false);
-            roomCardTitle.style.display = "none";
+            qchatHeaderElement.innerHTML = "💬 QChat";
+            document.title = "💬 QChat";
         }
+
         event.preventDefault();
     }
 
     function sendMessage(event) {
         if (!connected) {
-            displayMessage("Not connected to websocket");
+            displayAdminMessage("Not connected to websocket");
             event.preventDefault();
             return;
         }
-        const message = document.getElementById("messageText");
-        const author = document.getElementById("authorId");
-        const avatar = document.getElementById("avatarId");
-        if (!message.value || !author.value) {
-            displayMessage("Impossible: author and message must be set !");
+
+        if (!textMessageElement.value || !authorElement.value) {
+            displayAdminMessage("Impossible: author and message must be set !");
             event.preventDefault();
             return;
         }
-        websocket.send(JSON.stringify({type: "text", text: message.value, author: author.value, avatar: avatar.value}));
-        message.value = '';
+
+        websocket.send(JSON.stringify({type: "text", text: textMessageElement.value, author: authorElement.value, avatar: avatarElement.value}));
+
+        textMessageElement.value = '';
         event.preventDefault();
     }
 
-    window.onload = () => displayMessage("Not connected: please connect to a room to chat");
+    window.onload = () => displayAdminMessage("Not connected: please connect to a room to chat");
 </script>
 </body>
 </html>

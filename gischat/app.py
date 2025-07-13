@@ -277,7 +277,7 @@ async def websocket_endpoint(websocket: WebSocket, room: str) -> None:
                     message = GischatLikeMessage(**payload)
 
                     logger.info(
-                        f"🤝 [{room}]: {message.liker_author} liked {message.liked_author}'s message ({message.message})"
+                        f"👍 [{room}]: {message.liker_author} liked {message.liked_author}'s message ({message.message})"
                     )
                     await dispatcher.broadcast_to_redis_channel(room, message)
 
