@@ -6,6 +6,7 @@ from starlette.testclient import TestClient
 from gischat.models import GischatMessageTypeEnum
 from tests import MAX_GEOJSON_FEATURES, WGS84_AUTHID, WGS84_WKT
 from tests.conftest import get_test_rooms
+from tests.test_utils import is_subdict
 
 GEOJSON_PATH_OK = "tests/data/tissot.geojson"
 GEOJSON_PATH_NOK = "tests/data/points.geojson"
@@ -15,10 +16,13 @@ GEOJSON_PATH_NOK = "tests/data/points.geojson"
 def test_send_and_receive_geojson(client: TestClient, room: str):
     with client.websocket_connect(f"/room/{room}/ws") as websocket:
 
-        assert websocket.receive_json() == {
-            "type": GischatMessageTypeEnum.NB_USERS.value,
-            "nb_users": 1,
-        }
+        assert is_subdict(
+            {
+                "type": GischatMessageTypeEnum.NB_USERS.value,
+                "nb_users": 1,
+            },
+            websocket.receive_json(),
+        )
 
         with open(GEOJSON_PATH_OK) as file:
             websocket.send_json(
@@ -50,10 +54,13 @@ def test_send_and_receive_geojson(client: TestClient, room: str):
 def test_send_wrong_geojson(client: TestClient, room: str):
     with client.websocket_connect(f"/room/{room}/ws") as websocket:
 
-        assert websocket.receive_json() == {
-            "type": GischatMessageTypeEnum.NB_USERS.value,
-            "nb_users": 1,
-        }
+        assert is_subdict(
+            {
+                "type": GischatMessageTypeEnum.NB_USERS.value,
+                "nb_users": 1,
+            },
+            websocket.receive_json(),
+        )
 
         with open(GEOJSON_PATH_NOK) as file:
             websocket.send_json(
@@ -68,7 +75,10 @@ def test_send_wrong_geojson(client: TestClient, room: str):
                 }
             )
 
-        assert websocket.receive_json() == {
-            "type": GischatMessageTypeEnum.UNCOMPLIANT.value,
-            "reason": f"Too many geojson features : 501 vs max {int(MAX_GEOJSON_FEATURES)} allowed",
-        }
+        assert is_subdict(
+            {
+                "type": GischatMessageTypeEnum.UNCOMPLIANT.value,
+                "reason": f"Too many geojson features : 501 vs max {int(MAX_GEOJSON_FEATURES)} allowed",
+            },
+            websocket.receive_json(),
+        )

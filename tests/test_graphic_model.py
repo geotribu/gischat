@@ -3,16 +3,20 @@ from starlette.testclient import TestClient
 
 from gischat.models import GischatMessageTypeEnum
 from tests.conftest import get_test_rooms
+from tests.test_utils import is_subdict
 
 
 @pytest.mark.parametrize("room", get_test_rooms())
 def test_send_and_receive_geojson(client: TestClient, room: str):
     with client.websocket_connect(f"/room/{room}/ws") as websocket:
 
-        assert websocket.receive_json() == {
-            "type": GischatMessageTypeEnum.NB_USERS.value,
-            "nb_users": 1,
-        }
+        assert is_subdict(
+            {
+                "type": GischatMessageTypeEnum.NB_USERS.value,
+                "nb_users": 1,
+            },
+            websocket.receive_json(),
+        )
 
         websocket.send_json(
             {
