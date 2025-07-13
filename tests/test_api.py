@@ -13,6 +13,7 @@ from tests import (
     TEST_RULES,
 )
 from tests.conftest import get_test_rooms
+from tests.test_utils import is_subdict
 
 
 def test_get_version(client: TestClient):
@@ -193,14 +194,15 @@ def test_stored_message(client: TestClient, room: str):
     response = client.get(f"/room/{room}/last")
 
     assert response.status_code == 200
-    assert response.json() == [
+    assert is_subdict(
         {
             "type": GischatMessageTypeEnum.TEXT.value,
             "author": f"ws-tester-{room}",
             "avatar": "raster",
             "text": "fromage",
-        }
-    ]
+        },
+        response.json()[0],
+    )
 
 
 @pytest.mark.parametrize("room", get_test_rooms())

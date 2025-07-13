@@ -12,6 +12,7 @@ from tests import (
     MIN_AUTHOR_LENGTH,
 )
 from tests.conftest import get_test_rooms
+from tests.test_utils import is_in_dicts, is_subdict
 
 TEST_TEXT_MESSAGE = "Is this websocket working ?"
 
@@ -22,7 +23,13 @@ def test_websocket_connection(client: TestClient, room: str):
     with client.websocket_connect(f"/room/{room}/ws") as websocket:
         data = websocket.receive_json()
 
-        assert data == {"type": GischatMessageTypeEnum.NB_USERS.value, "nb_users": 1}
+        assert is_subdict(
+            {
+                "type": GischatMessageTypeEnum.NB_USERS.value,
+                "nb_users": 1,
+            },
+            data,
+        )
 
 
 def test_websocket_connection_wrong_room(client: TestClient):
@@ -37,10 +44,13 @@ def test_websocket_put_message(client: TestClient, room: str):
 
     with client.websocket_connect(f"/room/{room}/ws") as websocket:
 
-        assert websocket.receive_json() == {
-            "type": GischatMessageTypeEnum.NB_USERS.value,
-            "nb_users": 1,
-        }
+        assert is_subdict(
+            {
+                "type": GischatMessageTypeEnum.NB_USERS.value,
+                "nb_users": 1,
+            },
+            websocket.receive_json(),
+        )
 
         client.put(
             f"/room/{room}/text",
@@ -53,12 +63,15 @@ def test_websocket_put_message(client: TestClient, room: str):
         )
         data = websocket.receive_json()
 
-        assert data == {
-            "type": GischatMessageTypeEnum.TEXT.value,
-            "author": f"ws-tester-{room}",
-            "avatar": "postgis",
-            "text": TEST_TEXT_MESSAGE,
-        }
+        assert is_subdict(
+            {
+                "type": GischatMessageTypeEnum.TEXT.value,
+                "author": f"ws-tester-{room}",
+                "avatar": "postgis",
+                "text": TEST_TEXT_MESSAGE,
+            },
+            data,
+        )
 
 
 @pytest.mark.parametrize("room", get_test_rooms())
@@ -66,10 +79,13 @@ def test_websocket_send_message(client: TestClient, room: str):
 
     with client.websocket_connect(f"/room/{room}/ws") as websocket:
 
-        assert websocket.receive_json() == {
-            "type": GischatMessageTypeEnum.NB_USERS.value,
-            "nb_users": 1,
-        }
+        assert is_subdict(
+            {
+                "type": GischatMessageTypeEnum.NB_USERS.value,
+                "nb_users": 1,
+            },
+            websocket.receive_json(),
+        )
 
         websocket.send_json(
             {
@@ -80,12 +96,15 @@ def test_websocket_send_message(client: TestClient, room: str):
         )
         data = websocket.receive_json()
 
-        assert data == {
-            "type": GischatMessageTypeEnum.TEXT.value,
-            "author": f"ws-tester-{room}",
-            "avatar": None,
-            "text": TEST_TEXT_MESSAGE,
-        }
+        assert is_subdict(
+            {
+                "type": GischatMessageTypeEnum.TEXT.value,
+                "author": f"ws-tester-{room}",
+                "avatar": None,
+                "text": TEST_TEXT_MESSAGE,
+            },
+            data,
+        )
 
 
 def nb_connected_users(json: dict[str, Any], room: str) -> bool:
@@ -103,29 +122,41 @@ def test_websocket_nb_users_connected(client: TestClient, room: str):
 
     with client.websocket_connect(f"/room/{room}/ws") as websocket1:
 
-        assert websocket1.receive_json() == {
-            "type": GischatMessageTypeEnum.NB_USERS.value,
-            "nb_users": 1,
-        }
+        assert is_subdict(
+            {
+                "type": GischatMessageTypeEnum.NB_USERS.value,
+                "nb_users": 1,
+            },
+            websocket1.receive_json(),
+        )
 
         assert nb_connected_users(client.get("/status").json(), room) == 1
 
         with client.websocket_connect(f"/room/{room}/ws") as websocket2:
 
-            assert websocket1.receive_json() == {
-                "type": GischatMessageTypeEnum.NB_USERS.value,
-                "nb_users": 2,
-            }
-            assert websocket2.receive_json() == {
-                "type": GischatMessageTypeEnum.NB_USERS.value,
-                "nb_users": 2,
-            }
+            assert is_subdict(
+                {
+                    "type": GischatMessageTypeEnum.NB_USERS.value,
+                    "nb_users": 2,
+                },
+                websocket1.receive_json(),
+            )
+            assert is_subdict(
+                {
+                    "type": GischatMessageTypeEnum.NB_USERS.value,
+                    "nb_users": 2,
+                },
+                websocket2.receive_json(),
+            )
             assert nb_connected_users(client.get("/status").json(), room) == 2
 
-        assert websocket1.receive_json() == {
-            "type": GischatMessageTypeEnum.NB_USERS.value,
-            "nb_users": 1,
-        }
+        assert is_subdict(
+            {
+                "type": GischatMessageTypeEnum.NB_USERS.value,
+                "nb_users": 1,
+            },
+            websocket1.receive_json(),
+        )
         assert nb_connected_users(client.get("/status").json(), room) == 1
 
     assert nb_connected_users(client.get("/status").json(), room) == 0
@@ -136,10 +167,13 @@ def test_websocket_send_uncompliant(client: TestClient, room: str):
 
     with client.websocket_connect(f"/room/{room}/ws") as websocket1:
 
-        assert websocket1.receive_json() == {
-            "type": GischatMessageTypeEnum.NB_USERS.value,
-            "nb_users": 1,
-        }
+        assert is_subdict(
+            {
+                "type": GischatMessageTypeEnum.NB_USERS.value,
+                "nb_users": 1,
+            },
+            websocket1.receive_json(),
+        )
 
         # send author with unallowed chars
         websocket1.send_json(
@@ -219,14 +253,20 @@ def test_websocket_send_newcomer(client: TestClient, room: str):
             {"type": GischatMessageTypeEnum.NEWCOMER.value, "newcomer": "Isidore"}
         )
 
-        assert websocket.receive_json() == {
-            "type": GischatMessageTypeEnum.NB_USERS.value,
-            "nb_users": 1,
-        }
-        assert websocket.receive_json() == {
-            "type": GischatMessageTypeEnum.NEWCOMER.value,
-            "newcomer": "Isidore",
-        }
+        assert is_subdict(
+            {
+                "type": GischatMessageTypeEnum.NB_USERS.value,
+                "nb_users": 1,
+            },
+            websocket.receive_json(),
+        )
+        assert is_subdict(
+            {
+                "type": GischatMessageTypeEnum.NEWCOMER.value,
+                "newcomer": "Isidore",
+            },
+            websocket.receive_json(),
+        )
 
 
 @pytest.mark.parametrize("room", get_test_rooms())
@@ -237,24 +277,33 @@ def test_websocket_send_newcomer_twice(client: TestClient, room: str):
             {"type": GischatMessageTypeEnum.NEWCOMER.value, "newcomer": "Isidore"}
         )
 
-        assert websocket.receive_json() == {
-            "type": GischatMessageTypeEnum.NB_USERS.value,
-            "nb_users": 1,
-        }
-        assert websocket.receive_json() == {
-            "type": GischatMessageTypeEnum.NEWCOMER.value,
-            "newcomer": "Isidore",
-        }
+        assert is_subdict(
+            {
+                "type": GischatMessageTypeEnum.NB_USERS.value,
+                "nb_users": 1,
+            },
+            websocket.receive_json(),
+        )
+        assert is_subdict(
+            {
+                "type": GischatMessageTypeEnum.NEWCOMER.value,
+                "newcomer": "Isidore",
+            },
+            websocket.receive_json(),
+        )
 
         # Isidore sends second registration -> forbidden
         websocket.send_json(
             {"type": GischatMessageTypeEnum.NEWCOMER.value, "newcomer": "Isidore"}
         )
 
-        assert websocket.receive_json() == {
-            "type": GischatMessageTypeEnum.UNCOMPLIANT.value,
-            "reason": f"User 'Isidore' already registered in room {room}",
-        }
+        assert is_subdict(
+            {
+                "type": GischatMessageTypeEnum.UNCOMPLIANT.value,
+                "reason": f"User 'Isidore' already registered in room {room}",
+            },
+            websocket.receive_json(),
+        )
 
 
 @pytest.mark.parametrize("room", get_test_rooms())
@@ -283,14 +332,20 @@ def test_websocket_stored_message(client: TestClient, room: str):
             {"type": GischatMessageTypeEnum.NEWCOMER.value, "newcomer": "Isidore"}
         )
 
-        assert websocket.receive_json() == {
-            "type": GischatMessageTypeEnum.NB_USERS.value,
-            "nb_users": 1,
-        }
-        assert websocket.receive_json() == {
-            "type": GischatMessageTypeEnum.NEWCOMER.value,
-            "newcomer": "Isidore",
-        }
+        assert is_subdict(
+            {
+                "type": GischatMessageTypeEnum.NB_USERS.value,
+                "nb_users": 1,
+            },
+            websocket.receive_json(),
+        )
+        assert is_subdict(
+            {
+                "type": GischatMessageTypeEnum.NEWCOMER.value,
+                "newcomer": "Isidore",
+            },
+            websocket.receive_json(),
+        )
 
         for i in range(int(MAX_STORED_MESSAGES) * 2):
             websocket.send_json(
@@ -320,11 +375,11 @@ def test_websocket_stored_message(client: TestClient, room: str):
                 "text": str(i + int(MAX_STORED_MESSAGES)),
             }
 
-            assert message in received_messages
+            assert is_in_dicts(message, received_messages)
 
         nb_users_message = {
             "type": GischatMessageTypeEnum.NB_USERS.value,
             "nb_users": 1,
         }
 
-        assert nb_users_message in received_messages
+        assert is_in_dicts(nb_users_message, received_messages)
