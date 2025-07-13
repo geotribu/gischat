@@ -1,6 +1,8 @@
+import datetime
 import os
 from enum import Enum
 from typing import Any, Optional
+from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field, ValidationError
 
@@ -63,6 +65,13 @@ class GischatMessageTypeEnum(Enum):
 
 class GischatMessageModel(BaseModel):
     type: GischatMessageTypeEnum = Field(frozen=True, description="Type of message")
+    id: UUID = Field(
+        description="Unique identifier of the message", default_factory=uuid4
+    )
+    timestamp: int = Field(
+        description="Timestamp of the message in seconds since epoch",
+        default_factory=lambda: int(datetime.datetime.now().timestamp()),
+    )
 
 
 class GischatUncompliantMessage(GischatMessageModel):
