@@ -8,6 +8,7 @@ from tests.conftest import get_test_rooms
 @pytest.mark.parametrize("room", get_test_rooms())
 def test_send_and_receive_geojson(client: TestClient, room: str):
     with client.websocket_connect(f"/room/{room}/ws") as websocket:
+
         assert websocket.receive_json() == {
             "type": GischatMessageTypeEnum.NB_USERS.value,
             "nb_users": 1,
@@ -23,8 +24,8 @@ def test_send_and_receive_geojson(client: TestClient, room: str):
                 "raw_xml": "<xml>Some graphic model XML</xml>",
             }
         )
-
         data = websocket.receive_json()
+
         assert data["type"] == GischatMessageTypeEnum.MODEL.value
         assert data["author"] == f"ws-tester-{room}"
         assert data["avatar"] == "cat"
