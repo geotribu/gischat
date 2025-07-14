@@ -209,3 +209,45 @@ def parse_gischat_message(data: dict[str, Any]) -> GischatMessageModel:
         return cls(**data)
     except ValidationError as e:
         return GischatUncompliantMessage(reason=f"Validation error: {e}")
+
+
+class MatrixRegisterRequest(BaseModel):
+    homeserver: str = Field(
+        description="Matrix home server URL, e.g. 'https://matrix.example.com'"
+    )
+    room_id: str = Field(
+        description="ID of the room to join on the Matrix server",
+    )
+    user: str = Field(
+        description="Username to register on the Matrix server",
+    )
+    password: str = Field(
+        description="Password to register on the Matrix server",
+    )
+    device_id: str = Field(
+        description="Device ID to register on the Matrix server. If not provided, a random one will be generated.",
+        default_factory=lambda: uuid4().hex,
+    )
+
+
+class MatrixRegisterResponse(BaseModel):
+    request_id: UUID = Field(
+        description="UUID of the registration request", default_factory=uuid4
+    )
+
+
+class QMatrixChatTextMessage(BaseModel):
+    type: GischatMessageTypeEnum = GischatMessageTypeEnum.TEXT
+    id: UUID = Field(
+        description="Unique identifier of the message", default_factory=uuid4
+    )
+    timestamp: int = Field(
+        description="Timestamp of the message in seconds since epoch",
+        default_factory=lambda: int(datetime.datetime.now().timestamp()),
+    )
+    author: str = Field(
+        description="Author of the message, usually a Matrix user ID, e.g. '@user:example.com'",
+    )
+    text: str = Field(
+        description="Text content of the message",
+    )

@@ -7,7 +7,7 @@ from redis import Redis as RedisObject
 from starlette.testclient import TestClient
 
 from gischat.app import app
-from gischat.dispatchers import RedisWebsocketDispatcher
+from gischat.dispatchers import RedisDispatcher
 from gischat.env import REDIS_HOST, REDIS_PORT
 from tests import (
     MAX_GEOJSON_FEATURES,
@@ -44,7 +44,7 @@ def fastapi_app() -> FastAPI:
     os.environ["MAX_GEOJSON_FEATURES"] = MAX_GEOJSON_FEATURES
     os.environ["INSTANCE_ID"] = "abcdefg"
 
-    dispatcher = RedisWebsocketDispatcher.instance()
+    dispatcher = RedisDispatcher.instance()
 
     dispatcher.init_redis(
         pub=redis_connection,
