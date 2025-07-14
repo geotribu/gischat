@@ -1,7 +1,7 @@
 import pytest
 from fastapi.testclient import TestClient
 
-from gischat.models import GischatMessageTypeEnum
+from gischat.models import QChatMessageTypeEnum
 from gischat.utils import get_poetry_version
 from tests import (
     MAX_AUTHOR_LENGTH,
@@ -77,7 +77,7 @@ def test_put_message(client: TestClient, channel: str):
     response = client.put(
         f"/channel/{channel}/text",
         json={
-            "type": GischatMessageTypeEnum.TEXT.value,
+            "type": QChatMessageTypeEnum.TEXT.value,
             "author": f"ws-tester-{channel}",
             "avatar": "postgis",
             "text": "fromage",
@@ -95,7 +95,7 @@ def test_put_message_wrong_channel(client: TestClient):
         client.put(
             "/channel/fromage/text",
             json={
-                "type": GischatMessageTypeEnum.TEXT.value,
+                "type": QChatMessageTypeEnum.TEXT.value,
                 "author": "ws-tester",
                 "text": "fromage",
             },
@@ -107,7 +107,7 @@ def test_put_message_wrong_channel(client: TestClient):
         client.put(
             "/channel/void/text",
             json={
-                "type": GischatMessageTypeEnum.TEXT.value,
+                "type": QChatMessageTypeEnum.TEXT.value,
                 "author": "ws-tester",
                 "text": "fromage",
             },
@@ -121,7 +121,7 @@ def test_put_message_author_not_alphanum(client: TestClient, channel: str):
     response = client.put(
         f"/channel/{channel}/text",
         json={
-            "type": GischatMessageTypeEnum.TEXT.value,
+            "type": QChatMessageTypeEnum.TEXT.value,
             "author": "<darth_chri$tian>",
             "text": "fromage",
         },
@@ -135,7 +135,7 @@ def test_put_message_author_too_short(client: TestClient, channel: str):
     response = client.put(
         f"/channel/{channel}/text",
         json={
-            "type": GischatMessageTypeEnum.TEXT.value,
+            "type": QChatMessageTypeEnum.TEXT.value,
             "author": "ch",
             "avatar": "postgis",
             "text": "fromage",
@@ -151,7 +151,7 @@ def test_put_message_author_too_long(client: TestClient, channel: str):
     response = client.put(
         f"/channel/{channel}/text",
         json={
-            "type": GischatMessageTypeEnum.TEXT.value,
+            "type": QChatMessageTypeEnum.TEXT.value,
             "author": author,
             "text": "fromage",
         },
@@ -166,7 +166,7 @@ def test_put_message_too_long(client: TestClient, channel: str):
     response = client.put(
         f"/channel/{channel}/text",
         json={
-            "type": GischatMessageTypeEnum.TEXT.value,
+            "type": QChatMessageTypeEnum.TEXT.value,
             "author": "stephanie",
             "text": text,
         },
@@ -185,7 +185,7 @@ def test_stored_message(client: TestClient, channel: str):
     client.put(
         f"/channel/{channel}/text",
         json={
-            "type": GischatMessageTypeEnum.TEXT.value,
+            "type": QChatMessageTypeEnum.TEXT.value,
             "author": f"ws-tester-{channel}",
             "avatar": "raster",
             "text": "fromage",
@@ -196,7 +196,7 @@ def test_stored_message(client: TestClient, channel: str):
     assert response.status_code == 200
     assert is_subdict(
         {
-            "type": GischatMessageTypeEnum.TEXT.value,
+            "type": QChatMessageTypeEnum.TEXT.value,
             "author": f"ws-tester-{channel}",
             "avatar": "raster",
             "text": "fromage",
@@ -211,7 +211,7 @@ def test_stored_multiple(client: TestClient, channel: str):
         response = client.put(
             f"/channel/{channel}/text",
             json={
-                "type": GischatMessageTypeEnum.TEXT.value,
+                "type": QChatMessageTypeEnum.TEXT.value,
                 "author": f"ws-tester-{channel}",
                 "avatar": "raster",
                 "text": f"message {i}",

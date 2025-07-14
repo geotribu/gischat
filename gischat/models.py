@@ -32,12 +32,12 @@ class RulesModel(BaseModel):
     max_geojson_features: int
 
 
-GISCHAT_NICKNAME_FIELD = Field(
+QCHAT_NICKNAME_FIELD = Field(
     min_length=int(os.environ.get("MIN_AUTHOR_LENGTH", 3)),
     max_length=int(os.environ.get("MAX_AUTHOR_LENGTH", 32)),
     pattern=r"^[a-z-A-Z-0-9-_]+$",
 )
-GISCHAT_TEXT_MESSAGE_FIELD = Field(
+QCHAT_TEXT_MESSAGE_FIELD = Field(
     max_length=int(os.environ.get("MAX_MESSAGE_LENGTH", 255))
 )
 
@@ -45,7 +45,7 @@ CRS_WKT_FIELD = Field(description="WKT string of the CRS")
 CRS_AUTHID_FIELD = Field(description="Auth id of the crs, e.g.: 'EPSG:4326'")
 
 
-class GischatMessageTypeEnum(Enum):
+class QChatMessageTypeEnum(Enum):
     UNCOMPLIANT = "uncompliant"
     TEXT = "text"
     IMAGE = "image"
@@ -63,8 +63,8 @@ class GischatMessageTypeEnum(Enum):
         return self.value
 
 
-class GischatMessageModel(BaseModel):
-    type: GischatMessageTypeEnum = Field(frozen=True, description="Type of message")
+class QChatMessageModel(BaseModel):
+    type: QChatMessageTypeEnum = Field(frozen=True, description="Type of message")
     id: UUID = Field(
         description="Unique identifier of the message", default_factory=uuid4
     )
@@ -74,53 +74,53 @@ class GischatMessageModel(BaseModel):
     )
 
 
-class GischatUncompliantMessage(GischatMessageModel):
-    type: GischatMessageTypeEnum = GischatMessageTypeEnum.UNCOMPLIANT
+class QChatUncompliantMessage(QChatMessageModel):
+    type: QChatMessageTypeEnum = QChatMessageTypeEnum.UNCOMPLIANT
     reason: str = Field(description="Reason of the uncompliant message")
 
 
-class GischatTextMessage(GischatMessageModel):
-    type: GischatMessageTypeEnum = GischatMessageTypeEnum.TEXT
-    author: str = GISCHAT_NICKNAME_FIELD
+class QChatTextMessage(QChatMessageModel):
+    type: QChatMessageTypeEnum = QChatMessageTypeEnum.TEXT
+    author: str = QCHAT_NICKNAME_FIELD
     avatar: Optional[str] = Field(default=None)
-    text: str = GISCHAT_TEXT_MESSAGE_FIELD
+    text: str = QCHAT_TEXT_MESSAGE_FIELD
 
     def __str__(self) -> str:
         return f"[{self.author}]: '{self.text}'"
 
 
-class GischatImageMessage(GischatMessageModel):
-    type: GischatMessageTypeEnum = GischatMessageTypeEnum.IMAGE
-    author: str = GISCHAT_NICKNAME_FIELD
+class QChatImageMessage(QChatMessageModel):
+    type: QChatMessageTypeEnum = QChatMessageTypeEnum.IMAGE
+    author: str = QCHAT_NICKNAME_FIELD
     avatar: Optional[str] = Field(default=None)
     image_data: str = Field(description="String of the encoded image")
 
 
-class GischatNbUsersMessage(GischatMessageModel):
-    type: GischatMessageTypeEnum = GischatMessageTypeEnum.NB_USERS
+class QChatNbUsersMessage(QChatMessageModel):
+    type: QChatMessageTypeEnum = QChatMessageTypeEnum.NB_USERS
     nb_users: int = Field(description="Number of users in the channel")
 
 
-class GischatNewcomerMessage(GischatMessageModel):
-    type: GischatMessageTypeEnum = GischatMessageTypeEnum.NEWCOMER
-    newcomer: str = GISCHAT_NICKNAME_FIELD
+class QChatNewcomerMessage(QChatMessageModel):
+    type: QChatMessageTypeEnum = QChatMessageTypeEnum.NEWCOMER
+    newcomer: str = QCHAT_NICKNAME_FIELD
 
 
-class GischatExiterMessage(GischatMessageModel):
-    type: GischatMessageTypeEnum = GischatMessageTypeEnum.EXITER
-    exiter: str = GISCHAT_NICKNAME_FIELD
+class QChatExiterMessage(QChatMessageModel):
+    type: QChatMessageTypeEnum = QChatMessageTypeEnum.EXITER
+    exiter: str = QCHAT_NICKNAME_FIELD
 
 
-class GischatLikeMessage(GischatMessageModel):
-    type: GischatMessageTypeEnum = GischatMessageTypeEnum.LIKE
-    liker_author: str = GISCHAT_NICKNAME_FIELD
-    liked_author: str = GISCHAT_NICKNAME_FIELD
-    message: str = GISCHAT_TEXT_MESSAGE_FIELD
+class QChatLikeMessage(QChatMessageModel):
+    type: QChatMessageTypeEnum = QChatMessageTypeEnum.LIKE
+    liker_author: str = QCHAT_NICKNAME_FIELD
+    liked_author: str = QCHAT_NICKNAME_FIELD
+    message: str = QCHAT_TEXT_MESSAGE_FIELD
 
 
-class GischatGeojsonLayerMessage(GischatMessageModel):
-    type: GischatMessageTypeEnum = GischatMessageTypeEnum.GEOJSON
-    author: str = GISCHAT_NICKNAME_FIELD
+class QChatGeojsonLayerMessage(QChatMessageModel):
+    type: QChatMessageTypeEnum = QChatMessageTypeEnum.GEOJSON
+    author: str = QCHAT_NICKNAME_FIELD
     avatar: Optional[str] = Field(default=None)
     layer_name: str = Field(description="Name of the layer")
     crs_wkt: str = CRS_WKT_FIELD
@@ -131,17 +131,17 @@ class GischatGeojsonLayerMessage(GischatMessageModel):
     )
 
 
-class GischatCrsMessage(GischatMessageModel):
-    type: GischatMessageTypeEnum = GischatMessageTypeEnum.CRS
-    author: str = GISCHAT_NICKNAME_FIELD
+class QChatCrsMessage(QChatMessageModel):
+    type: QChatMessageTypeEnum = QChatMessageTypeEnum.CRS
+    author: str = QCHAT_NICKNAME_FIELD
     avatar: Optional[str] = Field(default=None)
     crs_wkt: str = CRS_WKT_FIELD
     crs_authid: str = CRS_AUTHID_FIELD
 
 
-class GischatBboxMessage(GischatMessageModel):
-    type: GischatMessageTypeEnum = GischatMessageTypeEnum.BBOX
-    author: str = GISCHAT_NICKNAME_FIELD
+class QChatBboxMessage(QChatMessageModel):
+    type: QChatMessageTypeEnum = QChatMessageTypeEnum.BBOX
+    author: str = QCHAT_NICKNAME_FIELD
     avatar: Optional[str] = Field(default=None)
     crs_wkt: str = CRS_WKT_FIELD
     crs_authid: str = CRS_AUTHID_FIELD
@@ -151,9 +151,9 @@ class GischatBboxMessage(GischatMessageModel):
     ymax: float
 
 
-class GischatPositionMessage(GischatMessageModel):
-    type: GischatMessageTypeEnum = GischatMessageTypeEnum.POSITION
-    author: str = GISCHAT_NICKNAME_FIELD
+class QChatPositionMessage(QChatMessageModel):
+    type: QChatMessageTypeEnum = QChatMessageTypeEnum.POSITION
+    author: str = QCHAT_NICKNAME_FIELD
     avatar: Optional[str] = Field(default=None)
     crs_wkt: str = CRS_WKT_FIELD
     crs_authid: str = CRS_AUTHID_FIELD
@@ -161,9 +161,9 @@ class GischatPositionMessage(GischatMessageModel):
     y: float
 
 
-class GischatModelMessage(GischatMessageModel):
-    type: GischatMessageTypeEnum = GischatMessageTypeEnum.MODEL
-    author: str = GISCHAT_NICKNAME_FIELD
+class QChatModelMessage(QChatMessageModel):
+    type: QChatMessageTypeEnum = QChatMessageTypeEnum.MODEL
+    author: str = QCHAT_NICKNAME_FIELD
     avatar: Optional[str] = Field(default=None)
     model_name: str = Field(description="Name of the QGIS graphic model")
     model_group: Optional[str] = Field(
@@ -173,8 +173,8 @@ class GischatModelMessage(GischatMessageModel):
 
 
 def build_message_type_mapping(
-    base_cls: type[GischatMessageModel],
-) -> dict[GischatMessageTypeEnum, type[GischatMessageModel]]:
+    base_cls: type[QChatMessageModel],
+) -> dict[QChatMessageTypeEnum, type[QChatMessageModel]]:
     mapping = {}
     for subclass in base_cls.__subclasses__():
         fields = getattr(subclass, "model_fields", {})
@@ -183,32 +183,32 @@ def build_message_type_mapping(
             continue
 
         default = type_field.default
-        if isinstance(default, GischatMessageTypeEnum):
+        if isinstance(default, QChatMessageTypeEnum):
             mapping[default] = subclass
     return mapping
 
 
-message_type_mapping = build_message_type_mapping(GischatMessageModel)
+message_type_mapping = build_message_type_mapping(QChatMessageModel)
 
 
-def parse_gischat_message(data: dict[str, Any]) -> GischatMessageModel:
+def parse_qchat_message(data: dict[str, Any]) -> QChatMessageModel:
     """
     Gischat message factory.
     """
     if "type" not in data:
-        return GischatUncompliantMessage(reason="Missing 'type' field")
+        return QChatUncompliantMessage(reason="Missing 'type' field")
 
     try:
-        msg_type = GischatMessageTypeEnum(data["type"])
+        msg_type = QChatMessageTypeEnum(data["type"])
     except ValueError:
-        return GischatUncompliantMessage(reason=f"Unknown type: {data['type']}")
+        return QChatUncompliantMessage(reason=f"Unknown type: {data['type']}")
 
-    cls = message_type_mapping.get(msg_type, GischatMessageModel)
+    cls = message_type_mapping.get(msg_type, QChatMessageModel)
 
     try:
         return cls(**data)
     except ValidationError as e:
-        return GischatUncompliantMessage(reason=f"Validation error: {e}")
+        return QChatUncompliantMessage(reason=f"Validation error: {e}")
 
 
 class MatrixRegisterRequest(BaseModel):
@@ -237,7 +237,7 @@ class MatrixRegisterResponse(BaseModel):
 
 
 class QMatrixChatTextMessage(BaseModel):
-    type: GischatMessageTypeEnum = GischatMessageTypeEnum.TEXT
+    type: QChatMessageTypeEnum = QChatMessageTypeEnum.TEXT
     id: UUID = Field(
         description="Unique identifier of the message", default_factory=uuid4
     )

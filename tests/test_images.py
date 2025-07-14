@@ -5,7 +5,7 @@ import pytest
 from PIL import Image
 from starlette.testclient import TestClient
 
-from gischat.models import GischatMessageTypeEnum
+from gischat.models import QChatMessageTypeEnum
 from tests import MAX_IMAGE_SIZE
 from tests.conftest import get_test_channels
 from tests.test_utils import is_subdict
@@ -25,7 +25,7 @@ def test_send_image_resized(client: TestClient, channel: str):
 
         assert is_subdict(
             {
-                "type": GischatMessageTypeEnum.NB_USERS.value,
+                "type": QChatMessageTypeEnum.NB_USERS.value,
                 "nb_users": 1,
             },
             websocket.receive_json(),
@@ -35,7 +35,7 @@ def test_send_image_resized(client: TestClient, channel: str):
             image_data = file.read()
             websocket.send_json(
                 {
-                    "type": GischatMessageTypeEnum.IMAGE.value,
+                    "type": QChatMessageTypeEnum.IMAGE.value,
                     "author": f"ws-tester-{channel}",
                     "avatar": "cat",
                     "image_data": base64.b64encode(image_data).decode("utf-8"),
@@ -43,7 +43,7 @@ def test_send_image_resized(client: TestClient, channel: str):
             )
             data = websocket.receive_json()
 
-            assert data["type"] == GischatMessageTypeEnum.IMAGE.value
+            assert data["type"] == QChatMessageTypeEnum.IMAGE.value
             assert data["author"] == f"ws-tester-{channel}"
             assert data["avatar"] == "cat"
             assert "image_data" in data

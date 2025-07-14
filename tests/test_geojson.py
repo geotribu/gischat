@@ -3,7 +3,7 @@ import json
 import pytest
 from starlette.testclient import TestClient
 
-from gischat.models import GischatMessageTypeEnum
+from gischat.models import QChatMessageTypeEnum
 from tests import MAX_GEOJSON_FEATURES, WGS84_AUTHID, WGS84_WKT
 from tests.conftest import get_test_channels
 from tests.test_utils import is_subdict
@@ -18,7 +18,7 @@ def test_send_and_receive_geojson(client: TestClient, channel: str):
 
         assert is_subdict(
             {
-                "type": GischatMessageTypeEnum.NB_USERS.value,
+                "type": QChatMessageTypeEnum.NB_USERS.value,
                 "nb_users": 1,
             },
             websocket.receive_json(),
@@ -27,7 +27,7 @@ def test_send_and_receive_geojson(client: TestClient, channel: str):
         with open(GEOJSON_PATH_OK) as file:
             websocket.send_json(
                 {
-                    "type": GischatMessageTypeEnum.GEOJSON.value,
+                    "type": QChatMessageTypeEnum.GEOJSON.value,
                     "author": f"ws-tester-{channel}",
                     "avatar": "cat",
                     "layer_name": "tissot",
@@ -39,7 +39,7 @@ def test_send_and_receive_geojson(client: TestClient, channel: str):
             )
         data = websocket.receive_json()
 
-        assert data["type"] == GischatMessageTypeEnum.GEOJSON.value
+        assert data["type"] == QChatMessageTypeEnum.GEOJSON.value
         assert data["author"] == f"ws-tester-{channel}"
         assert data["avatar"] == "cat"
         assert data["layer_name"] == "tissot"
@@ -56,7 +56,7 @@ def test_send_wrong_geojson(client: TestClient, channel: str):
 
         assert is_subdict(
             {
-                "type": GischatMessageTypeEnum.NB_USERS.value,
+                "type": QChatMessageTypeEnum.NB_USERS.value,
                 "nb_users": 1,
             },
             websocket.receive_json(),
@@ -65,7 +65,7 @@ def test_send_wrong_geojson(client: TestClient, channel: str):
         with open(GEOJSON_PATH_NOK) as file:
             websocket.send_json(
                 {
-                    "type": GischatMessageTypeEnum.GEOJSON.value,
+                    "type": QChatMessageTypeEnum.GEOJSON.value,
                     "author": f"ws-tester-{channel}",
                     "avatar": "cat",
                     "layer_name": "points",
@@ -77,7 +77,7 @@ def test_send_wrong_geojson(client: TestClient, channel: str):
 
         assert is_subdict(
             {
-                "type": GischatMessageTypeEnum.UNCOMPLIANT.value,
+                "type": QChatMessageTypeEnum.UNCOMPLIANT.value,
                 "reason": f"Too many geojson features : 501 vs max {int(MAX_GEOJSON_FEATURES)} allowed",
             },
             websocket.receive_json(),
