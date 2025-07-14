@@ -11,16 +11,16 @@ from tests import (
     MAX_STORED_MESSAGES,
     MIN_AUTHOR_LENGTH,
 )
-from tests.conftest import get_test_rooms
+from tests.conftest import get_test_channels
 from tests.test_utils import is_in_dicts, is_subdict
 
 TEST_TEXT_MESSAGE = "Is this websocket working ?"
 
 
-@pytest.mark.parametrize("room", get_test_rooms())
-def test_websocket_connection(client: TestClient, room: str):
+@pytest.mark.parametrize("channel", get_test_channels())
+def test_websocket_connection(client: TestClient, channel: str):
 
-    with client.websocket_connect(f"/room/{room}/ws") as websocket:
+    with client.websocket_connect(f"/channel/{channel}/ws") as websocket:
         data = websocket.receive_json()
 
         assert is_subdict(
@@ -32,17 +32,17 @@ def test_websocket_connection(client: TestClient, room: str):
         )
 
 
-def test_websocket_connection_wrong_room(client: TestClient):
+def test_websocket_connection_wrong_channel(client: TestClient):
 
     with pytest.raises(WebSocketDisconnect):
-        with client.websocket_connect("/room/fr0mage/ws") as websocket:
+        with client.websocket_connect("/channel/fr0mage/ws") as websocket:
             websocket.receive_json()
 
 
-@pytest.mark.parametrize("room", get_test_rooms())
-def test_websocket_put_message(client: TestClient, room: str):
+@pytest.mark.parametrize("channel", get_test_channels())
+def test_websocket_put_message(client: TestClient, channel: str):
 
-    with client.websocket_connect(f"/room/{room}/ws") as websocket:
+    with client.websocket_connect(f"/channel/{channel}/ws") as websocket:
 
         assert is_subdict(
             {
@@ -53,10 +53,10 @@ def test_websocket_put_message(client: TestClient, room: str):
         )
 
         client.put(
-            f"/room/{room}/text",
+            f"/channel/{channel}/text",
             json={
                 "type": GischatMessageTypeEnum.TEXT.value,
-                "author": f"ws-tester-{room}",
+                "author": f"ws-tester-{channel}",
                 "avatar": "postgis",
                 "text": TEST_TEXT_MESSAGE,
             },
@@ -66,7 +66,7 @@ def test_websocket_put_message(client: TestClient, room: str):
         assert is_subdict(
             {
                 "type": GischatMessageTypeEnum.TEXT.value,
-                "author": f"ws-tester-{room}",
+                "author": f"ws-tester-{channel}",
                 "avatar": "postgis",
                 "text": TEST_TEXT_MESSAGE,
             },
@@ -74,10 +74,10 @@ def test_websocket_put_message(client: TestClient, room: str):
         )
 
 
-@pytest.mark.parametrize("room", get_test_rooms())
-def test_websocket_send_message(client: TestClient, room: str):
+@pytest.mark.parametrize("channel", get_test_channels())
+def test_websocket_send_message(client: TestClient, channel: str):
 
-    with client.websocket_connect(f"/room/{room}/ws") as websocket:
+    with client.websocket_connect(f"/channel/{channel}/ws") as websocket:
 
         assert is_subdict(
             {
@@ -90,7 +90,7 @@ def test_websocket_send_message(client: TestClient, room: str):
         websocket.send_json(
             {
                 "type": GischatMessageTypeEnum.TEXT.value,
-                "author": f"ws-tester-{room}",
+                "author": f"ws-tester-{channel}",
                 "text": TEST_TEXT_MESSAGE,
             }
         )
@@ -99,7 +99,7 @@ def test_websocket_send_message(client: TestClient, room: str):
         assert is_subdict(
             {
                 "type": GischatMessageTypeEnum.TEXT.value,
-                "author": f"ws-tester-{room}",
+                "author": f"ws-tester-{channel}",
                 "avatar": None,
                 "text": TEST_TEXT_MESSAGE,
             },
@@ -107,20 +107,20 @@ def test_websocket_send_message(client: TestClient, room: str):
         )
 
 
-def nb_connected_users(json: dict[str, Any], room: str) -> bool:
+def nb_connected_users(json: dict[str, Any], channel: str) -> bool:
     """
-    Utils function to get number of connected users in a room from a status dict
+    Utils function to get number of connected users in a channel from a status dict
     """
-    rooms_dict = {r["name"]: r["nb_connected_users"] for r in json["rooms"]}
-    return rooms_dict[room]
+    channels_dict = {r["name"]: r["nb_connected_users"] for r in json["channels"]}
+    return channels_dict[channel]
 
 
-@pytest.mark.parametrize("room", get_test_rooms())
-def test_websocket_nb_users_connected(client: TestClient, room: str):
+@pytest.mark.parametrize("channel", get_test_channels())
+def test_websocket_nb_users_connected(client: TestClient, channel: str):
 
-    assert nb_connected_users(client.get("/status").json(), room) == 0
+    assert nb_connected_users(client.get("/status").json(), channel) == 0
 
-    with client.websocket_connect(f"/room/{room}/ws") as websocket1:
+    with client.websocket_connect(f"/channel/{channel}/ws") as websocket1:
 
         assert is_subdict(
             {
@@ -130,9 +130,9 @@ def test_websocket_nb_users_connected(client: TestClient, room: str):
             websocket1.receive_json(),
         )
 
-        assert nb_connected_users(client.get("/status").json(), room) == 1
+        assert nb_connected_users(client.get("/status").json(), channel) == 1
 
-        with client.websocket_connect(f"/room/{room}/ws") as websocket2:
+        with client.websocket_connect(f"/channel/{channel}/ws") as websocket2:
 
             assert is_subdict(
                 {
@@ -148,7 +148,7 @@ def test_websocket_nb_users_connected(client: TestClient, room: str):
                 },
                 websocket2.receive_json(),
             )
-            assert nb_connected_users(client.get("/status").json(), room) == 2
+            assert nb_connected_users(client.get("/status").json(), channel) == 2
 
         assert is_subdict(
             {
@@ -157,15 +157,15 @@ def test_websocket_nb_users_connected(client: TestClient, room: str):
             },
             websocket1.receive_json(),
         )
-        assert nb_connected_users(client.get("/status").json(), room) == 1
+        assert nb_connected_users(client.get("/status").json(), channel) == 1
 
-    assert nb_connected_users(client.get("/status").json(), room) == 0
+    assert nb_connected_users(client.get("/status").json(), channel) == 0
 
 
-@pytest.mark.parametrize("room", get_test_rooms())
-def test_websocket_send_uncompliant(client: TestClient, room: str):
+@pytest.mark.parametrize("channel", get_test_channels())
+def test_websocket_send_uncompliant(client: TestClient, channel: str):
 
-    with client.websocket_connect(f"/room/{room}/ws") as websocket1:
+    with client.websocket_connect(f"/channel/{channel}/ws") as websocket1:
 
         assert is_subdict(
             {
@@ -246,9 +246,9 @@ def test_websocket_send_uncompliant(client: TestClient, room: str):
         )
 
 
-@pytest.mark.parametrize("room", get_test_rooms())
-def test_websocket_send_newcomer(client: TestClient, room: str):
-    with client.websocket_connect(f"/room/{room}/ws") as websocket:
+@pytest.mark.parametrize("channel", get_test_channels())
+def test_websocket_send_newcomer(client: TestClient, channel: str):
+    with client.websocket_connect(f"/channel/{channel}/ws") as websocket:
         websocket.send_json(
             {"type": GischatMessageTypeEnum.NEWCOMER.value, "newcomer": "Isidore"}
         )
@@ -269,9 +269,9 @@ def test_websocket_send_newcomer(client: TestClient, room: str):
         )
 
 
-@pytest.mark.parametrize("room", get_test_rooms())
-def test_websocket_send_newcomer_twice(client: TestClient, room: str):
-    with client.websocket_connect(f"/room/{room}/ws") as websocket:
+@pytest.mark.parametrize("channel", get_test_channels())
+def test_websocket_send_newcomer_twice(client: TestClient, channel: str):
+    with client.websocket_connect(f"/channel/{channel}/ws") as websocket:
         # Isidore sends first registration
         websocket.send_json(
             {"type": GischatMessageTypeEnum.NEWCOMER.value, "newcomer": "Isidore"}
@@ -300,34 +300,37 @@ def test_websocket_send_newcomer_twice(client: TestClient, room: str):
         assert is_subdict(
             {
                 "type": GischatMessageTypeEnum.UNCOMPLIANT.value,
-                "reason": f"User 'Isidore' already registered in room {room}",
+                "reason": f"User 'Isidore' already registered in channel {channel}",
             },
             websocket.receive_json(),
         )
 
 
-@pytest.mark.parametrize("room", get_test_rooms())
-def test_websocket_send_newcomer_api_call(client: TestClient, room: str):
-    with client.websocket_connect(f"/room/{room}/ws") as websocket1:
+@pytest.mark.parametrize("channel", get_test_channels())
+def test_websocket_send_newcomer_api_call(client: TestClient, channel: str):
+    with client.websocket_connect(f"/channel/{channel}/ws") as websocket1:
         websocket1.send_json(
             {"type": GischatMessageTypeEnum.NEWCOMER.value, "newcomer": "Isidore"}
         )
 
-        assert client.get(f"/room/{room}/users").json() == ["Isidore"]
+        assert client.get(f"/channel/{channel}/users").json() == ["Isidore"]
 
-        with client.websocket_connect(f"/room/{room}/ws") as websocket2:
+        with client.websocket_connect(f"/channel/{channel}/ws") as websocket2:
             websocket2.send_json(
                 {"type": GischatMessageTypeEnum.NEWCOMER.value, "newcomer": "Barnabe"}
             )
 
-            assert client.get(f"/room/{room}/users").json() == ["Barnabe", "Isidore"]
+            assert client.get(f"/channel/{channel}/users").json() == [
+                "Barnabe",
+                "Isidore",
+            ]
 
 
-@pytest.mark.parametrize("room", get_test_rooms())
-def test_websocket_stored_message(client: TestClient, room: str):
+@pytest.mark.parametrize("channel", get_test_channels())
+def test_websocket_stored_message(client: TestClient, channel: str):
 
     # first we send some dummy messages to the websocket.
-    with client.websocket_connect(f"/room/{room}/ws") as websocket:
+    with client.websocket_connect(f"/channel/{channel}/ws") as websocket:
         websocket.send_json(
             {"type": GischatMessageTypeEnum.NEWCOMER.value, "newcomer": "Isidore"}
         )
@@ -351,7 +354,7 @@ def test_websocket_stored_message(client: TestClient, room: str):
             websocket.send_json(
                 {
                     "type": GischatMessageTypeEnum.TEXT.value,
-                    "author": f"ws-tester-{room}",
+                    "author": f"ws-tester-{channel}",
                     "avatar": "dog",
                     "text": str(i),
                 }
@@ -359,7 +362,7 @@ def test_websocket_stored_message(client: TestClient, room: str):
 
     # then we assert we receive only the last `MAX_STORED_MESSAGES` of them.
     received_messages = []
-    with client.websocket_connect(f"/room/{room}/ws") as websocket:
+    with client.websocket_connect(f"/channel/{channel}/ws") as websocket:
 
         for i in range(int(MAX_STORED_MESSAGES)):
             received_messages.append(websocket.receive_json())
@@ -370,7 +373,7 @@ def test_websocket_stored_message(client: TestClient, room: str):
         for i in range(int(MAX_STORED_MESSAGES)):
             message = {
                 "type": GischatMessageTypeEnum.TEXT.value,
-                "author": f"ws-tester-{room}",
+                "author": f"ws-tester-{channel}",
                 "avatar": "dog",
                 "text": str(i + int(MAX_STORED_MESSAGES)),
             }

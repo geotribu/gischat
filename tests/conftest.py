@@ -14,7 +14,7 @@ from tests import (
     MAX_IMAGE_SIZE,
     MAX_MESSAGE_LENGTH,
     MIN_AUTHOR_LENGTH,
-    TEST_ROOMS,
+    TEST_CHANNELS,
     TEST_RULES,
 )
 
@@ -25,8 +25,8 @@ redis_connection = RedisObject(
 )
 
 
-def get_test_rooms() -> list[str]:
-    return TEST_ROOMS
+def get_test_channels() -> list[str]:
+    return TEST_CHANNELS
 
 
 @pytest_asyncio.fixture(scope="session")
@@ -36,7 +36,7 @@ def anyio_backend() -> str:
 
 @pytest_asyncio.fixture(scope="session")
 def fastapi_app() -> FastAPI:
-    os.environ["ROOMS"] = ",".join(TEST_ROOMS)
+    os.environ["CHANNELS"] = ",".join(TEST_CHANNELS)
     os.environ["RULES"] = TEST_RULES
     os.environ["MIN_AUTHOR_LENGTH"] = MIN_AUTHOR_LENGTH
     os.environ["MAX_MESSAGE_LENGTH"] = MAX_MESSAGE_LENGTH

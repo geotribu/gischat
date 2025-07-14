@@ -11,7 +11,7 @@ class VersionModel(BaseModel):
     version: str
 
 
-class RoomStatusModel(BaseModel):
+class ChannelStatusModel(BaseModel):
     name: str
     nb_connected_users: int
 
@@ -19,7 +19,7 @@ class RoomStatusModel(BaseModel):
 class StatusModel(BaseModel):
     status: str
     healthy: bool
-    rooms: list[RoomStatusModel]
+    channels: list[ChannelStatusModel]
 
 
 class RulesModel(BaseModel):
@@ -98,7 +98,7 @@ class GischatImageMessage(GischatMessageModel):
 
 class GischatNbUsersMessage(GischatMessageModel):
     type: GischatMessageTypeEnum = GischatMessageTypeEnum.NB_USERS
-    nb_users: int = Field(description="Number of users in the room")
+    nb_users: int = Field(description="Number of users in the channel")
 
 
 class GischatNewcomerMessage(GischatMessageModel):

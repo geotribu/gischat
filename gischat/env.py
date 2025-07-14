@@ -2,7 +2,7 @@ import os
 import uuid
 
 INSTANCE_ID = os.getenv("INSTANCE_ID", uuid.uuid4())
-INSTANCE_ROOMS = os.getenv("ROOMS", "QGIS,Geotribu").split(",")
+INSTANCE_CHANNELS = os.getenv("CHANNELS", "QGIS,Geotribu").split(",")
 
 MAX_STORED_MESSAGES = int(os.getenv("MAX_STORED_MESSAGES", 5))
 

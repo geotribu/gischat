@@ -5,16 +5,16 @@ from starlette.testclient import TestClient
 
 from gischat.models import GischatMessageTypeEnum
 from tests import MAX_GEOJSON_FEATURES, WGS84_AUTHID, WGS84_WKT
-from tests.conftest import get_test_rooms
+from tests.conftest import get_test_channels
 from tests.test_utils import is_subdict
 
 GEOJSON_PATH_OK = "tests/data/tissot.geojson"
 GEOJSON_PATH_NOK = "tests/data/points.geojson"
 
 
-@pytest.mark.parametrize("room", get_test_rooms())
-def test_send_and_receive_geojson(client: TestClient, room: str):
-    with client.websocket_connect(f"/room/{room}/ws") as websocket:
+@pytest.mark.parametrize("channel", get_test_channels())
+def test_send_and_receive_geojson(client: TestClient, channel: str):
+    with client.websocket_connect(f"/channel/{channel}/ws") as websocket:
 
         assert is_subdict(
             {
@@ -28,7 +28,7 @@ def test_send_and_receive_geojson(client: TestClient, room: str):
             websocket.send_json(
                 {
                     "type": GischatMessageTypeEnum.GEOJSON.value,
-                    "author": f"ws-tester-{room}",
+                    "author": f"ws-tester-{channel}",
                     "avatar": "cat",
                     "layer_name": "tissot",
                     "crs_wkt": WGS84_WKT,
@@ -40,7 +40,7 @@ def test_send_and_receive_geojson(client: TestClient, room: str):
         data = websocket.receive_json()
 
         assert data["type"] == GischatMessageTypeEnum.GEOJSON.value
-        assert data["author"] == f"ws-tester-{room}"
+        assert data["author"] == f"ws-tester-{channel}"
         assert data["avatar"] == "cat"
         assert data["layer_name"] == "tissot"
         assert data["crs_wkt"] == WGS84_WKT
@@ -50,9 +50,9 @@ def test_send_and_receive_geojson(client: TestClient, room: str):
         assert len(data["geojson"]["features"]) == 60
 
 
-@pytest.mark.parametrize("room", get_test_rooms())
-def test_send_wrong_geojson(client: TestClient, room: str):
-    with client.websocket_connect(f"/room/{room}/ws") as websocket:
+@pytest.mark.parametrize("channel", get_test_channels())
+def test_send_wrong_geojson(client: TestClient, channel: str):
+    with client.websocket_connect(f"/channel/{channel}/ws") as websocket:
 
         assert is_subdict(
             {
@@ -66,7 +66,7 @@ def test_send_wrong_geojson(client: TestClient, room: str):
             websocket.send_json(
                 {
                     "type": GischatMessageTypeEnum.GEOJSON.value,
-                    "author": f"ws-tester-{room}",
+                    "author": f"ws-tester-{channel}",
                     "avatar": "cat",
                     "layer_name": "points",
                     "crs_wkt": WGS84_WKT,
