@@ -17,13 +17,13 @@ from gischat.env import (
 )
 from gischat.logging import logger
 from gischat.models import (
-    GischatExiterMessage,
-    GischatMessageModel,
-    GischatNbUsersMessage,
-    GischatNewcomerMessage,
     MatrixRegisterRequest,
+    QChatExiterMessage,
+    QChatMessageModel,
+    QChatNbUsersMessage,
+    QChatNewcomerMessage,
     QMatrixChatTextMessage,
-    parse_gischat_message,
+    parse_qchat_message,
 )
 
 
@@ -122,7 +122,7 @@ class RedisDispatcher:
                 active_connections.remove(ws)
 
     async def broadcast_to_redis_channel(
-        self, channel: str, message: GischatMessageModel
+        self, channel: str, message: QChatMessageModel
     ) -> None:
         await self.redis_pub.publish(
             get_redis_channel_key(channel), message.model_dump_json()
@@ -147,7 +147,7 @@ class RedisDispatcher:
         Notifies connected users in a channel with the number of connected users.
         :param channel: channel to notify.
         """
-        message = GischatNbUsersMessage(nb_users=self.get_nb_connected_users(channel))
+        message = QChatNbUsersMessage(nb_users=self.get_nb_connected_users(channel))
         await self.broadcast_to_redis_channel(channel, message)
 
     async def notify_newcomer(self, channel: str, user: str) -> None:
@@ -156,7 +156,7 @@ class RedisDispatcher:
         :param channel: channel to notify.
         :param user: nickname of the newcomer.
         """
-        message = GischatNewcomerMessage(newcomer=user)
+        message = QChatNewcomerMessage(newcomer=user)
         await self.broadcast_to_redis_channel(channel, message)
 
     async def notify_exiter(self, channel: str, user: str) -> None:
@@ -165,7 +165,7 @@ class RedisDispatcher:
         :param channel: channel to notify.
         :param user: nickname of the exiter.
         """
-        message = GischatExiterMessage(exiter=user)
+        message = QChatExiterMessage(exiter=user)
         await self.broadcast_to_redis_channel(channel, message)
 
     def register_user(self, channel: str, websocket: WebSocket, user: str) -> None:
@@ -196,7 +196,7 @@ class RedisDispatcher:
         return user in users_list
 
     async def notify_user(
-        self, channel: str, user: str, message: GischatMessageModel
+        self, channel: str, user: str, message: QChatMessageModel
     ) -> None:
         """
         Notifies a user in a channel with a "private" message.
@@ -215,7 +215,7 @@ class RedisDispatcher:
             except KeyError:
                 continue
 
-    def store_message(self, channel: str, message: GischatMessageModel) -> None:
+    def store_message(self, channel: str, message: QChatMessageModel) -> None:
         """
         Stores a message sent in a channel.
         Will keep only the last MAX_STORED_MESSAGES (env var).
@@ -228,7 +228,7 @@ class RedisDispatcher:
         self.redis_connection.lpush(last_message_key, text_value)
         self.redis_connection.ltrim(last_message_key, 0, MAX_STORED_MESSAGES - 1)
 
-    def get_stored_messages(self, channel: str) -> list[GischatMessageModel]:
+    def get_stored_messages(self, channel: str) -> list[QChatMessageModel]:
         """
         Returns the last messages sent and stored in a channel.
         :param channel: channel with stored messages.
@@ -239,7 +239,7 @@ class RedisDispatcher:
 
         messages = []
         for raw in reversed(raw_stored):
-            message = parse_gischat_message(json.loads(raw))
+            message = parse_qchat_message(json.loads(raw))
             messages.append(message)
 
         return messages

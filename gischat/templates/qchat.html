@@ -46,10 +46,17 @@
             <form class="d-flex flex-column flex-md-row align-items-md-center gap-2 mb-2">
 
                 <label for="authorId">Nickname:</label>
-                <input type="text" class="form-control" id="authorId" aria-describedby="nickname" placeholder="Enter nickname" value="Geotribu">
+                <input type="text" class="form-control" id="authorId" aria-describedby="nickname" placeholder="Enter nickname">
 
-                <label for="avatarId">Avatar:</label>
-                <input type="text" class="form-control" id="avatarId" aria-describedby="avatar" placeholder="Enter avatar" value="mGeoPackage.svg">
+                <label for="avatar-dropdown">Avatar:</label>
+                <select id="avatar-dropdown" class="form-select">
+                    <option value="mIconCamera.svg">Camera</option>
+                    <option value="mGeoPackage.svg" selected>GeoPackage</option>
+                    <option value="mIconPostgis.svg">PostGIS</option>
+                    <option value="mIconPythonFile.svg">Python</option>
+                    <option value="mIconRaster.svg">Raster</option>
+                    <option value="mIconSpatialite.svg">Spatialite</option>
+                </select>
 
                 <label for="channel-dropdown" class="form-label">Channel:</label>
                 <select id="channel-dropdown" class="form-select"></select>
@@ -148,7 +155,7 @@
 
     const authorElement = document.getElementById("authorId");
     authorElement.value = `jd_${(Math.random() * 10000).toFixed(0)}`;
-    const avatarElement = document.getElementById("avatarId");
+    const avatarDropdownElement = document.getElementById("avatar-dropdown");
 
     const textMessageElement = document.getElementById("messageText");
     const qchatTableBodyElement = document.getElementById("messages-table-body");
@@ -210,7 +217,7 @@
     const setFormEnabled = (enabled) => {
         channelDropdown.disabled = enabled;
         authorElement.disabled = enabled;
-        avatarElement.disabled = enabled;
+        avatarDropdownElement.disabled = enabled;
         textMessageElement.disabled = !enabled;
         document.getElementById("sendButton").disabled = !enabled;
         document.getElementById("connectButton").innerText = enabled ? "Disconnect" : "Connect";
@@ -262,7 +269,7 @@
                     displayMessage(data.timestamp, "💬", data.author, data.text);
                     break;
                 case "image":
-                    displayMessage(data.timestamp, "🖼️", data.author, `${data.author} sent an image`, "table-info");
+                    displayMessage(data.timestamp, "🖼️", data.author, `Shared an image`, "table-info");
                     break;
                 case "nb_users":
                     setChannelText(channelDropdown.value, data.nb_users);
@@ -325,7 +332,7 @@
             return;
         }
 
-        websocket.send(JSON.stringify({type: "text", text: textMessageElement.value, author: authorElement.value, avatar: avatarElement.value}));
+        websocket.send(JSON.stringify({type: "text", text: textMessageElement.value, author: authorElement.value, avatar: avatarDropdownElement.value}));
 
         textMessageElement.value = '';
         event.preventDefault();

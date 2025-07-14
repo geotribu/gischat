@@ -1,7 +1,7 @@
 import pytest
 from starlette.testclient import TestClient
 
-from gischat.models import GischatMessageTypeEnum
+from gischat.models import QChatMessageTypeEnum
 from tests import WGS84_AUTHID, WGS84_WKT
 from tests.conftest import get_test_channels
 from tests.test_utils import is_subdict
@@ -13,7 +13,7 @@ def test_send_and_receive_geojson(client: TestClient, channel: str):
 
         assert is_subdict(
             {
-                "type": GischatMessageTypeEnum.NB_USERS.value,
+                "type": QChatMessageTypeEnum.NB_USERS.value,
                 "nb_users": 1,
             },
             websocket.receive_json(),
@@ -21,7 +21,7 @@ def test_send_and_receive_geojson(client: TestClient, channel: str):
 
         websocket.send_json(
             {
-                "type": GischatMessageTypeEnum.POSITION.value,
+                "type": QChatMessageTypeEnum.POSITION.value,
                 "author": f"ws-tester-{channel}",
                 "avatar": "alpaga",
                 "crs_wkt": WGS84_WKT,
@@ -34,7 +34,7 @@ def test_send_and_receive_geojson(client: TestClient, channel: str):
 
         assert is_subdict(
             {
-                "type": GischatMessageTypeEnum.POSITION.value,
+                "type": QChatMessageTypeEnum.POSITION.value,
                 "author": f"ws-tester-{channel}",
                 "avatar": "alpaga",
                 "crs_wkt": WGS84_WKT,
@@ -50,7 +50,7 @@ def test_send_and_receive_geojson(client: TestClient, channel: str):
     assert response.status_code == 200
     assert is_subdict(
         {
-            "type": GischatMessageTypeEnum.POSITION.value,
+            "type": QChatMessageTypeEnum.POSITION.value,
             "author": f"ws-tester-{channel}",
             "avatar": "alpaga",
             "crs_wkt": WGS84_WKT,

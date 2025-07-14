@@ -31,20 +31,20 @@ from gischat.env import (
 from gischat.logging import logger
 from gischat.models import (
     ChannelStatusModel,
-    GischatBboxMessage,
-    GischatCrsMessage,
-    GischatGeojsonLayerMessage,
-    GischatImageMessage,
-    GischatLikeMessage,
-    GischatMessageModel,
-    GischatMessageTypeEnum,
-    GischatModelMessage,
-    GischatNewcomerMessage,
-    GischatPositionMessage,
-    GischatTextMessage,
-    GischatUncompliantMessage,
     MatrixRegisterRequest,
     MatrixRegisterResponse,
+    QChatBboxMessage,
+    QChatCrsMessage,
+    QChatGeojsonLayerMessage,
+    QChatImageMessage,
+    QChatLikeMessage,
+    QChatMessageModel,
+    QChatMessageTypeEnum,
+    QChatModelMessage,
+    QChatNewcomerMessage,
+    QChatPositionMessage,
+    QChatTextMessage,
+    QChatUncompliantMessage,
     QMatrixChatTextMessage,
     RulesModel,
     StatusModel,
@@ -199,11 +199,9 @@ async def get_last_messages(channel: str) -> list:
 
 @app.put(
     "/channel/{channel}/text",
-    response_model=GischatTextMessage,
+    response_model=QChatTextMessage,
 )
-async def put_text_message(
-    channel: str, message: GischatTextMessage
-) -> GischatTextMessage:
+async def put_text_message(channel: str, message: QChatTextMessage) -> QChatTextMessage:
 
     if channel not in redis_dispatcher.channels:
         raise HTTPException(
@@ -245,11 +243,11 @@ async def websocket_endpoint(websocket: WebSocket, channel: str) -> None:
             payload = await websocket.receive_json()
 
             try:
-                message = GischatMessageModel(**payload)
+                message = QChatMessageModel(**payload)
 
                 # text message
-                if message.type == GischatMessageTypeEnum.TEXT:
-                    message = GischatTextMessage(**payload)
+                if message.type == QChatMessageTypeEnum.TEXT:
+                    message = QChatTextMessage(**payload)
 
                     logger.info(f"💬 [{channel}]: ({message.author}): '{message.text}'")
                     await redis_dispatcher.broadcast_to_redis_channel(channel, message)
@@ -258,8 +256,8 @@ async def websocket_endpoint(websocket: WebSocket, channel: str) -> None:
                         redis_dispatcher.store_message(channel, message)
 
                 # image message
-                if message.type == GischatMessageTypeEnum.IMAGE:
-                    message = GischatImageMessage(**payload)
+                if message.type == QChatMessageTypeEnum.IMAGE:
+                    message = QChatImageMessage(**payload)
 
                     # resize image if needed using MAX_IMAGE_SIZE env var
                     image = Image.open(BytesIO(base64.b64decode(message.image_data)))
@@ -277,15 +275,15 @@ async def websocket_endpoint(websocket: WebSocket, channel: str) -> None:
                     redis_dispatcher.store_message(channel, message)
 
                 # newcomer message
-                if message.type == GischatMessageTypeEnum.NEWCOMER:
-                    message = GischatNewcomerMessage(**payload)
+                if message.type == QChatMessageTypeEnum.NEWCOMER:
+                    message = QChatNewcomerMessage(**payload)
 
                     # check if user is already registered
                     if redis_dispatcher.is_user_present(channel, message.newcomer):
                         logger.info(
                             f"❌ User '{message.newcomer}' wants to register but there is already a '{message.newcomer}' in channel {channel}"
                         )
-                        message = GischatUncompliantMessage(
+                        message = QChatUncompliantMessage(
                             reason=f"User '{message.newcomer}' already registered in channel {channel}"
                         )
                         await websocket.send_json(jsonable_encoder(message))
@@ -296,8 +294,8 @@ async def websocket_endpoint(websocket: WebSocket, channel: str) -> None:
                     await redis_dispatcher.notify_newcomer(channel, message.newcomer)
 
                 # like message
-                if message.type == GischatMessageTypeEnum.LIKE:
-                    message = GischatLikeMessage(**payload)
+                if message.type == QChatMessageTypeEnum.LIKE:
+                    message = QChatLikeMessage(**payload)
 
                     logger.info(
                         f"👍 [{channel}]: {message.liker_author} liked {message.liked_author}'s message ({message.message})"
@@ -305,8 +303,8 @@ async def websocket_endpoint(websocket: WebSocket, channel: str) -> None:
                     await redis_dispatcher.broadcast_to_redis_channel(channel, message)
 
                 # geojson layer message
-                if message.type == GischatMessageTypeEnum.GEOJSON:
-                    message = GischatGeojsonLayerMessage(**payload)
+                if message.type == QChatMessageTypeEnum.GEOJSON:
+                    message = QChatGeojsonLayerMessage(**payload)
 
                     # check if the number of features is compliant
                     # must not be greater than the MAX_GEOJSON_FEATURES env variable
@@ -317,7 +315,7 @@ async def websocket_endpoint(websocket: WebSocket, channel: str) -> None:
                             f"❌ {message.author} sent a geojson layer ('{message.layer_name}') with too many features ({nb_features}"
                         )
                         # notify user with an uncompliant message
-                        message = GischatUncompliantMessage(
+                        message = QChatUncompliantMessage(
                             reason=f"Too many geojson features : {nb_features} vs max {max_nb_features} allowed"
                         )
                         await websocket.send_json(jsonable_encoder(message))
@@ -331,8 +329,8 @@ async def websocket_endpoint(websocket: WebSocket, channel: str) -> None:
                     redis_dispatcher.store_message(channel, message)
 
                 # crs message
-                if message.type == GischatMessageTypeEnum.CRS:
-                    message = GischatCrsMessage(**payload)
+                if message.type == QChatMessageTypeEnum.CRS:
+                    message = QChatCrsMessage(**payload)
 
                     logger.info(
                         f"📐 [{channel}]: ({message.author}): shared crs '{message.crs_authid}'"
@@ -342,8 +340,8 @@ async def websocket_endpoint(websocket: WebSocket, channel: str) -> None:
                     redis_dispatcher.store_message(channel, message)
 
                 # bbox message
-                if message.type == GischatMessageTypeEnum.BBOX:
-                    message = GischatBboxMessage(**payload)
+                if message.type == QChatMessageTypeEnum.BBOX:
+                    message = QChatBboxMessage(**payload)
 
                     logger.info(
                         f"🔳 [{channel}]: ({message.author}): shared bbox using crs '{message.crs_authid}'"
@@ -353,8 +351,8 @@ async def websocket_endpoint(websocket: WebSocket, channel: str) -> None:
                     redis_dispatcher.store_message(channel, message)
 
                 # position message
-                if message.type == GischatMessageTypeEnum.POSITION:
-                    message = GischatPositionMessage(**payload)
+                if message.type == QChatMessageTypeEnum.POSITION:
+                    message = QChatPositionMessage(**payload)
 
                     logger.info(
                         f"📍 [{channel}]: ({message.author}): shared position '{message.x} x {message.y}' using crs '{message.crs_authid}'"
@@ -364,8 +362,8 @@ async def websocket_endpoint(websocket: WebSocket, channel: str) -> None:
                     redis_dispatcher.store_message(channel, message)
 
                 # graphic model message
-                if message.type == GischatMessageTypeEnum.MODEL:
-                    message = GischatModelMessage(**payload)
+                if message.type == QChatMessageTypeEnum.MODEL:
+                    message = QChatModelMessage(**payload)
 
                     logger.info(
                         f"🧮 [{channel}]: ({message.author}): shared graphic model '{message.model_name}'"
@@ -375,7 +373,7 @@ async def websocket_endpoint(websocket: WebSocket, channel: str) -> None:
                     redis_dispatcher.store_message(channel, message)
 
             except ValidationError as e:
-                message = GischatUncompliantMessage(reason=str(e))
+                message = QChatUncompliantMessage(reason=str(e))
 
                 logger.error(f"❌ Uncompliant message shared: {e}")
                 await redis_dispatcher.broadcast_to_redis_channel(channel, message)
@@ -445,10 +443,10 @@ if MATRIX_ENABLED:
                 payload = await websocket.receive_json()
 
                 try:
-                    message = GischatMessageModel(**payload)
+                    message = QChatMessageModel(**payload)
 
                     # text message
-                    if message.type == GischatMessageTypeEnum.TEXT:
+                    if message.type == QChatMessageTypeEnum.TEXT:
                         print("payload: ", payload)
                         message = QMatrixChatTextMessage(**payload)
 
@@ -462,7 +460,7 @@ if MATRIX_ENABLED:
                         )
 
                 except ValidationError as e:
-                    message = GischatUncompliantMessage(reason=str(e))
+                    message = QChatUncompliantMessage(reason=str(e))
                     logger.error(f"❌ Uncompliant message shared: {e}")
                     await websocket.send_json(jsonable_encoder(message))
 

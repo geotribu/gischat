@@ -12,9 +12,19 @@
 
 ---
 
-Gischat API backend for chatting with your tribe in GIS tools like QGIS (using [QTribu](https://github.com/geotribu/qtribu) plugin available [from official plugin repository](https://plugins.qgis.org/plugins/qtribu/)), GIS mobile apps (e.g [QField plugin)(https://github.com/geotribu/qchat-qfield-plugin), and other to come!
+Gischat API backend for chatting with your tribe in GIS tools.
 
 **No database : messages are not stored. Just stateless websockets.**
+
+## Known clients
+
+Here are the known clients implementing gischat / QChat, at the moment:
+
+- [QChat](https://github.com/geotribu/qchat) QGIS plugin.
+- [QTribu](https://github.com/geotribu/qtribu) QGIS plugin, available [from the official QGIS plugin repository](https://plugins.qgis.org/plugins/qtribu/).
+- [QField plugin](https://github.com/geotribu/qchat-qfield-plugin).
+
+And other to come!
 
 ## Known instances
 
@@ -22,8 +32,8 @@ Following instances are up and running :
 
 | URL | Description | Location |
 | :-: | :---------- | :------- |
-| <https://gischat.geotribu.net> | "official" international instance | Germany |
-| <https://gischat.geotribu.fr> | "official" french-speaking instance | Germany |
+| <https://gischat.geotribu.net> | Geotribu's international instance | Germany |
+| <https://gischat.geotribu.fr> | Geotribu's fr-speaking instance | Germany |
 
 ## Developer information
 

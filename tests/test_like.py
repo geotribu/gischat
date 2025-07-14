@@ -3,7 +3,7 @@ from time import sleep
 import pytest
 from starlette.testclient import TestClient
 
-from gischat.models import GischatMessageTypeEnum
+from gischat.models import QChatMessageTypeEnum
 from tests.conftest import get_test_channels
 from tests.test_utils import is_subdict
 
@@ -15,19 +15,19 @@ def test_websocket_like_message(client: TestClient, channel: str):
 
         assert is_subdict(
             {
-                "type": GischatMessageTypeEnum.NB_USERS.value,
+                "type": QChatMessageTypeEnum.NB_USERS.value,
                 "nb_users": 1,
             },
             websocket1.receive_json(),
         )
 
         websocket1.send_json(
-            {"type": GischatMessageTypeEnum.NEWCOMER.value, "newcomer": "Isidore"}
+            {"type": QChatMessageTypeEnum.NEWCOMER.value, "newcomer": "Isidore"}
         )
 
         assert is_subdict(
             {
-                "type": GischatMessageTypeEnum.NEWCOMER.value,
+                "type": QChatMessageTypeEnum.NEWCOMER.value,
                 "newcomer": "Isidore",
             },
             websocket1.receive_json(),
@@ -38,33 +38,33 @@ def test_websocket_like_message(client: TestClient, channel: str):
 
             assert is_subdict(
                 {
-                    "type": GischatMessageTypeEnum.NB_USERS.value,
+                    "type": QChatMessageTypeEnum.NB_USERS.value,
                     "nb_users": 2,
                 },
                 websocket1.receive_json(),
             )
             assert is_subdict(
                 {
-                    "type": GischatMessageTypeEnum.NB_USERS.value,
+                    "type": QChatMessageTypeEnum.NB_USERS.value,
                     "nb_users": 2,
                 },
                 websocket2.receive_json(),
             )
 
             websocket2.send_json(
-                {"type": GischatMessageTypeEnum.NEWCOMER.value, "newcomer": "Barnabe"}
+                {"type": QChatMessageTypeEnum.NEWCOMER.value, "newcomer": "Barnabe"}
             )
 
             assert is_subdict(
                 {
-                    "type": GischatMessageTypeEnum.NEWCOMER.value,
+                    "type": QChatMessageTypeEnum.NEWCOMER.value,
                     "newcomer": "Barnabe",
                 },
                 websocket2.receive_json(),
             )
             assert is_subdict(
                 {
-                    "type": GischatMessageTypeEnum.NEWCOMER.value,
+                    "type": QChatMessageTypeEnum.NEWCOMER.value,
                     "newcomer": "Barnabe",
                 },
                 websocket1.receive_json(),
@@ -73,7 +73,7 @@ def test_websocket_like_message(client: TestClient, channel: str):
             # client 1 sends a message
             websocket1.send_json(
                 {
-                    "type": GischatMessageTypeEnum.TEXT.value,
+                    "type": QChatMessageTypeEnum.TEXT.value,
                     "author": "Isidore",
                     "avatar": "postgis",
                     "text": "hi",
@@ -82,7 +82,7 @@ def test_websocket_like_message(client: TestClient, channel: str):
 
             assert is_subdict(
                 {
-                    "type": GischatMessageTypeEnum.TEXT.value,
+                    "type": QChatMessageTypeEnum.TEXT.value,
                     "author": "Isidore",
                     "avatar": "postgis",
                     "text": "hi",
@@ -91,7 +91,7 @@ def test_websocket_like_message(client: TestClient, channel: str):
             )
             assert is_subdict(
                 {
-                    "type": GischatMessageTypeEnum.TEXT.value,
+                    "type": QChatMessageTypeEnum.TEXT.value,
                     "author": "Isidore",
                     "avatar": "postgis",
                     "text": "hi",
@@ -102,7 +102,7 @@ def test_websocket_like_message(client: TestClient, channel: str):
             # client 2 likes client 1's message
             websocket2.send_json(
                 {
-                    "type": GischatMessageTypeEnum.LIKE.value,
+                    "type": QChatMessageTypeEnum.LIKE.value,
                     "liker_author": "Barnabe",
                     "liked_author": "Isidore",
                     "message": "hi",
@@ -112,7 +112,7 @@ def test_websocket_like_message(client: TestClient, channel: str):
 
             assert is_subdict(
                 {
-                    "type": GischatMessageTypeEnum.LIKE.value,
+                    "type": QChatMessageTypeEnum.LIKE.value,
                     "liker_author": "Barnabe",
                     "liked_author": "Isidore",
                     "message": "hi",

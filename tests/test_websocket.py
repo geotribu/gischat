@@ -4,7 +4,7 @@ import pytest
 from fastapi.testclient import TestClient
 from starlette.websockets import WebSocketDisconnect
 
-from gischat.models import GischatMessageTypeEnum
+from gischat.models import QChatMessageTypeEnum
 from tests import (
     MAX_AUTHOR_LENGTH,
     MAX_MESSAGE_LENGTH,
@@ -25,7 +25,7 @@ def test_websocket_connection(client: TestClient, channel: str):
 
         assert is_subdict(
             {
-                "type": GischatMessageTypeEnum.NB_USERS.value,
+                "type": QChatMessageTypeEnum.NB_USERS.value,
                 "nb_users": 1,
             },
             data,
@@ -46,7 +46,7 @@ def test_websocket_put_message(client: TestClient, channel: str):
 
         assert is_subdict(
             {
-                "type": GischatMessageTypeEnum.NB_USERS.value,
+                "type": QChatMessageTypeEnum.NB_USERS.value,
                 "nb_users": 1,
             },
             websocket.receive_json(),
@@ -55,7 +55,7 @@ def test_websocket_put_message(client: TestClient, channel: str):
         client.put(
             f"/channel/{channel}/text",
             json={
-                "type": GischatMessageTypeEnum.TEXT.value,
+                "type": QChatMessageTypeEnum.TEXT.value,
                 "author": f"ws-tester-{channel}",
                 "avatar": "postgis",
                 "text": TEST_TEXT_MESSAGE,
@@ -65,7 +65,7 @@ def test_websocket_put_message(client: TestClient, channel: str):
 
         assert is_subdict(
             {
-                "type": GischatMessageTypeEnum.TEXT.value,
+                "type": QChatMessageTypeEnum.TEXT.value,
                 "author": f"ws-tester-{channel}",
                 "avatar": "postgis",
                 "text": TEST_TEXT_MESSAGE,
@@ -81,7 +81,7 @@ def test_websocket_send_message(client: TestClient, channel: str):
 
         assert is_subdict(
             {
-                "type": GischatMessageTypeEnum.NB_USERS.value,
+                "type": QChatMessageTypeEnum.NB_USERS.value,
                 "nb_users": 1,
             },
             websocket.receive_json(),
@@ -89,7 +89,7 @@ def test_websocket_send_message(client: TestClient, channel: str):
 
         websocket.send_json(
             {
-                "type": GischatMessageTypeEnum.TEXT.value,
+                "type": QChatMessageTypeEnum.TEXT.value,
                 "author": f"ws-tester-{channel}",
                 "text": TEST_TEXT_MESSAGE,
             }
@@ -98,7 +98,7 @@ def test_websocket_send_message(client: TestClient, channel: str):
 
         assert is_subdict(
             {
-                "type": GischatMessageTypeEnum.TEXT.value,
+                "type": QChatMessageTypeEnum.TEXT.value,
                 "author": f"ws-tester-{channel}",
                 "avatar": None,
                 "text": TEST_TEXT_MESSAGE,
@@ -124,7 +124,7 @@ def test_websocket_nb_users_connected(client: TestClient, channel: str):
 
         assert is_subdict(
             {
-                "type": GischatMessageTypeEnum.NB_USERS.value,
+                "type": QChatMessageTypeEnum.NB_USERS.value,
                 "nb_users": 1,
             },
             websocket1.receive_json(),
@@ -136,14 +136,14 @@ def test_websocket_nb_users_connected(client: TestClient, channel: str):
 
             assert is_subdict(
                 {
-                    "type": GischatMessageTypeEnum.NB_USERS.value,
+                    "type": QChatMessageTypeEnum.NB_USERS.value,
                     "nb_users": 2,
                 },
                 websocket1.receive_json(),
             )
             assert is_subdict(
                 {
-                    "type": GischatMessageTypeEnum.NB_USERS.value,
+                    "type": QChatMessageTypeEnum.NB_USERS.value,
                     "nb_users": 2,
                 },
                 websocket2.receive_json(),
@@ -152,7 +152,7 @@ def test_websocket_nb_users_connected(client: TestClient, channel: str):
 
         assert is_subdict(
             {
-                "type": GischatMessageTypeEnum.NB_USERS.value,
+                "type": QChatMessageTypeEnum.NB_USERS.value,
                 "nb_users": 1,
             },
             websocket1.receive_json(),
@@ -169,7 +169,7 @@ def test_websocket_send_uncompliant(client: TestClient, channel: str):
 
         assert is_subdict(
             {
-                "type": GischatMessageTypeEnum.NB_USERS.value,
+                "type": QChatMessageTypeEnum.NB_USERS.value,
                 "nb_users": 1,
             },
             websocket1.receive_json(),
@@ -178,57 +178,53 @@ def test_websocket_send_uncompliant(client: TestClient, channel: str):
         # send author with unallowed chars
         websocket1.send_json(
             {
-                "type": GischatMessageTypeEnum.TEXT.value,
+                "type": QChatMessageTypeEnum.TEXT.value,
                 "author": "chri$tian",
                 "text": TEST_TEXT_MESSAGE,
             }
         )
 
         assert (
-            websocket1.receive_json()["type"]
-            == GischatMessageTypeEnum.UNCOMPLIANT.value
+            websocket1.receive_json()["type"] == QChatMessageTypeEnum.UNCOMPLIANT.value
         )
 
         # send too short author
         websocket1.send_json(
             {
-                "type": GischatMessageTypeEnum.TEXT.value,
+                "type": QChatMessageTypeEnum.TEXT.value,
                 "author": "".join(["a" for _ in range(int(MIN_AUTHOR_LENGTH) - 1)]),
                 "text": TEST_TEXT_MESSAGE,
             }
         )
 
         assert (
-            websocket1.receive_json()["type"]
-            == GischatMessageTypeEnum.UNCOMPLIANT.value
+            websocket1.receive_json()["type"] == QChatMessageTypeEnum.UNCOMPLIANT.value
         )
 
         # send too long author
         websocket1.send_json(
             {
-                "type": GischatMessageTypeEnum.TEXT.value,
+                "type": QChatMessageTypeEnum.TEXT.value,
                 "author": "".join(["a" for _ in range(int(MAX_AUTHOR_LENGTH) + 1)]),
                 "text": TEST_TEXT_MESSAGE,
             }
         )
 
         assert (
-            websocket1.receive_json()["type"]
-            == GischatMessageTypeEnum.UNCOMPLIANT.value
+            websocket1.receive_json()["type"] == QChatMessageTypeEnum.UNCOMPLIANT.value
         )
 
         # send too long message
         websocket1.send_json(
             {
-                "type": GischatMessageTypeEnum.TEXT.value,
+                "type": QChatMessageTypeEnum.TEXT.value,
                 "author": "Thierry_le_0uf",
                 "text": "".join(["a" for _ in range(int(MAX_MESSAGE_LENGTH) + 1)]),
             }
         )
 
         assert (
-            websocket1.receive_json()["type"]
-            == GischatMessageTypeEnum.UNCOMPLIANT.value
+            websocket1.receive_json()["type"] == QChatMessageTypeEnum.UNCOMPLIANT.value
         )
 
         # send unknown message type
@@ -241,8 +237,7 @@ def test_websocket_send_uncompliant(client: TestClient, channel: str):
         )
 
         assert (
-            websocket1.receive_json()["type"]
-            == GischatMessageTypeEnum.UNCOMPLIANT.value
+            websocket1.receive_json()["type"] == QChatMessageTypeEnum.UNCOMPLIANT.value
         )
 
 
@@ -250,19 +245,19 @@ def test_websocket_send_uncompliant(client: TestClient, channel: str):
 def test_websocket_send_newcomer(client: TestClient, channel: str):
     with client.websocket_connect(f"/channel/{channel}/ws") as websocket:
         websocket.send_json(
-            {"type": GischatMessageTypeEnum.NEWCOMER.value, "newcomer": "Isidore"}
+            {"type": QChatMessageTypeEnum.NEWCOMER.value, "newcomer": "Isidore"}
         )
 
         assert is_subdict(
             {
-                "type": GischatMessageTypeEnum.NB_USERS.value,
+                "type": QChatMessageTypeEnum.NB_USERS.value,
                 "nb_users": 1,
             },
             websocket.receive_json(),
         )
         assert is_subdict(
             {
-                "type": GischatMessageTypeEnum.NEWCOMER.value,
+                "type": QChatMessageTypeEnum.NEWCOMER.value,
                 "newcomer": "Isidore",
             },
             websocket.receive_json(),
@@ -274,19 +269,19 @@ def test_websocket_send_newcomer_twice(client: TestClient, channel: str):
     with client.websocket_connect(f"/channel/{channel}/ws") as websocket:
         # Isidore sends first registration
         websocket.send_json(
-            {"type": GischatMessageTypeEnum.NEWCOMER.value, "newcomer": "Isidore"}
+            {"type": QChatMessageTypeEnum.NEWCOMER.value, "newcomer": "Isidore"}
         )
 
         assert is_subdict(
             {
-                "type": GischatMessageTypeEnum.NB_USERS.value,
+                "type": QChatMessageTypeEnum.NB_USERS.value,
                 "nb_users": 1,
             },
             websocket.receive_json(),
         )
         assert is_subdict(
             {
-                "type": GischatMessageTypeEnum.NEWCOMER.value,
+                "type": QChatMessageTypeEnum.NEWCOMER.value,
                 "newcomer": "Isidore",
             },
             websocket.receive_json(),
@@ -294,12 +289,12 @@ def test_websocket_send_newcomer_twice(client: TestClient, channel: str):
 
         # Isidore sends second registration -> forbidden
         websocket.send_json(
-            {"type": GischatMessageTypeEnum.NEWCOMER.value, "newcomer": "Isidore"}
+            {"type": QChatMessageTypeEnum.NEWCOMER.value, "newcomer": "Isidore"}
         )
 
         assert is_subdict(
             {
-                "type": GischatMessageTypeEnum.UNCOMPLIANT.value,
+                "type": QChatMessageTypeEnum.UNCOMPLIANT.value,
                 "reason": f"User 'Isidore' already registered in channel {channel}",
             },
             websocket.receive_json(),
@@ -310,14 +305,14 @@ def test_websocket_send_newcomer_twice(client: TestClient, channel: str):
 def test_websocket_send_newcomer_api_call(client: TestClient, channel: str):
     with client.websocket_connect(f"/channel/{channel}/ws") as websocket1:
         websocket1.send_json(
-            {"type": GischatMessageTypeEnum.NEWCOMER.value, "newcomer": "Isidore"}
+            {"type": QChatMessageTypeEnum.NEWCOMER.value, "newcomer": "Isidore"}
         )
 
         assert client.get(f"/channel/{channel}/users").json() == ["Isidore"]
 
         with client.websocket_connect(f"/channel/{channel}/ws") as websocket2:
             websocket2.send_json(
-                {"type": GischatMessageTypeEnum.NEWCOMER.value, "newcomer": "Barnabe"}
+                {"type": QChatMessageTypeEnum.NEWCOMER.value, "newcomer": "Barnabe"}
             )
 
             assert client.get(f"/channel/{channel}/users").json() == [
@@ -332,19 +327,19 @@ def test_websocket_stored_message(client: TestClient, channel: str):
     # first we send some dummy messages to the websocket.
     with client.websocket_connect(f"/channel/{channel}/ws") as websocket:
         websocket.send_json(
-            {"type": GischatMessageTypeEnum.NEWCOMER.value, "newcomer": "Isidore"}
+            {"type": QChatMessageTypeEnum.NEWCOMER.value, "newcomer": "Isidore"}
         )
 
         assert is_subdict(
             {
-                "type": GischatMessageTypeEnum.NB_USERS.value,
+                "type": QChatMessageTypeEnum.NB_USERS.value,
                 "nb_users": 1,
             },
             websocket.receive_json(),
         )
         assert is_subdict(
             {
-                "type": GischatMessageTypeEnum.NEWCOMER.value,
+                "type": QChatMessageTypeEnum.NEWCOMER.value,
                 "newcomer": "Isidore",
             },
             websocket.receive_json(),
@@ -353,7 +348,7 @@ def test_websocket_stored_message(client: TestClient, channel: str):
         for i in range(int(MAX_STORED_MESSAGES) * 2):
             websocket.send_json(
                 {
-                    "type": GischatMessageTypeEnum.TEXT.value,
+                    "type": QChatMessageTypeEnum.TEXT.value,
                     "author": f"ws-tester-{channel}",
                     "avatar": "dog",
                     "text": str(i),
@@ -372,7 +367,7 @@ def test_websocket_stored_message(client: TestClient, channel: str):
 
         for i in range(int(MAX_STORED_MESSAGES)):
             message = {
-                "type": GischatMessageTypeEnum.TEXT.value,
+                "type": QChatMessageTypeEnum.TEXT.value,
                 "author": f"ws-tester-{channel}",
                 "avatar": "dog",
                 "text": str(i + int(MAX_STORED_MESSAGES)),
@@ -381,7 +376,7 @@ def test_websocket_stored_message(client: TestClient, channel: str):
             assert is_in_dicts(message, received_messages)
 
         nb_users_message = {
-            "type": GischatMessageTypeEnum.NB_USERS.value,
+            "type": QChatMessageTypeEnum.NB_USERS.value,
             "nb_users": 1,
         }
 
