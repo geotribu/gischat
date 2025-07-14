@@ -1,4 +1,4 @@
-name: "🐍 Lint py code"
+name: "🐍 Lint"
 
 on:
   push:
@@ -19,6 +19,8 @@ env:
 jobs:
 
   lint-ubuntu:
+
+    name: "🔍 Lint Python code"
 
     runs-on: ubuntu-latest
 

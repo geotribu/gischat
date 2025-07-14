@@ -1,21 +1,21 @@
 [tool.poetry]
 name = "gischat"
-version = "2.5.0"
-description = "GIS chat backend for QGIS and QField"
+version = "3.0.0"
+description = "QChat backend for QGIS and QField plugins"
 authors = ["Guilhem Allaman <contact@guilhemallaman.net>"]
 readme = "README.md"
 packages = [{include = "gischat"}]
 
 [tool.poetry.dependencies]
-python = "^3.10"
-fastapi = "^0.115.10"
-uvicorn = {extras = ["standard"], version = "^0.34.0"}
+python = "^3.11"
+fastapi = "^0.116.1"
+uvicorn = {extras = ["standard"], version = "^0.35.0"}
 colorlog = "^6.9.0"
-websockets = "^15.0"
-pydantic = "^2.10.6"
+websockets = "^15.0.1"
+pydantic = "^2.11.7"
 toml = "^0.10.2"
 jinja2 = "^3.1.6"
-sentry-sdk = {extras = ["fastapi"], version = "^2.22.0"}
+sentry-sdk = {extras = ["fastapi"], version = "^2.32.0"}
 pillow = "^11.3.0"
 httpx = "^0.28.1"
 redis = "^6.2.0"
@@ -23,15 +23,15 @@ asyncio = "^3.4.3"
 matrix-nio = "^0.25.2"
 
 [tool.poetry.group.dev.dependencies]
-pre-commit = "^4.1.0"
-pytest = "^8.3.4"
+pre-commit = "^4.2.0"
+pytest = "^8.4.1"
 pytest-asyncio = "^1.0.0"
-pytest-cov = "^6.0.0"
+pytest-cov = "^6.2.1"
 pytest-timeout = "^2.4.0"
 codecov = "^2.1.13"
 black = "^25.1.0"
 isort = "^6.0.1"
-flake8 = "^7.1.2"
+flake8 = "^7.3.0"
 
 [tool.pytest]
 addopts = "--junitxml=junit/test-results.xml --cov=gischat --cov-report=html --cov-report=term --cov-report=xml"
