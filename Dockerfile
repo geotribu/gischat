@@ -1,4 +1,4 @@
-FROM python:3.10-alpine AS python-base
+FROM python:3.11-alpine AS python-base
 LABEL org.opencontainers.image.source="https://github.com/geotribu/gischat"
 LABEL maintainer="Guilhem Allaman <contact@guilhemallaman.net>"
 

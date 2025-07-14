@@ -1,4 +1,4 @@
-name: "⚒️ Deploy image to Dockerhub and GHCR"
+name: "⚒️ Docker"
 
 on:
   push:
@@ -10,6 +10,8 @@ on:
 jobs:
 
   push-store-image:
+
+    name: "🏗️ Build & Push"
 
     runs-on: ubuntu-latest
 
