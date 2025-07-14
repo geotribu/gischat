@@ -38,7 +38,7 @@
 
             <form class="d-flex flex-column flex-md-row align-items-md-center gap-2 mb-2">
 
-                <label for="room-dropdown" class="form-label">Homeserver:</label>
+                <label for="homeserverId" class="form-label">Homeserver:</label>
                 <input type="text" class="form-control" id="homeserverId" aria-describedby="homeserver" placeholder="Enter matrix homeserver.">
 
                 <label for="roomId">RoomID:</label>
@@ -253,7 +253,7 @@
                 }
             })
             .catch(error => {
-                console.error("Error when fetching room data:", error);
+                console.error("Error when fetching channel data:", error);
             });
 
         event.preventDefault();

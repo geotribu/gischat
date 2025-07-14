@@ -7,21 +7,21 @@ from starlette.testclient import TestClient
 
 from gischat.models import GischatMessageTypeEnum
 from tests import MAX_IMAGE_SIZE
-from tests.conftest import get_test_rooms
+from tests.conftest import get_test_channels
 from tests.test_utils import is_subdict
 
 CAT_IMAGE_PATH = "tests/img/cat.jpg"
 
 
-@pytest.mark.parametrize("room", get_test_rooms())
-def test_send_image_resized(client: TestClient, room: str):
+@pytest.mark.parametrize("channel", get_test_channels())
+def test_send_image_resized(client: TestClient, channel: str):
     original_image = Image.open(CAT_IMAGE_PATH)
     ow, oh = original_image.size
 
     assert ow == 1200
     assert oh == 800
 
-    with client.websocket_connect(f"/room/{room}/ws") as websocket:
+    with client.websocket_connect(f"/channel/{channel}/ws") as websocket:
 
         assert is_subdict(
             {
@@ -36,7 +36,7 @@ def test_send_image_resized(client: TestClient, room: str):
             websocket.send_json(
                 {
                     "type": GischatMessageTypeEnum.IMAGE.value,
-                    "author": f"ws-tester-{room}",
+                    "author": f"ws-tester-{channel}",
                     "avatar": "cat",
                     "image_data": base64.b64encode(image_data).decode("utf-8"),
                 }
@@ -44,7 +44,7 @@ def test_send_image_resized(client: TestClient, room: str):
             data = websocket.receive_json()
 
             assert data["type"] == GischatMessageTypeEnum.IMAGE.value
-            assert data["author"] == f"ws-tester-{room}"
+            assert data["author"] == f"ws-tester-{channel}"
             assert data["avatar"] == "cat"
             assert "image_data" in data
             assert data["image_data"]

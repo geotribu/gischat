@@ -4,14 +4,14 @@ import pytest
 from starlette.testclient import TestClient
 
 from gischat.models import GischatMessageTypeEnum
-from tests.conftest import get_test_rooms
+from tests.conftest import get_test_channels
 from tests.test_utils import is_subdict
 
 
-@pytest.mark.parametrize("room", get_test_rooms())
-def test_websocket_like_message(client: TestClient, room: str):
+@pytest.mark.parametrize("channel", get_test_channels())
+def test_websocket_like_message(client: TestClient, channel: str):
     # register client 1 (Isidore)
-    with client.websocket_connect(f"/room/{room}/ws") as websocket1:
+    with client.websocket_connect(f"/channel/{channel}/ws") as websocket1:
 
         assert is_subdict(
             {
@@ -34,7 +34,7 @@ def test_websocket_like_message(client: TestClient, room: str):
         )
 
         # register client 2 (Barnabe)
-        with client.websocket_connect(f"/room/{room}/ws") as websocket2:
+        with client.websocket_connect(f"/channel/{channel}/ws") as websocket2:
 
             assert is_subdict(
                 {

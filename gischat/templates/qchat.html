@@ -51,8 +51,8 @@
                 <label for="avatarId">Avatar:</label>
                 <input type="text" class="form-control" id="avatarId" aria-describedby="avatar" placeholder="Enter avatar" value="mGeoPackage.svg">
 
-                <label for="room-dropdown" class="form-label">Room:</label>
-                <select id="room-dropdown" class="form-select"></select>
+                <label for="channel-dropdown" class="form-label">Channel:</label>
+                <select id="channel-dropdown" class="form-select"></select>
 
                 <button class="btn btn-primary" id="connectButton" onclick="onConnectButtonClick(event)">Connect</button>
                 <button class="btn btn-outline-primary" id="rulesButton" onclick="onRulesButtonClick(event)">Rules</button>
@@ -126,22 +126,22 @@
     const instance = window.location.host;
     const ssl = window.location.protocol.startsWith("https");
 
-    const roomDropdown = document.getElementById("room-dropdown");
+    const channelDropdown = document.getElementById("channel-dropdown");
 
-    // populate rooms with API call
+    // populate channels with API call
     const protocol = ssl ? "https" : "http";
-    fetch(`${protocol}://${instance}/rooms`)
+    fetch(`${protocol}://${instance}/channels`)
         .then(response => response.json())
         .then(data => {
-            data.forEach(room => {
+            data.forEach(channel => {
                 const option = document.createElement("option");
-                option.value = room;        // Valeur à récupérer
-                option.text = room;       // Texte affiché
-                roomDropdown.appendChild(option);
+                option.value = channel;
+                option.text = channel;
+                channelDropdown.appendChild(option);
             });
         })
         .catch(error => {
-            console.error("Error when fetching room data:", error);
+            console.error("Error when fetching channel data:", error);
         });
 
     const qchatHeaderElement = document.getElementById("qchat-header-button");
@@ -203,12 +203,12 @@
         const protocol = ssl ? "https" : "http";
         fetch(`${protocol}://${instance}/status`)
             .then(response => response.json())
-            .then(data => alert(`Instance status: ${data.status}\n\nUsers:\n${data.rooms.map(room => `${room.name}: ${room.nb_connected_users}`).join("\n")}`));
+            .then(data => alert(`Instance status: ${data.status}\n\nUsers:\n${data.channels.map(channel => `${channel.name}: ${channel.nb_connected_users}`).join("\n")}`));
         event.preventDefault()
     }
 
     const setFormEnabled = (enabled) => {
-        roomDropdown.disabled = enabled;
+        channelDropdown.disabled = enabled;
         authorElement.disabled = enabled;
         avatarElement.disabled = enabled;
         textMessageElement.disabled = !enabled;
@@ -216,9 +216,9 @@
         document.getElementById("connectButton").innerText = enabled ? "Disconnect" : "Connect";
     }
 
-    const setRoomText = (room, nbUsers) => {
-        qchatHeaderElement.innerHTML = `💬 QChat - ${room} <span class="badge bg-primary">${nbUsers}</span>`;
-        document.title = `💬 QChat - ${room} (${nbUsers})`;
+    const setChannelText = (channel, nbUsers) => {
+        qchatHeaderElement.innerHTML = `💬 QChat - ${channel} <span class="badge bg-primary">${nbUsers}</span>`;
+        document.title = `💬 QChat - ${channel} (${nbUsers})`;
     }
 
     const onConnectButtonClick = (event) => {
@@ -228,23 +228,23 @@
             return;
         }
 
-        if (!roomDropdown.value) {
-            alert("Room must be set");
+        if (!channelDropdown.value) {
+            alert("Channel must be set");
             return;
         }
 
         const ws_protocol = ssl ? "wss" : "ws";
-        const ws_url = `${ws_protocol}://${instance}/room/${roomDropdown.value}/ws`;
+        const ws_url = `${ws_protocol}://${instance}/channel/${channelDropdown.value}/ws`;
         const user = authorElement.value;
 
         websocket = new WebSocket(ws_url);
 
         websocket.onopen = (event) => {
             clearMessages();
-            displayAdminMessage(`Connected to room ${roomDropdown.value}`);
+            displayAdminMessage(`Connected to channel ${channelDropdown.value}`);
             connected = true;
             setFormEnabled(true);
-            setRoomText(roomDropdown.value, "-");
+            setChannelText(channelDropdown.value, "-");
             qchatSettingsElement.classList.remove("show");
             qchatElement.classList.add("show");
             websocket.send(JSON.stringify({type: "newcomer", newcomer: user}));
@@ -265,13 +265,13 @@
                     displayMessage(data.timestamp, "🖼️", data.author, `${data.author} sent an image`, "table-info");
                     break;
                 case "nb_users":
-                    setRoomText(roomDropdown.value, data.nb_users);
+                    setChannelText(channelDropdown.value, data.nb_users);
                     break;
                 case "newcomer":
-                    console.log(`${data.newcomer} has joined the room`);
+                    console.log(`${data.newcomer} has joined the channel`);
                     break;
                 case "exiter":
-                    console.log(`${data.exiter} has left the room`);
+                    console.log(`${data.exiter} has left the channel`);
                     break;
                 case "like":
                     displayMessage(data.timestamp, "👍", data.liker_author, `Liked ${data.liked_author}'s message`, "table-success");
@@ -331,7 +331,7 @@
         event.preventDefault();
     }
 
-    window.onload = () => displayAdminMessage("Not connected: please connect to a room to chat");
+    window.onload = () => displayAdminMessage("Not connected: please connect to a channel to chat");
 </script>
 </body>
 </html>

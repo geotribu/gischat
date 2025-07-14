@@ -12,7 +12,7 @@ from tests import (
     MIN_AUTHOR_LENGTH,
     TEST_RULES,
 )
-from tests.conftest import get_test_rooms
+from tests.conftest import get_test_channels
 from tests.test_utils import is_subdict
 
 
@@ -23,8 +23,8 @@ def test_get_version(client: TestClient):
     assert response.json()["version"] == get_poetry_version()
 
 
-@pytest.mark.parametrize("room", get_test_rooms())
-def test_get_status(client: TestClient, room: str):
+@pytest.mark.parametrize("channel", get_test_channels())
+def test_get_status(client: TestClient, channel: str):
     response = client.get("/status")
 
     assert response.status_code == 200
@@ -33,22 +33,22 @@ def test_get_status(client: TestClient, room: str):
 
     assert data["status"] == "ok"
     assert data["healthy"]
-    assert "rooms" in data
+    assert "channels" in data
 
-    rooms = [r["name"] for r in data["rooms"]]
+    channels = [r["name"] for r in data["channels"]]
 
-    assert room in rooms
+    assert channel in channels
 
-    for r in data["rooms"]:
+    for r in data["channels"]:
         assert r["nb_connected_users"] == 0
 
 
-@pytest.mark.parametrize("room", get_test_rooms())
-def test_get_rooms(client: TestClient, room: str):
-    response = client.get("/rooms")
+@pytest.mark.parametrize("channel", get_test_channels())
+def test_get_channels(client: TestClient, channel: str):
+    response = client.get("/channels")
 
     assert response.status_code == 200
-    assert room in response.json()
+    assert channel in response.json()
 
 
 def test_get_rules(client: TestClient):
@@ -64,21 +64,21 @@ def test_get_rules(client: TestClient):
     assert response.json()["max_geojson_features"] == int(MAX_GEOJSON_FEATURES)
 
 
-@pytest.mark.parametrize("room", get_test_rooms())
-def test_get_users(client: TestClient, room: str):
-    response = client.get(f"/room/{room}/users")
+@pytest.mark.parametrize("channel", get_test_channels())
+def test_get_users(client: TestClient, channel: str):
+    response = client.get(f"/channel/{channel}/users")
 
     assert response.status_code == 200
     assert response.json() == []
 
 
-@pytest.mark.parametrize("room", get_test_rooms())
-def test_put_message(client: TestClient, room: str):
+@pytest.mark.parametrize("channel", get_test_channels())
+def test_put_message(client: TestClient, channel: str):
     response = client.put(
-        f"/room/{room}/text",
+        f"/channel/{channel}/text",
         json={
             "type": GischatMessageTypeEnum.TEXT.value,
-            "author": f"ws-tester-{room}",
+            "author": f"ws-tester-{channel}",
             "avatar": "postgis",
             "text": "fromage",
         },
@@ -86,14 +86,14 @@ def test_put_message(client: TestClient, room: str):
 
     assert response.status_code == 200
     assert response.json()["text"] == "fromage"
-    assert response.json()["author"] == f"ws-tester-{room}"
+    assert response.json()["author"] == f"ws-tester-{channel}"
     assert response.json()["avatar"] == "postgis"
 
 
-def test_put_message_wrong_room(client: TestClient):
+def test_put_message_wrong_channel(client: TestClient):
     assert (
         client.put(
-            "/room/fromage/text",
+            "/channel/fromage/text",
             json={
                 "type": GischatMessageTypeEnum.TEXT.value,
                 "author": "ws-tester",
@@ -105,7 +105,7 @@ def test_put_message_wrong_room(client: TestClient):
 
     assert (
         client.put(
-            "/room/void/text",
+            "/channel/void/text",
             json={
                 "type": GischatMessageTypeEnum.TEXT.value,
                 "author": "ws-tester",
@@ -116,10 +116,10 @@ def test_put_message_wrong_room(client: TestClient):
     )
 
 
-@pytest.mark.parametrize("room", get_test_rooms())
-def test_put_message_author_not_alphanum(client: TestClient, room: str):
+@pytest.mark.parametrize("channel", get_test_channels())
+def test_put_message_author_not_alphanum(client: TestClient, channel: str):
     response = client.put(
-        f"/room/{room}/text",
+        f"/channel/{channel}/text",
         json={
             "type": GischatMessageTypeEnum.TEXT.value,
             "author": "<darth_chri$tian>",
@@ -130,10 +130,10 @@ def test_put_message_author_not_alphanum(client: TestClient, room: str):
     assert response.status_code == 422
 
 
-@pytest.mark.parametrize("room", get_test_rooms())
-def test_put_message_author_too_short(client: TestClient, room: str):
+@pytest.mark.parametrize("channel", get_test_channels())
+def test_put_message_author_too_short(client: TestClient, channel: str):
     response = client.put(
-        f"/room/{room}/text",
+        f"/channel/{channel}/text",
         json={
             "type": GischatMessageTypeEnum.TEXT.value,
             "author": "ch",
@@ -145,11 +145,11 @@ def test_put_message_author_too_short(client: TestClient, room: str):
     assert response.status_code == 422
 
 
-@pytest.mark.parametrize("room", get_test_rooms())
-def test_put_message_author_too_long(client: TestClient, room: str):
+@pytest.mark.parametrize("channel", get_test_channels())
+def test_put_message_author_too_long(client: TestClient, channel: str):
     author = "".join(["a" for _ in range(int(MAX_AUTHOR_LENGTH) + 1)])
     response = client.put(
-        f"/room/{room}/text",
+        f"/channel/{channel}/text",
         json={
             "type": GischatMessageTypeEnum.TEXT.value,
             "author": author,
@@ -160,11 +160,11 @@ def test_put_message_author_too_long(client: TestClient, room: str):
     assert response.status_code == 422
 
 
-@pytest.mark.parametrize("room", get_test_rooms())
-def test_put_message_too_long(client: TestClient, room: str):
+@pytest.mark.parametrize("channel", get_test_channels())
+def test_put_message_too_long(client: TestClient, channel: str):
     text = "".join(["a" for _ in range(int(MAX_MESSAGE_LENGTH) + 1)])
     response = client.put(
-        f"/room/{room}/text",
+        f"/channel/{channel}/text",
         json={
             "type": GischatMessageTypeEnum.TEXT.value,
             "author": "stephanie",
@@ -175,29 +175,29 @@ def test_put_message_too_long(client: TestClient, room: str):
     assert response.status_code == 422
 
 
-@pytest.mark.parametrize("room", get_test_rooms())
-def test_stored_message(client: TestClient, room: str):
-    response = client.get(f"/room/{room}/last")
+@pytest.mark.parametrize("channel", get_test_channels())
+def test_stored_message(client: TestClient, channel: str):
+    response = client.get(f"/channel/{channel}/last")
 
     assert response.status_code == 200
     assert response.json() == []
 
     client.put(
-        f"/room/{room}/text",
+        f"/channel/{channel}/text",
         json={
             "type": GischatMessageTypeEnum.TEXT.value,
-            "author": f"ws-tester-{room}",
+            "author": f"ws-tester-{channel}",
             "avatar": "raster",
             "text": "fromage",
         },
     )
-    response = client.get(f"/room/{room}/last")
+    response = client.get(f"/channel/{channel}/last")
 
     assert response.status_code == 200
     assert is_subdict(
         {
             "type": GischatMessageTypeEnum.TEXT.value,
-            "author": f"ws-tester-{room}",
+            "author": f"ws-tester-{channel}",
             "avatar": "raster",
             "text": "fromage",
         },
@@ -205,21 +205,21 @@ def test_stored_message(client: TestClient, room: str):
     )
 
 
-@pytest.mark.parametrize("room", get_test_rooms())
-def test_stored_multiple(client: TestClient, room: str):
+@pytest.mark.parametrize("channel", get_test_channels())
+def test_stored_multiple(client: TestClient, channel: str):
     for i in range(int(MAX_STORED_MESSAGES) * 2):
         response = client.put(
-            f"/room/{room}/text",
+            f"/channel/{channel}/text",
             json={
                 "type": GischatMessageTypeEnum.TEXT.value,
-                "author": f"ws-tester-{room}",
+                "author": f"ws-tester-{channel}",
                 "avatar": "raster",
                 "text": f"message {i}",
             },
         )
         assert response.status_code == 200
 
-    response = client.get(f"/room/{room}/last")
+    response = client.get(f"/channel/{channel}/last")
 
     assert response.status_code == 200
     assert len(response.json()) == int(MAX_STORED_MESSAGES)

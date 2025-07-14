@@ -27,12 +27,12 @@ Following instances are up and running :
 
 ## Developer information
 
-- Rooms can be fetched using [the `/rooms` endpoint](https://gischat.geotribu.net/docs#/default/get_rooms_rooms_get)
+- Channel can be fetched using [the `/channels` endpoint](https://gischat.geotribu.net/docs#/default/get_channels_channels_get)
 - Rules can be fetched using [the `/rules` endpoint](https://gischat.geotribu.net/docs#/default/get_rules_rules_get)
 - Number of connected users can be fetched using [the `/status` endpoint](https://gischat.geotribu.net/docs#/default/get_status_status_get)
-- List of connected and registered users can be fetched using [the `/room/{room}/users` endpoint](https://gischat.geotribu.net/docs)
-- New users must connect a websocket to the `/room/{room_name}/ws` endpoint
-- After connecting to the websocket, it is possible to register the user in the room by sending a `newcomer` message (see below)
+- List of connected and registered users can be fetched using [the `/channel/{channel}/users` endpoint](https://gischat.geotribu.net/docs)
+- New users must connect a websocket to the `/channel/{channel}/ws` endpoint
+- After connecting to the websocket, it is possible to register the user in the channel by sending a `newcomer` message (see below)
 - Messages passing through the websocket are strings with a JSON structure, they have a `type` key which represent which kind of message it is
 
 ### JSON message types
@@ -41,7 +41,7 @@ Those are the messages that might transit through the websocket.
 
 Each of them has a `"type"` key based on which it is possible to parse them :
 
-1. `"text"`: basic text message send by someone in the room, e.g.:
+1. `"text"`: basic text message send by someone in the channel, e.g.:
 
    ```json
    {
@@ -56,7 +56,7 @@ Each of them has a `"type"` key based on which it is possible to parse them :
    > `avatar` value is optional and usually points to [a QGIS resource icon](https://github.com/qgis/QGIS/blob/master/images/images.qrc) (see the ones [available in the QChat/QTribu plugin](https://github.com/geotribu/qtribu/blob/e07012628a6c03f2c4ee664025ece0bf7672d245/qtribu/constants.py#L200))  
    > `"text"` value must have max length set by `MAX_MESSAGE_LENGTH` environment variable
 
-1. `"image"`: image message send by someone in the room, e.g.:
+1. `"image"`: image message send by someone in the channel, e.g.:
 
    ```json
    {
@@ -69,7 +69,7 @@ Each of them has a `"type"` key based on which it is possible to parse them :
 
    > The image will be resized by the backend before broadcast, using the `MAX_IMAGE_SIZE` environment variable value
 
-1. `"nb_users"`: notifies about the number of users connected to the room, e.g.:
+1. `"nb_users"`: notifies about the number of users connected to the channel, e.g.:
 
    ```json
    {
@@ -78,7 +78,7 @@ Each of them has a `"type"` key based on which it is possible to parse them :
    }
    ```
 
-1. `"newcomer"`: someone has just registered in the room, e.g.:
+1. `"newcomer"`: someone has just registered in the channel, e.g.:
 
    ```json
    {
@@ -89,7 +89,7 @@ Each of them has a `"type"` key based on which it is possible to parse them :
 
    > After having connected to the websocket, it is possible to register a user by sending a `newcomer` message
 
-1. `"exiter"`: someone registered has left the room, e.g.:
+1. `"exiter"`: someone registered has left the channel, e.g.:
 
    ```json
    {
@@ -207,7 +207,7 @@ Each of them has a `"type"` key based on which it is possible to parse them :
 
 > [!NOTE]
 > `NB_UVICORN_WORKERS` refers to the number of async workers. A usual convenient value would be : (nb_cpu * 2) + 1.
-> `ROOMS` environment variable is a comma-separated list of strings which represent the available chat rooms.  
+> `CHANNELS` environment variable is a comma-separated list of strings which represent the available chat channels.  
 > `RULES` environment variable describes the instance's rules. Useful information that users should know, even when skimming content.  
 > `MAX_IMAGE_SIZE` environment variable describes the max size of image in pixels. The server will resize images based on this value.  
 > `MAX_GEOJSON_FEATURES` environment variable describes the max number of features allowed in a `geojson` message. If there is more feature, the message will not be considered and the server will respond with a `uncompliant` message.  
@@ -223,7 +223,7 @@ Each of them has a `"type"` key based on which it is possible to parse them :
         container_name: gischat-app
         environment:
           - NB_UVICORN_WORKERS=5
-          - ROOMS=QGIS,Field and mobile,GIS tribe, Living room,Kitchen,Garden
+          - CHANNELS=QGIS,Field and mobile,GIS tribe,Kitchen,Garden
           - RULES=Be kind and nice to this wonderful world
           - MAIN_LANG=en
           - INSTANCE_ID=abcdefghijklmnopqrstuvwxyz
@@ -391,7 +391,7 @@ That's it, you should be able to chat now with your fellow GIS mates !
 1. Run docker image:
 
   ```sh
-  docker run --env ROOMS=QGIS,QField,Geotribu --env RULES="Those are the rules: ..." geotribu/gischat:latest
+  docker run --env CHANNELS=QGIS,QField,Geotribu --env RULES="Those are the rules: ..." geotribu/gischat:latest
   ```
 
 ## Testing

@@ -9,8 +9,8 @@ from redis import Redis as RedisObject
 from starlette.websockets import WebSocketDisconnect
 
 from gischat.env import (
+    INSTANCE_CHANNELS,
     INSTANCE_ID,
-    INSTANCE_ROOMS,
     MAX_STORED_MESSAGES,
     REDIS_HOST,
     REDIS_PORT,
@@ -27,20 +27,20 @@ from gischat.models import (
 )
 
 
-def get_redis_channel_key(room: str) -> str:
-    return f"iid:{INSTANCE_ID};room:{room}"
+def get_redis_channel_key(channel: str) -> str:
+    return f"iid:{INSTANCE_ID};channel:{channel}"
 
 
-def get_redis_last_messages_key(room: str) -> str:
-    return f"iid:{INSTANCE_ID};room:{room};last_messages"
+def get_redis_last_messages_key(channel: str) -> str:
+    return f"iid:{INSTANCE_ID};channel:{channel};last_messages"
 
 
-def get_redis_nb_users_key(room: str) -> str:
-    return f"iid:{INSTANCE_ID};room:{room};nb_users"
+def get_redis_nb_users_key(channel: str) -> str:
+    return f"iid:{INSTANCE_ID};channel:{channel};nb_users"
 
 
-def get_redis_users_key(room: str) -> str:
-    return f"iid:{INSTANCE_ID};room:{room};registered_users"
+def get_redis_users_key(channel: str) -> str:
+    return f"iid:{INSTANCE_ID};channel:{channel};registered_users"
 
 
 class RedisDispatcher:
@@ -51,7 +51,7 @@ class RedisDispatcher:
     @classmethod
     def instance(cls) -> "RedisDispatcher":
         if cls._instance is None:
-            cls._instance = RedisDispatcher(INSTANCE_ROOMS)
+            cls._instance = RedisDispatcher(INSTANCE_CHANNELS)
         return cls._instance
 
     # redis PubSub clients
@@ -59,20 +59,20 @@ class RedisDispatcher:
     redis_sub: RedisObject
     redis_connection: RedisObject
 
-    # list of websockets connections associated to room
+    # list of websockets connections associated to channel
     active_connections: dict[str, list[WebSocket]]
 
     # list of websockets connections associated to user
     users_websockets: dict[str, dict[WebSocket, str]]
 
-    def __init__(self, rooms: list[str]):
-        self.rooms = rooms
+    def __init__(self, channels: list[str]):
+        self.channels = channels
         self.active_connections = {}
         self.users_websockets = {}
 
-        for room in rooms:
-            self.active_connections[room] = []
-            self.users_websockets[room] = {}
+        for channel in channels:
+            self.active_connections[channel] = []
+            self.users_websockets[channel] = {}
 
     def init_redis(
         self, pub: RedisObject, sub: RedisObject, connection: RedisObject
@@ -81,39 +81,39 @@ class RedisDispatcher:
         self.redis_sub = sub
         self.redis_connection = connection
 
-    async def accept_websocket(self, room: str, websocket: WebSocket) -> None:
+    async def accept_websocket(self, channel: str, websocket: WebSocket) -> None:
         """
-        Connects a new user to a room.
-        :param room: room to connect the websocket to.
+        Connects a new user to a channel.
+        :param channel: channel to connect the websocket to.
         :param websocket: new user's websocket connection.
         """
         await websocket.accept()
-        self.active_connections[room].append(websocket)
+        self.active_connections[channel].append(websocket)
 
-    def remove_websocket(self, room: str, websocket: WebSocket) -> None:
+    def remove_websocket(self, channel: str, websocket: WebSocket) -> None:
         """
-        Removes a websocket from a room.
+        Removes a websocket from a channel.
         Should be called when a websocket is disconnected.
-        :param room: room to disconnect user from.
+        :param channel: channel to disconnect user from.
         :param websocket: user's websocket connection.
         """
         # remove websocket from connections.
-        if websocket in self.active_connections[room]:
-            self.active_connections[room].remove(websocket)
+        if websocket in self.active_connections[channel]:
+            self.active_connections[channel].remove(websocket)
 
         # remove connected user if registered.
-        if websocket in self.users_websockets[room]:
-            user = self.users_websockets[room][websocket]
-            self.users_websockets[room].pop(websocket)
-            self.redis_connection.lrem(get_redis_users_key(room), 0, user)
+        if websocket in self.users_websockets[channel]:
+            user = self.users_websockets[channel][websocket]
+            self.users_websockets[channel].pop(websocket)
+            self.redis_connection.lrem(get_redis_users_key(channel), 0, user)
 
-    async def broadcast_to_active_websockets(self, room: str, message: str) -> None:
+    async def broadcast_to_active_websockets(self, channel: str, message: str) -> None:
         """
-        Broadcasts a message coming from redis to active websockets in a room.
-        :param room: room to notify.
+        Broadcasts a message coming from redis to active websockets in a channel.
+        :param channel: channel to notify.
         :param message: message to broadcast.
         """
-        active_connections = self.active_connections.get(room, [])
+        active_connections = self.active_connections.get(channel, [])
         for ws in active_connections:
             try:
                 await ws.send_text(message)
@@ -122,90 +122,90 @@ class RedisDispatcher:
                 active_connections.remove(ws)
 
     async def broadcast_to_redis_channel(
-        self, room: str, message: GischatMessageModel
+        self, channel: str, message: GischatMessageModel
     ) -> None:
         await self.redis_pub.publish(
-            get_redis_channel_key(room), message.model_dump_json()
+            get_redis_channel_key(channel), message.model_dump_json()
         )
 
-    def get_nb_connected_users(self, room: str) -> int:
-        nb_users_redis_key = get_redis_nb_users_key(room)
+    def get_nb_connected_users(self, channel: str) -> int:
+        nb_users_redis_key = get_redis_nb_users_key(channel)
 
         if not self.redis_connection.exists(nb_users_redis_key):
             self.redis_connection.set(nb_users_redis_key, 0)
 
         return self.redis_connection.get(nb_users_redis_key)
 
-    def increment_nb_connected_users(self, room: str) -> int:
-        return self.redis_connection.incr(get_redis_nb_users_key(room))
+    def increment_nb_connected_users(self, channel: str) -> int:
+        return self.redis_connection.incr(get_redis_nb_users_key(channel))
 
-    def decrement_nb_connected_users(self, room: str) -> int:
-        return self.redis_connection.decr(get_redis_nb_users_key(room))
+    def decrement_nb_connected_users(self, channel: str) -> int:
+        return self.redis_connection.decr(get_redis_nb_users_key(channel))
 
-    async def notify_nb_users(self, room: str) -> None:
+    async def notify_nb_users(self, channel: str) -> None:
         """
-        Notifies connected users in a room with the number of connected users.
-        :param room: room to notify.
+        Notifies connected users in a channel with the number of connected users.
+        :param channel: channel to notify.
         """
-        message = GischatNbUsersMessage(nb_users=self.get_nb_connected_users(room))
-        await self.broadcast_to_redis_channel(room, message)
+        message = GischatNbUsersMessage(nb_users=self.get_nb_connected_users(channel))
+        await self.broadcast_to_redis_channel(channel, message)
 
-    async def notify_newcomer(self, room: str, user: str) -> None:
+    async def notify_newcomer(self, channel: str, user: str) -> None:
         """
-        Notifies a room that a newcomer has joined.
-        :param room: room to notify.
+        Notifies a channel that a newcomer has joined.
+        :param channel: channel to notify.
         :param user: nickname of the newcomer.
         """
         message = GischatNewcomerMessage(newcomer=user)
-        await self.broadcast_to_redis_channel(room, message)
+        await self.broadcast_to_redis_channel(channel, message)
 
-    async def notify_exiter(self, room: str, user: str) -> None:
+    async def notify_exiter(self, channel: str, user: str) -> None:
         """
-        Notifies a room that a user has left the room.
-        :param room: room to notify.
+        Notifies a channel that a user has left the channel.
+        :param channel: channel to notify.
         :param user: nickname of the exiter.
         """
         message = GischatExiterMessage(exiter=user)
-        await self.broadcast_to_redis_channel(room, message)
+        await self.broadcast_to_redis_channel(channel, message)
 
-    def register_user(self, room: str, websocket: WebSocket, user: str) -> None:
+    def register_user(self, channel: str, websocket: WebSocket, user: str) -> None:
         """
         Registers a user assigned to a websocket.
         :param websocket: user's websocket.
         :param user: user's nickname.
         """
-        self.redis_connection.rpush(get_redis_users_key(room), user)
-        self.users_websockets[room][websocket] = user
+        self.redis_connection.rpush(get_redis_users_key(channel), user)
+        self.users_websockets[channel][websocket] = user
 
-    def get_registered_users(self, room: str) -> list[str]:
+    def get_registered_users(self, channel: str) -> list[str]:
         """
-        Returns the nicknames of users registered in a room.
-        :param room: room to check.
+        Returns the nicknames of users registered in a channel.
+        :param channel: channel to check.
         :return: List of user names.
         """
-        return self.redis_connection.lrange(get_redis_users_key(room), 0, -1)
+        return self.redis_connection.lrange(get_redis_users_key(channel), 0, -1)
 
-    def is_user_present(self, room: str, user: str) -> bool:
+    def is_user_present(self, channel: str, user: str) -> bool:
         """
-        Checks if a user given by the nickname is registered in a room.
-        :param room: room to check.
+        Checks if a user given by the nickname is registered in a channel.
+        :param channel: channel to check.
         :param user: user to check.
         :return: True if present, False otherwise.
         """
-        users_list = self.get_registered_users(room)
+        users_list = self.get_registered_users(channel)
         return user in users_list
 
     async def notify_user(
-        self, room: str, user: str, message: GischatMessageModel
+        self, channel: str, user: str, message: GischatMessageModel
     ) -> None:
         """
-        Notifies a user in a room with a "private" message.
+        Notifies a user in a channel with a "private" message.
         Private means only this user is notified of the message.
-        :param room: room.
+        :param channel: channel to notify.
         :param user: user to notify.
         :param message: message to send.
         """
-        for ws in self.active_connections[room]:
+        for ws in self.active_connections[channel]:
             try:
                 if self.users[ws] == user:
                     try:
@@ -215,26 +215,26 @@ class RedisDispatcher:
             except KeyError:
                 continue
 
-    def store_message(self, room: str, message: GischatMessageModel) -> None:
+    def store_message(self, channel: str, message: GischatMessageModel) -> None:
         """
-        Stores a message sent in a room.
+        Stores a message sent in a channel.
         Will keep only the last MAX_STORED_MESSAGES (env var).
-        :param room: room to store the message.
+        :param channel: channel to store the message.
         :param message: message to store.
         """
-        last_message_key = get_redis_last_messages_key(room)
+        last_message_key = get_redis_last_messages_key(channel)
         text_value = message.model_dump_json()
 
         self.redis_connection.lpush(last_message_key, text_value)
         self.redis_connection.ltrim(last_message_key, 0, MAX_STORED_MESSAGES - 1)
 
-    def get_stored_messages(self, room: str) -> list[GischatMessageModel]:
+    def get_stored_messages(self, channel: str) -> list[GischatMessageModel]:
         """
-        Returns the last messages sent and stored in a room.
-        :param room: room with stored messages.
-        :return: list of last messages sent and stored in the room.
+        Returns the last messages sent and stored in a channel.
+        :param channel: channel with stored messages.
+        :return: list of last messages sent and stored in the channel.
         """
-        last_message_key = get_redis_last_messages_key(room)
+        last_message_key = get_redis_last_messages_key(channel)
         raw_stored = self.redis_connection.lrange(last_message_key, 0, -1)
 
         messages = []
@@ -310,9 +310,9 @@ class MatrixDispatcher:
 
     def get_registration_request_room_id(self, request_id: UUID) -> str:
         """
-        Returns the room ID associated with a registration request.
+        Returns the channel ID associated with a registration request.
         :param request_id: UUID of the registration request.
-        :return: Room ID of the registration request.
+        :return: Channel ID of the registration request.
         """
         return self.get_registration_request(request_id).room_id
 
