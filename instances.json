@@ -1,8 +1,38 @@
 {
+  "be": [
+    "https://qchat.geotribu.net"
+  ],
+  "bg": [
+    "https://qchat.geotribu.net"
+  ],
+  "ch": [
+    "https://qchat.geotribu.net"
+  ],
+  "de": [
+    "https://qchat.geotribu.net"
+  ],
+  "dk": [
+    "https://qchat.geotribu.net"
+  ],
   "en": [
-    "https://gischat.geotribu.net"
+    "https://qchat.geotribu.net"
+  ],
+  "es": [
+    "https://qchat.geotribu.net"
   ],
   "fr": [
-    "https://gischat.geotribu.fr"
+    "https://qchat.geotribu.net"
+  ],
+  "it": [
+    "https://qchat.geotribu.net"
+  ],
+  "nl": [
+    "https://qchat.geotribu.net"
+  ],
+  "pl": [
+    "https://qchat.geotribu.net"
+  ],
+  "pt": [
+    "https://qchat.geotribu.net"
   ]
 }
