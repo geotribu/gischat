@@ -20,8 +20,7 @@ Gischat API backend for chatting with your tribe in GIS tools.
 
 Here are the known clients implementing gischat / QChat, at the moment:
 
-- [QChat](https://github.com/geotribu/qchat) QGIS plugin.
-- [QTribu](https://github.com/geotribu/qtribu) QGIS plugin, available [from the official QGIS plugin repository](https://plugins.qgis.org/plugins/qtribu/).
+- [QChat](https://github.com/geotribu/qchat) QGIS plugin, available [from the official QGIS plugin repository](https://plugins.qgis.org/plugins/qchat/).
 - [QField plugin](https://github.com/geotribu/qchat-qfield-plugin).
 
 And other to come!
@@ -32,8 +31,7 @@ Following instances are up and running :
 
 | URL | Description | Location |
 | :-: | :---------- | :------- |
-| <https://gischat.geotribu.net> | Geotribu's international instance | Germany |
-| <https://gischat.geotribu.fr> | Geotribu's fr-speaking instance | Germany |
+| <https://qchat.geotribu.net> | Geotribu's official instance | Germany |
 
 ## Developer information
 
