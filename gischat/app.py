@@ -1,5 +1,6 @@
 import asyncio
 import base64
+import json
 import os
 from contextlib import asynccontextmanager
 from io import BytesIO
@@ -22,7 +23,6 @@ from gischat.dispatchers import (
     get_redis_channel_key,
 )
 from gischat.env import (
-    INSTANCE_CHANNELS,
     MATRIX_ENABLED,
     REDIS_HOST,
     REDIS_PORT,
@@ -73,30 +73,28 @@ async def lifespan(app: FastAPI):
     app.state.redis_pub = await redis.from_url(REDIS_URL, decode_responses=True)
     app.state.redis_sub = await redis.from_url(REDIS_URL, decode_responses=True)
 
-    redis_dispatcher.init_redis(
-        pub=app.state.redis_pub,
-        sub=app.state.redis_sub,
-        connection=RedisObject(
-            host=REDIS_HOST,
-            port=REDIS_PORT,
-            decode_responses=True,
-        ),
+    redis_connection = RedisObject(
+        host=REDIS_HOST,
+        port=REDIS_PORT,
+        decode_responses=True,
     )
 
-    # register channel listeners
-    app.state.listener_tasks = []
-    for channel in INSTANCE_CHANNELS:
-        listener_task = asyncio.create_task(redis_listener(app, channel))
-        app.state.listener_tasks.append(listener_task)
+    redis_dispatcher.init_redis(
+        pub=app.state.redis_pub, sub=app.state.redis_sub, connection=redis_connection
+    )
+
+    # register redis listener
+    listener_task = asyncio.create_task(redis_listener(app))
 
     # let the app run
     yield
 
     # shutdown
-    for listener_task in app.state.listener_tasks:
-        listener_task.cancel()
+    redis_dispatcher.clean()
+    listener_task.cancel()
     await app.state.redis_pub.aclose()
     await app.state.redis_sub.aclose()
+    redis_connection.close()
     logger.info("👋 Lifespan shutdown done.")
 
 
@@ -110,7 +108,7 @@ app = FastAPI(
 templates = Jinja2Templates(directory="gischat/templates")
 
 
-async def redis_listener(app: FastAPI, channel: str) -> None:
+async def redis_listener(app: FastAPI) -> None:
     """
     Listens to redis pub/sub events and publishes messages to channel.
     :param app: FastAPI app.
@@ -118,15 +116,19 @@ async def redis_listener(app: FastAPI, channel: str) -> None:
     """
 
     pubsub = app.state.redis_sub.pubsub()
-    redis_channel = get_redis_channel_key(channel)
+    redis_channel = get_redis_channel_key()
 
     await pubsub.subscribe(redis_channel)
-    logger.info(f"✅ Redis listener running for channel {channel}")
+    logger.info("✅ Redis listener running...")
 
     async for message in pubsub.listen():
         if message["type"] == "message":
+            # extract the "channel" key to broadcast to the correct channel.
+            message_data = json.loads(message["data"])
+            channel = message_data.pop("channel")
+
             await redis_dispatcher.broadcast_to_active_websockets(
-                channel, message["data"]
+                channel, json.dumps(message_data)
             )
 
 

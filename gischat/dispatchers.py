@@ -27,8 +27,8 @@ from gischat.models import (
 )
 
 
-def get_redis_channel_key(channel: str) -> str:
-    return f"iid:{INSTANCE_ID};channel:{channel}"
+def get_redis_channel_key() -> str:
+    return f"iid:{INSTANCE_ID};channel"
 
 
 def get_redis_last_messages_key(channel: str) -> str:
@@ -124,9 +124,14 @@ class RedisDispatcher:
     async def broadcast_to_redis_channel(
         self, channel: str, message: QChatMessageModel
     ) -> None:
-        await self.redis_pub.publish(
-            get_redis_channel_key(channel), message.model_dump_json()
-        )
+        redis_key = get_redis_channel_key()
+
+        # add the "channel" key to the message dict,
+        # for the redis listener to know which channel to broadcast to.
+        message_dict = message.model_dump(mode="json")
+        message_dict["channel"] = channel
+
+        await self.redis_pub.publish(redis_key, json.dumps(message_dict))
 
     def get_nb_connected_users(self, channel: str) -> int:
         nb_users_redis_key = get_redis_nb_users_key(channel)
@@ -243,6 +248,19 @@ class RedisDispatcher:
             messages.append(message)
 
         return messages
+
+    def clean(self) -> None:
+        """
+        Cleans the things stored in the instance.
+        Should be called on application shutdown.
+        """
+        for channel in self.channels:
+            self.redis_connection.delete(get_redis_channel_key())
+            self.redis_connection.delete(get_redis_nb_users_key(channel))
+            self.redis_connection.delete(get_redis_users_key(channel))
+
+        self.active_connections.clear()
+        self.users_websockets.clear()
 
 
 def get_redis_matrix_registrations_key(uuid: UUID) -> str:
