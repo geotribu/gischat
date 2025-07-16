@@ -249,6 +249,19 @@ class RedisDispatcher:
 
         return messages
 
+    def clean(self) -> None:
+        """
+        Cleans the things stored in the instance.
+        Should be called on application shutdown.
+        """
+        for channel in self.channels:
+            self.redis_connection.delete(get_redis_channel_key())
+            self.redis_connection.delete(get_redis_nb_users_key(channel))
+            self.redis_connection.delete(get_redis_users_key(channel))
+
+        self.active_connections.clear()
+        self.users_websockets.clear()
+
 
 def get_redis_matrix_registrations_key(uuid: UUID) -> str:
     return f"iid:{INSTANCE_ID};req:{uuid};matrix_registrations"

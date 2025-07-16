@@ -73,14 +73,14 @@ async def lifespan(app: FastAPI):
     app.state.redis_pub = await redis.from_url(REDIS_URL, decode_responses=True)
     app.state.redis_sub = await redis.from_url(REDIS_URL, decode_responses=True)
 
+    redis_connection = RedisObject(
+        host=REDIS_HOST,
+        port=REDIS_PORT,
+        decode_responses=True,
+    )
+
     redis_dispatcher.init_redis(
-        pub=app.state.redis_pub,
-        sub=app.state.redis_sub,
-        connection=RedisObject(
-            host=REDIS_HOST,
-            port=REDIS_PORT,
-            decode_responses=True,
-        ),
+        pub=app.state.redis_pub, sub=app.state.redis_sub, connection=redis_connection
     )
 
     # register redis listener
@@ -90,9 +90,11 @@ async def lifespan(app: FastAPI):
     yield
 
     # shutdown
+    redis_dispatcher.clean()
     listener_task.cancel()
     await app.state.redis_pub.aclose()
     await app.state.redis_sub.aclose()
+    redis_connection.close()
     logger.info("👋 Lifespan shutdown done.")
 
 
