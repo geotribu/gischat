@@ -35,10 +35,10 @@ Following instances are up and running :
 
 ## Developer information
 
-- Channel can be fetched using [the `/channels` endpoint](https://gischat.geotribu.net/docs#/default/get_channels_channels_get)
-- Rules can be fetched using [the `/rules` endpoint](https://gischat.geotribu.net/docs#/default/get_rules_rules_get)
-- Number of connected users can be fetched using [the `/status` endpoint](https://gischat.geotribu.net/docs#/default/get_status_status_get)
-- List of connected and registered users can be fetched using [the `/channel/{channel}/users` endpoint](https://gischat.geotribu.net/docs)
+- Channel can be fetched using [the `/channels` endpoint](https://qchat.geotribu.net/docs#/default/get_channels_channels_get)
+- Rules can be fetched using [the `/rules` endpoint](https://qchat.geotribu.net/docs#/default/get_rules_rules_get)
+- Number of connected users can be fetched using [the `/status` endpoint](https://qchat.geotribu.net/docs#/default/get_status_status_get)
+- List of connected and registered users can be fetched using [the `/channel/{channel}/users` endpoint](https://qchat.geotribu.net/docs#/default/get_connected_users_channel__channel__users_get)
 - New users must connect a websocket to the `/channel/{channel}/ws` endpoint
 - After connecting to the websocket, it is possible to register the user in the channel by sending a `newcomer` message (see below)
 - Messages passing through the websocket are strings with a JSON structure, they have a `type` key which represent which kind of message it is
@@ -211,7 +211,7 @@ Each of them has a `"type"` key based on which it is possible to parse them :
 
 ## Deploy a self-hosted instance
 
-### Setup Gischat backend
+### Setup a gischat backend
 
 > [!NOTE]
 > `NB_UVICORN_WORKERS` refers to the number of async workers. A usual convenient value would be : (nb_cpu * 2) + 1.
