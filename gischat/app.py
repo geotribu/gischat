@@ -6,11 +6,12 @@ from contextlib import asynccontextmanager
 from io import BytesIO
 from uuid import UUID
 
+import httpx
 import redis.asyncio as redis
 import sentry_sdk
-from fastapi import FastAPI, HTTPException, Request, WebSocket
+from fastapi import FastAPI, HTTPException, Request, Response, WebSocket
 from fastapi.encoders import jsonable_encoder
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, StreamingResponse
 from fastapi.templating import Jinja2Templates
 from PIL import Image
 from pydantic import ValidationError
@@ -146,6 +147,31 @@ async def get_qchat_web_page(request: Request):
 @app.get("/version", response_model=VersionModel)
 async def get_version() -> VersionModel:
     return VersionModel(version=get_poetry_version())
+
+
+QFIELD_PLUGIN_LATEST_DOWNLOAD_URL = "https://github.com/geotribu/qchat-qfield-plugin/releases/latest/download/qfchat-latest.zip"
+
+
+@app.get("/qfield")
+async def get_latest_qfield_plugin() -> Response:
+    async with httpx.AsyncClient() as client:
+        remote_response = await client.get(
+            QFIELD_PLUGIN_LATEST_DOWNLOAD_URL, follow_redirects=True
+        )
+
+        if remote_response.status_code != 200:
+            return Response(
+                content="Error while downloading latest QField plugin",
+                status_code=remote_response.status_code,
+            )
+
+        return StreamingResponse(
+            remote_response.aiter_bytes(),
+            media_type=remote_response.headers.get(
+                "content-type", "application/octet-stream"
+            ),
+            headers={"Content-Disposition": 'attachment; filename="qfchat-latest.zip"'},
+        )
 
 
 @app.get("/channels", response_model=list[str])
