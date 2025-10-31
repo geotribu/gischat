@@ -1,7 +1,7 @@
 import datetime
 import os
 from enum import Enum
-from typing import Any, Optional
+from typing import Any
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field, ValidationError
@@ -82,7 +82,7 @@ class QChatUncompliantMessage(QChatMessageModel):
 class QChatTextMessage(QChatMessageModel):
     type: QChatMessageTypeEnum = QChatMessageTypeEnum.TEXT
     author: str = QCHAT_NICKNAME_FIELD
-    avatar: Optional[str] = Field(default=None)
+    avatar: str | None = Field(default=None)
     text: str = QCHAT_TEXT_MESSAGE_FIELD
 
     def __str__(self) -> str:
@@ -92,7 +92,7 @@ class QChatTextMessage(QChatMessageModel):
 class QChatImageMessage(QChatMessageModel):
     type: QChatMessageTypeEnum = QChatMessageTypeEnum.IMAGE
     author: str = QCHAT_NICKNAME_FIELD
-    avatar: Optional[str] = Field(default=None)
+    avatar: str | None = Field(default=None)
     image_data: str = Field(description="String of the encoded image")
 
 
@@ -121,12 +121,12 @@ class QChatLikeMessage(QChatMessageModel):
 class QChatGeojsonLayerMessage(QChatMessageModel):
     type: QChatMessageTypeEnum = QChatMessageTypeEnum.GEOJSON
     author: str = QCHAT_NICKNAME_FIELD
-    avatar: Optional[str] = Field(default=None)
+    avatar: str | None = Field(default=None)
     layer_name: str = Field(description="Name of the layer")
     crs_wkt: str = CRS_WKT_FIELD
     crs_authid: str = CRS_AUTHID_FIELD
     geojson: dict = Field(description="Geo data as geojson")
-    style: Optional[str] = Field(
+    style: str | None = Field(
         default=None, description="QML style of the layer (AllStyleCategories)"
     )
 
@@ -134,7 +134,7 @@ class QChatGeojsonLayerMessage(QChatMessageModel):
 class QChatCrsMessage(QChatMessageModel):
     type: QChatMessageTypeEnum = QChatMessageTypeEnum.CRS
     author: str = QCHAT_NICKNAME_FIELD
-    avatar: Optional[str] = Field(default=None)
+    avatar: str | None = Field(default=None)
     crs_wkt: str = CRS_WKT_FIELD
     crs_authid: str = CRS_AUTHID_FIELD
 
@@ -142,7 +142,7 @@ class QChatCrsMessage(QChatMessageModel):
 class QChatBboxMessage(QChatMessageModel):
     type: QChatMessageTypeEnum = QChatMessageTypeEnum.BBOX
     author: str = QCHAT_NICKNAME_FIELD
-    avatar: Optional[str] = Field(default=None)
+    avatar: str | None = Field(default=None)
     crs_wkt: str = CRS_WKT_FIELD
     crs_authid: str = CRS_AUTHID_FIELD
     xmin: float
@@ -154,7 +154,7 @@ class QChatBboxMessage(QChatMessageModel):
 class QChatPositionMessage(QChatMessageModel):
     type: QChatMessageTypeEnum = QChatMessageTypeEnum.POSITION
     author: str = QCHAT_NICKNAME_FIELD
-    avatar: Optional[str] = Field(default=None)
+    avatar: str | None = Field(default=None)
     crs_wkt: str = CRS_WKT_FIELD
     crs_authid: str = CRS_AUTHID_FIELD
     x: float
@@ -164,9 +164,9 @@ class QChatPositionMessage(QChatMessageModel):
 class QChatModelMessage(QChatMessageModel):
     type: QChatMessageTypeEnum = QChatMessageTypeEnum.MODEL
     author: str = QCHAT_NICKNAME_FIELD
-    avatar: Optional[str] = Field(default=None)
+    avatar: str | None = Field(default=None)
     model_name: str = Field(description="Name of the QGIS graphic model")
-    model_group: Optional[str] = Field(
+    model_group: str | None = Field(
         default=None, description="Group of the QGIS graphic model"
     )
     raw_xml: str = Field(description="Raw XML of the QGIS graphic model")
