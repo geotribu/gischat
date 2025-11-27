@@ -302,7 +302,6 @@ class MatrixDispatcher:
         """
         uuid = uuid4()
         mapping = body.model_dump()
-        print(mapping)
         self.redis.hset(get_redis_matrix_registrations_key(uuid), mapping=mapping)
         return uuid
 
@@ -357,7 +356,11 @@ class MatrixDispatcher:
         logger.info(f"🧑‍💻 Matrix client logged in: {login_result}")
 
         client.add_event_callback(
-            partial(self.on_matrix_text_message_received, websocket=websocket),
+            partial(
+                self.on_matrix_text_message_received,
+                room_id=matrix_registration.room_id,
+                websocket=websocket,
+            ),
             RoomMessageText,
         )
 
@@ -381,7 +384,11 @@ class MatrixDispatcher:
         await client.close()
 
     async def on_matrix_text_message_received(
-        self, room: MatrixRoom, event: RoomMessageText, websocket: WebSocket
+        self,
+        room: MatrixRoom,
+        event: RoomMessageText,
+        room_id: str,
+        websocket: WebSocket,
     ) -> None:
         """
         Callback for when a text message is received in a Matrix room.
@@ -389,6 +396,9 @@ class MatrixDispatcher:
         :param event: Event containing the message.
         """
         if not isinstance(event, RoomMessageText):
+            return
+
+        if room.room_id != room_id:
             return
 
         message = QMatrixChatTextMessage(

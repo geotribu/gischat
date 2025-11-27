@@ -228,6 +228,9 @@ class MatrixRegisterRequest(BaseModel):
         description="Device ID to register on the Matrix server. If not provided, a random one will be generated.",
         default_factory=lambda: uuid4().hex,
     )
+    room_id: str = Field(
+        description="ID of the room to join on the Matrix server, e.g. '!abcdef:matrix.example.com'",
+    )
 
 
 class MatrixRegisterResponse(BaseModel):
