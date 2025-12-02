@@ -247,7 +247,7 @@ Each of them has a `"type"` key based on which it is possible to parse them :
           - 8000:8000
         restart: unless-stopped
 
-     redis:
+      redis:
        image: redis:latest
        container_name: gischat-redis
        restart: unless-stopped
