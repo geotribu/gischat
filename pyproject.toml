@@ -1,37 +1,48 @@
-[tool.poetry]
+[project]
 name = "gischat"
 version = "3.0.0"
 description = "QChat backend for QGIS and QField plugins"
-authors = ["Guilhem Allaman <contact@guilhemallaman.net>"]
+authors = [{ name = "Guilhem Allaman", email = "contact@guilhemallaman.net" }]
+requires-python = ">=3.11,<4"
 readme = "README.md"
-packages = [{include = "gischat"}]
+dependencies = [
+    "fastapi>=0.120.3,<0.121",
+    "uvicorn[standard]>=0.38.0,<0.39",
+    "colorlog>=6.10.1,<7",
+    "websockets>=15.0.1,<16",
+    "pydantic>=2.12.3,<3",
+    "toml>=0.10.2,<0.11",
+    "jinja2>=3.1.6,<4",
+    "sentry-sdk[fastapi]>=2.43.0,<3",
+    "pillow>=12.0.0,<13",
+    "httpx>=0.28.1,<0.29",
+    "redis>=7.0.1,<8",
+    "asyncio>=4.0.0,<5",
+    "matrix-nio>=0.25.2,<0.26",
+]
 
-[tool.poetry.dependencies]
-python = "^3.11"
-fastapi = "^0.120.3"
-uvicorn = {extras = ["standard"], version = "^0.38.0"}
-colorlog = "^6.10.1"
-websockets = "^15.0.1"
-pydantic = "^2.12.3"
-toml = "^0.10.2"
-jinja2 = "^3.1.6"
-sentry-sdk = {extras = ["fastapi"], version = "^2.43.0"}
-pillow = "^12.0.0"
-httpx = "^0.28.1"
-redis = "^7.0.1"
-asyncio = "^4.0.0"
-matrix-nio = "^0.25.2"
+[dependency-groups]
+dev = [
+    "pre-commit>=4.3.0,<5",
+    "pytest>=8.4.2,<9",
+    "pytest-asyncio>=1.2.0,<2",
+    "pytest-cov>=7.0.0,<8",
+    "pytest-timeout>=2.4.0,<3",
+    "codecov>=2.1.13,<3",
+    "black>=25.9.0,<26",
+    "isort>=7.0.0,<8",
+    "flake8>=7.3.0,<8",
+]
 
-[tool.poetry.group.dev.dependencies]
-pre-commit = "^4.3.0"
-pytest = "^8.4.2"
-pytest-asyncio = "^1.2.0"
-pytest-cov = "^7.0.0"
-pytest-timeout = "^2.4.0"
-codecov = "^2.1.13"
-black = "^25.9.0"
-isort = "^7.0.0"
-flake8 = "^7.3.0"
+[tool.hatch.build.targets.sdist]
+include = ["gischat"]
+
+[tool.hatch.build.targets.wheel]
+include = ["gischat"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [tool.pytest]
 addopts = "--junitxml=junit/test-results.xml --cov=gischat --cov-report=html --cov-report=term --cov-report=xml"
@@ -48,7 +59,3 @@ branch = true
 
 [tool.coverage.report]
 include = ["gischat/*.py"]
-
-[build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"

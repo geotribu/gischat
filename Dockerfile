@@ -1,4 +1,4 @@
-FROM python:3.11-alpine AS python-base
+FROM python:3.12-alpine AS python-base
 LABEL org.opencontainers.image.source="https://github.com/geotribu/gischat"
 LABEL maintainer="Guilhem Allaman <contact@guilhemallaman.net>"
 
@@ -11,7 +11,7 @@ ARG PIP_NO_CACHE_DIR 1
 WORKDIR /gischat
 
 COPY pyproject.toml /gischat/pyproject.toml
-COPY poetry.lock /gischat/poetry.lock
+COPY uv.lock /gischat/uv.lock
 COPY log_config.yaml /gischat/log_config.yaml
 COPY entrypoint.sh /gischat/entrypoint.sh
 COPY README.md /gischat/README.md
@@ -19,9 +19,9 @@ COPY README.md /gischat/README.md
 COPY gischat /gischat/gischat
 
 RUN chmod +x entrypoint.sh \
-&& pip install poetry
+&& pip install uv
 
-RUN poetry install
+RUN uv sync
 
 EXPOSE 8000
 

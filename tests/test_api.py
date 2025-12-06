@@ -2,7 +2,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from gischat.models import QChatMessageTypeEnum
-from gischat.utils import get_poetry_version
+from gischat.utils import get_uv_version
 from tests import (
     MAX_AUTHOR_LENGTH,
     MAX_GEOJSON_FEATURES,
@@ -20,7 +20,7 @@ def test_get_version(client: TestClient):
     response = client.get("/version")
 
     assert response.status_code == 200
-    assert response.json()["version"] == get_poetry_version()
+    assert response.json()["version"] == get_uv_version()
 
 
 @pytest.mark.parametrize("channel", get_test_channels())

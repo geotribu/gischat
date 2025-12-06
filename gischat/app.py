@@ -51,7 +51,7 @@ from gischat.models import (
     StatusModel,
     VersionModel,
 )
-from gischat.utils import QCHAT_CHEATCODES, get_poetry_version
+from gischat.utils import QCHAT_CHEATCODES, get_uv_version
 
 # initialize sentry
 if os.getenv("SENTRY_DSN", None):
@@ -102,7 +102,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="gischat API",
     summary="Chat with your GIS tribe in QGIS, GIS mobile apps and other clients !",
-    version=get_poetry_version(),
+    version=get_uv_version(),
     lifespan=lifespan,
 )
 
@@ -146,7 +146,7 @@ async def get_qchat_web_page(request: Request):
 
 @app.get("/version", response_model=VersionModel)
 async def get_version() -> VersionModel:
-    return VersionModel(version=get_poetry_version())
+    return VersionModel(version=get_uv_version())
 
 
 QFIELD_PLUGIN_LATEST_DOWNLOAD_URL = "https://github.com/geotribu/qchat-qfield-plugin/releases/latest/download/qfchat-latest.zip"

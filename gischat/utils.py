@@ -5,16 +5,14 @@ import toml
 QCHAT_CHEATCODES = ["givemesomecheese", "iamarobot", "its10oclock", "qgisprolicense"]
 
 
-def get_poetry_version() -> str:
+def get_uv_version() -> str:
     v = "unknown"
     pyproject_toml_file = Path(__file__).parent.parent / "pyproject.toml"
+
     if pyproject_toml_file.exists() and pyproject_toml_file.is_file():
         data = toml.load(pyproject_toml_file)
-        # check tool.poetry.version
-        if (
-            "tool" in data
-            and "poetry" in data["tool"]
-            and "version" in data["tool"]["poetry"]
-        ):
-            v = data["tool"]["poetry"]["version"]
+
+        if "project" in data and "version" in data["project"]:
+            v = data["project"]["version"]
+
     return v

@@ -352,10 +352,10 @@ That's it, you should be able to chat now with your fellow GIS mates !
 
 ## Development
 
-1. Install [poetry](https://python-poetry.org/):
+1. Install [uv](https://github.com/astral-sh/uv):
 
   ```sh
-  python -m pip install poetry
+  python -m pip install uv
   ```
 
 1. Install [`redis`](https://redis.io/) on your local machine:
@@ -364,16 +364,16 @@ That's it, you should be able to chat now with your fellow GIS mates !
   sudo apt install redis-server
   ```
 
-1. Install project's dependencies using poetry:
+1. Install project's dependencies using `uv`:
 
   ```sh
-  poetry install
+  uv sync
   ```
 
 1. Install pre-commit tools:
 
   ```sh
-  poetry run pre-commit install
+  uv run pre-commit install
   ```
 
 1. Create local environment file and edit it:
@@ -385,7 +385,7 @@ That's it, you should be able to chat now with your fellow GIS mates !
 1. Launch API:
 
   ```sh
-  poetry run uvicorn gischat.app:app --reload --env-file .env --log-config=log_config.yaml
+  uv run uvicorn gischat.app:app --reload --env-file .env --log-config=log_config.yaml
   ```
 
 ## Build
@@ -404,14 +404,8 @@ That's it, you should be able to chat now with your fellow GIS mates !
 
 ## Testing
 
-1. Install dev dependencies:
-
-   ```sh
-   poetry install --with=dev
-   ```
-
 1. Run unit tests:
 
    ```sh
-   poetry run pytest tests
+   uv run pytest tests
    ```
