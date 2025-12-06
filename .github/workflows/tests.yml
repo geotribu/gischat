@@ -15,7 +15,7 @@ on:
       - "**/*.py"
       - ".github/workflows/tests.yml"
       - "pyproject.toml"
-      - "poetry.lock"
+      - "uv.lock"
 
 jobs:
 
@@ -49,27 +49,21 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
           cache: "pip"
-          cache-dependency-path: "poetry.lock"
+          cache-dependency-path: "uv.lock"
 
-      - name: Install poetry
-        uses: snok/install-poetry@v1
-        with:
-          version: 2.1.3
-          virtualenvs-create: true
-          virtualenvs-in-project: true
-          virtualenvs-path: ~/.venv
-          installer-parallel: true
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
 
       - name: Install requirements
-        run: poetry install
+        run: uv sync
 
       - name: Set up Redis
         uses: shogo82148/actions-setup-redis@v1
         with:
-          redis-version: "7.4"
+          redis-version: "8"
 
       - name: Unit tests
-        run: poetry run pytest -v --cov --cov-report xml:coverage.xml
+        run: uv run pytest -v --cov --cov-report xml:coverage.xml
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4.5.0
