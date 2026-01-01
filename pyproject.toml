@@ -6,7 +6,7 @@ authors = [{ name = "Guilhem Allaman", email = "contact@guilhemallaman.net" }]
 requires-python = ">=3.11,<4"
 readme = "README.md"
 dependencies = [
-    "fastapi>=0.120.3,<0.121",
+    "fastapi>=0.120.3,<0.124",
     "uvicorn[standard]>=0.38.0,<0.39",
     "colorlog>=6.10.1,<7",
     "websockets>=15.0.1,<16",
