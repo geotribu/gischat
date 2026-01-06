@@ -219,6 +219,8 @@ Each of them has a `"type"` key based on which it is possible to parse them :
 > `RULES` environment variable describes the instance's rules. Useful information that users should know, even when skimming content.  
 > `MAX_IMAGE_SIZE` environment variable describes the max size of image in pixels. The server will resize images based on this value.  
 > `MAX_GEOJSON_FEATURES` environment variable describes the max number of features allowed in a `geojson` message. If there is more feature, the message will not be considered and the server will respond with a `uncompliant` message.  
+> `MATRIX_CHAT_ENABLED` environment variable describes if the instance should serve the matrix-related websocket endpoints.
+> `MATRIX_PING_*` environment variables describe the matrix settings to ping a room when a message starts with the `MATRIX_PING_MESSAGE_PREFIX`.
 
 1. Install `docker` using [the official documentation](https://docs.docker.com/engine/install/)
 1. Create a `docker-compose.yaml` file on your server:
@@ -243,6 +245,11 @@ Each of them has a `"type"` key based on which it is possible to parse them :
           - MAX_GEOJSON_FEATURES=500
           - MAX_STORED_MESSAGES=5
           - REDIS_HOST=redis
+          - MATRIX_CHAT_ENABLED=false
+          - MATRIX_PING_MESSAGE_PREFIX="@matrixping"
+          - MATRIX_PING_HOMESERVER=https://my.matrix.server.net
+          - MATRIX_PING_ROOMID=!id:my.matrix.server.net
+          - MATRIX_PING_TOKEN=mat_token
         ports:
           - 8000:8000
         restart: unless-stopped

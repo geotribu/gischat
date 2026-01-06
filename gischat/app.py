@@ -21,10 +21,15 @@ from starlette.websockets import WebSocketDisconnect
 from gischat.dispatchers import (
     MatrixDispatcher,
     RedisDispatcher,
+    forward_message_to_matrix_channel,
     get_redis_channel_key,
 )
 from gischat.env import (
-    MATRIX_ENABLED,
+    MATRIX_CHAT_ENABLED,
+    MATRIX_PING_HOMESERVER,
+    MATRIX_PING_MESSAGE_PREFIX,
+    MATRIX_PING_ROOMID,
+    MATRIX_PING_TOKEN,
     REDIS_HOST,
     REDIS_PORT,
     REDIS_URL,
@@ -283,6 +288,18 @@ async def websocket_endpoint(websocket: WebSocket, channel: str) -> None:
                     if message.text not in QCHAT_CHEATCODES:
                         redis_dispatcher.store_message(channel, message)
 
+                    if (
+                        message.text.startswith(MATRIX_PING_MESSAGE_PREFIX)
+                        and MATRIX_PING_MESSAGE_PREFIX
+                        and MATRIX_PING_HOMESERVER
+                        and MATRIX_PING_ROOMID
+                        and MATRIX_PING_TOKEN
+                    ):
+                        logger.info(
+                            f"🏓 [{channel}]: Matrix ping received, forwarding to Matrix channel."
+                        )
+                        await forward_message_to_matrix_channel(message, channel)
+
                 # image message
                 if message.type == QChatMessageTypeEnum.IMAGE:
                     message = QChatImageMessage(**payload)
@@ -420,7 +437,7 @@ async def websocket_endpoint(websocket: WebSocket, channel: str) -> None:
 matrix_dispatcher = MatrixDispatcher.instance()
 
 
-if MATRIX_ENABLED:
+if MATRIX_CHAT_ENABLED:
 
     @app.get("/matrix", response_class=HTMLResponse)
     async def get_matrix_ws_page(request: Request):
@@ -475,7 +492,6 @@ if MATRIX_ENABLED:
 
                     # text message
                     if message.type == QChatMessageTypeEnum.TEXT:
-                        print("payload: ", payload)
                         message = QMatrixChatTextMessage(**payload)
 
                         logger.info(

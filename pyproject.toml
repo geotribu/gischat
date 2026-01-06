@@ -19,6 +19,7 @@ dependencies = [
     "redis>=7.1.0,<8",
     "asyncio>=4.0.0,<5",
     "matrix-nio>=0.25.2,<0.26",
+    "markdown>=3.10",
 ]
 
 [dependency-groups]
