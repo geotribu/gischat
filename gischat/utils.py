@@ -2,7 +2,13 @@ from pathlib import Path
 
 import toml
 
-QCHAT_CHEATCODES = ["givemesomecheese", "iamarobot", "its10oclock", "qgisprolicense"]
+QCHAT_CHEATCODES = [
+    "givemesomecheese",
+    "lookattheflickofqgis",
+    "iamarobot",
+    "its10oclock",
+    "qgisprolicense",
+]
 
 
 def get_uv_version() -> str:
