@@ -2,6 +2,7 @@ import json
 from functools import partial
 from uuid import UUID, uuid4
 
+import markdown
 from fastapi import WebSocket
 from fastapi.encoders import jsonable_encoder
 from nio import AsyncClient, MatrixRoom, RoomMessageText
@@ -11,6 +12,9 @@ from starlette.websockets import WebSocketDisconnect
 from gischat.env import (
     INSTANCE_CHANNELS,
     INSTANCE_ID,
+    MATRIX_PING_HOMESERVER,
+    MATRIX_PING_ROOMID,
+    MATRIX_PING_TOKEN,
     MAX_STORED_MESSAGES,
     REDIS_HOST,
     REDIS_PORT,
@@ -22,6 +26,7 @@ from gischat.models import (
     QChatMessageModel,
     QChatNbUsersMessage,
     QChatNewcomerMessage,
+    QChatTextMessage,
     QMatrixChatTextMessage,
     parse_qchat_message,
 )
@@ -407,3 +412,34 @@ class MatrixDispatcher:
         )
 
         await websocket.send_json(jsonable_encoder(message))
+
+
+async def forward_message_to_matrix_channel(
+    message: QChatTextMessage, channel: str
+) -> None:
+    """
+    Forwards a QChat text message to a Matrix channel.
+    :param message: QChat text message to forward.
+    :param channel: QChat channel where the message originated.
+    """
+
+    client = AsyncClient(homeserver=MATRIX_PING_HOMESERVER)
+    client.access_token = MATRIX_PING_TOKEN
+
+    try:
+        body_md = f"""💬 QChat message in channel **{channel}** by _{message.author}_:
+{message.text}"""
+        body_html = markdown.markdown(body_md)
+
+        await client.room_send(
+            room_id=MATRIX_PING_ROOMID,
+            message_type="m.room.message",
+            content={
+                "msgtype": "m.text",
+                "body": body_md,
+                "format": "org.matrix.custom.html",
+                "formatted_body": body_html,
+            },
+        )
+    finally:
+        await client.close()

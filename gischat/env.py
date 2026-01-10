@@ -10,4 +10,13 @@ REDIS_HOST = os.getenv("REDIS_HOST", "localhost")
 REDIS_PORT = int(os.getenv("REDIS_PORT", "6379"))
 REDIS_URL = f"redis://{REDIS_HOST}:{REDIS_PORT}"
 
-MATRIX_ENABLED = os.getenv("MATRIX_ENABLED", "false").lower() in ("true", "1", "yes")
+MATRIX_CHAT_ENABLED = os.getenv("MATRIX_CHAT_ENABLED", "false").lower() in (
+    "true",
+    "1",
+    "yes",
+)
+
+MATRIX_PING_MESSAGE_PREFIX = os.getenv("MATRIX_PING_MESSAGE_PREFIX", "@matrixping")
+MATRIX_PING_HOMESERVER = os.getenv("MATRIX_PING_HOMESERVER", "")
+MATRIX_PING_ROOMID = os.getenv("MATRIX_PING_ROOMID", "")
+MATRIX_PING_TOKEN = os.getenv("MATRIX_PING_TOKEN", "")
