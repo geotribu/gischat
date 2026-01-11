@@ -8,6 +8,7 @@ QCHAT_CHEATCODES = [
     "iamarobot",
     "its10oclock",
     "qgisprolicense",
+    "wizz",
 ]
 
 
