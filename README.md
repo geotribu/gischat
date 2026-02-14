@@ -357,6 +357,38 @@ Each of them has a `"type"` key based on which it is possible to parse them :
 
 That's it, you should be able to chat now with your fellow GIS mates !
 
+### Moderation
+
+Sometimes you may want to delete some messages stored in the `redis` database. To do so, you can connect to the database using the redis CLI :
+
+```sh
+docker compose exec redis redis-cli
+```
+
+Once connected, list the stored keys with : `keys *`.
+
+To delete the last stored message, you need the exact redis key that ends with `last_messages`, then use the `lpop <key>` command :
+
+```
+lpop iid:<INSTANCE_ID>;channel:<CHANNEL>;last_messages
+```
+
+If you want to reset the redis storage, you can consider deleting the whole docker volume used by redis :
+
+```sh
+# stop the stack
+docker compose down
+
+# list docker volumes
+docker volume ls
+
+# get the one for redis and delete it
+docker volume rm redis-data
+
+# restart the stack
+docker compose up -d
+```
+
 ## Development
 
 1. Install [uv](https://github.com/astral-sh/uv):
