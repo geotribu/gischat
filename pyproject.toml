@@ -6,20 +6,20 @@ authors = [{ name = "Guilhem Allaman", email = "contact@guilhemallaman.net" }]
 requires-python = ">=3.11,<4"
 readme = "README.md"
 dependencies = [
-    "fastapi>=0.128.0,<1",
+    "fastapi>=0.129.0,<1",
     "uvicorn[standard]>=0.40.0,<1",
     "colorlog>=6.10.1,<7",
     "websockets>=16.0,<17",
     "pydantic>=2.12.5,<3",
     "toml>=0.10.2,<0.11",
     "jinja2>=3.1.6,<4",
-    "sentry-sdk[fastapi]>=2.51.0,<3",
-    "pillow>=12.1.0,<13",
+    "sentry-sdk[fastapi]>=2.53.0,<3",
+    "pillow>=12.1.1,<13",
     "httpx>=0.28.1,<0.29",
-    "redis>=7.1.0,<8",
+    "redis>=7.2.0,<8",
     "asyncio>=4.0.0,<5",
     "matrix-nio>=0.25.2,<0.26",
-    "markdown>=3.10.1",
+    "markdown>=3.10.2",
 ]
 
 [dependency-groups]
