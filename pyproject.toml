@@ -6,15 +6,15 @@ authors = [{ name = "Guilhem Allaman", email = "contact@guilhemallaman.net" }]
 requires-python = ">=3.11,<4"
 readme = "README.md"
 dependencies = [
-    "fastapi>=0.135.2,<1",
-    "uvicorn[standard]>=0.42.0,<1",
+    "fastapi>=0.135.3,<1",
+    "uvicorn[standard]>=0.43.0,<1",
     "colorlog>=6.10.1,<7",
     "websockets>=16.0,<17",
     "pydantic>=2.12.5,<3",
     "toml>=0.10.2,<0.11",
     "jinja2>=3.1.6,<4",
-    "sentry-sdk[fastapi]>=2.56.0,<3",
-    "pillow>=12.1.1,<13",
+    "sentry-sdk[fastapi]>=2.57.0,<3",
+    "pillow>=12.2.0,<13",
     "httpx>=0.28.1,<0.29",
     "redis>=7.4.0,<8",
     "asyncio>=4.0.0,<5",
