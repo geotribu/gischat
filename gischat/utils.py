@@ -9,6 +9,7 @@ QCHAT_CHEATCODES = [
     "its10oclock",
     "qgisprolicense",
     "wizz",
+    "spaceandtime",
 ]
 
 
