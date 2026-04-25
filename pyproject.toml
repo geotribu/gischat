@@ -6,8 +6,8 @@ authors = [{ name = "Guilhem Allaman", email = "contact@guilhemallaman.net" }]
 requires-python = ">=3.11,<4"
 readme = "README.md"
 dependencies = [
-    "fastapi>=0.136.0,<1",
-    "uvicorn[standard]>=0.44.0,<1",
+    "fastapi>=0.136.1,<1",
+    "uvicorn[standard]>=0.46.0,<1",
     "colorlog>=6.10.1,<7",
     "websockets>=16.0,<17",
     "pydantic>=2.13.2,<3",
@@ -24,7 +24,7 @@ dependencies = [
 
 [dependency-groups]
 dev = [
-    "pre-commit>=4.5.1,<5",
+    "pre-commit>=4.6.0,<5",
     "pytest>=9.0.3,<10",
     "pytest-asyncio>=1.3.0,<2",
     "pytest-cov>=7.1.0,<8",
