@@ -1,0 +1,32 @@
+name: "🔒 Security"
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "**/*.py"
+      - ".github/workflows/security.yml"
+
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "**/*.py"
+      - ".github/workflows/security.yml"
+
+jobs:
+
+  analyze:
+
+    name: "🔍 Analyze with bandit"
+    runs-on: ubuntu-latest
+
+    permissions:
+      security-events: write
+      actions: read
+      contents: read
+
+    steps:
+      - name: Perform Bandit Analysis
+        uses: PyCQA/bandit-action@v1
