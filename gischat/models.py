@@ -43,6 +43,9 @@ QCHAT_TEXT_MESSAGE_FIELD = Field(
 
 CRS_WKT_FIELD = Field(description="WKT string of the CRS")
 CRS_AUTHID_FIELD = Field(description="Auth id of the crs, e.g.: 'EPSG:4326'")
+IN_REPLY_TO_ID_FIELD = Field(
+    default=None, description="ID of the message this one is replying to"
+)
 
 
 class QChatMessageTypeEnum(Enum):
@@ -84,6 +87,7 @@ class QChatTextMessage(QChatMessageModel):
     author: str = QCHAT_NICKNAME_FIELD
     avatar: str | None = Field(default=None)
     text: str = QCHAT_TEXT_MESSAGE_FIELD
+    in_reply_to_id: UUID | None = IN_REPLY_TO_ID_FIELD
 
     def __str__(self) -> str:
         return f"[{self.author}]: '{self.text}'"
@@ -94,6 +98,7 @@ class QChatImageMessage(QChatMessageModel):
     author: str = QCHAT_NICKNAME_FIELD
     avatar: str | None = Field(default=None)
     image_data: str = Field(description="String of the encoded image")
+    in_reply_to_id: UUID | None = IN_REPLY_TO_ID_FIELD
 
 
 class QChatNbUsersMessage(QChatMessageModel):
@@ -129,6 +134,7 @@ class QChatGeojsonLayerMessage(QChatMessageModel):
     style: str | None = Field(
         default=None, description="QML style of the layer (AllStyleCategories)"
     )
+    in_reply_to_id: str | None = IN_REPLY_TO_ID_FIELD
 
 
 class QChatCrsMessage(QChatMessageModel):
@@ -137,6 +143,7 @@ class QChatCrsMessage(QChatMessageModel):
     avatar: str | None = Field(default=None)
     crs_wkt: str = CRS_WKT_FIELD
     crs_authid: str = CRS_AUTHID_FIELD
+    in_reply_to_id: str | None = IN_REPLY_TO_ID_FIELD
 
 
 class QChatBboxMessage(QChatMessageModel):
@@ -149,6 +156,7 @@ class QChatBboxMessage(QChatMessageModel):
     xmax: float
     ymin: float
     ymax: float
+    in_reply_to_id: str | None = IN_REPLY_TO_ID_FIELD
 
 
 class QChatPositionMessage(QChatMessageModel):
@@ -159,6 +167,7 @@ class QChatPositionMessage(QChatMessageModel):
     crs_authid: str = CRS_AUTHID_FIELD
     x: float
     y: float
+    in_reply_to_id: UUID | None = IN_REPLY_TO_ID_FIELD
 
 
 class QChatModelMessage(QChatMessageModel):
@@ -170,6 +179,7 @@ class QChatModelMessage(QChatMessageModel):
         default=None, description="Group of the QGIS graphic model"
     )
     raw_xml: str = Field(description="Raw XML of the QGIS graphic model")
+    in_reply_to_id: UUID | None = IN_REPLY_TO_ID_FIELD
 
 
 def build_message_type_mapping(
