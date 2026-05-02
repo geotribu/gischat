@@ -50,6 +50,12 @@ repos:
         args:
           - --select=E9,F401,F63,F7,F82,D103
 
+  - repo: https://github.com/PyCQA/bandit
+    rev: 1.9.4
+    hooks:
+      - id: bandit
+        args: ["-c", "pyproject.toml"]
+
 ci:
   autoupdate_schedule: quarterly
   skip: []
