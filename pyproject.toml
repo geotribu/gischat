@@ -3,7 +3,7 @@ name = "gischat"
 version = "3.3.2"
 description = "QChat backend for QGIS and QField plugins"
 authors = [{ name = "Guilhem Allaman", email = "contact@guilhemallaman.net" }]
-requires-python = ">=3.11,<4"
+requires-python = ">=3.12,<4"
 readme = "README.md"
 dependencies = [
     "fastapi>=0.136.1,<1",
@@ -30,9 +30,8 @@ dev = [
     "pytest-cov>=7.1.0,<8",
     "pytest-timeout>=2.4.0,<3",
     "codecov>=2.1.13,<3",
-    "black>=26.3.1,<27",
-    "isort>=8.0.1,<9",
     "flake8>=7.3.0,<8",
+    "bandit>=1.9.4,<2",
 ]
 
 [tool.hatch.build.targets.sdist]
@@ -64,3 +63,7 @@ branch = true
 
 [tool.coverage.report]
 include = ["gischat/*.py"]
+
+[tool.bandit]
+targets = ["gischat"]
+exclude_dirs = [".venv", "tests"]
