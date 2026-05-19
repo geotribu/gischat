@@ -41,8 +41,8 @@ QCHAT_TEXT_MESSAGE_FIELD = Field(
     max_length=int(os.environ.get("MAX_MESSAGE_LENGTH", 255))
 )
 
-CRS_WKT_FIELD = Field(description="WKT string of the CRS")
-CRS_AUTHID_FIELD = Field(description="Auth id of the crs, e.g.: 'EPSG:4326'")
+CRS_WKT_FIELD = Field(description="WKT string of the CRS", max_length=2000)
+CRS_AUTHID_FIELD = Field(description="Auth id of the crs, e.g.: 'EPSG:4326'", max_length=50)
 
 
 class QChatMessageTypeEnum(Enum):
@@ -93,7 +93,7 @@ class QChatImageMessage(QChatMessageModel):
     type: QChatMessageTypeEnum = QChatMessageTypeEnum.IMAGE
     author: str = QCHAT_NICKNAME_FIELD
     avatar: str | None = Field(default=None)
-    image_data: str = Field(description="String of the encoded image")
+    image_data: str = Field(description="String of the encoded image", max_length=2_000_000)
 
 
 class QChatNbUsersMessage(QChatMessageModel):
@@ -122,7 +122,7 @@ class QChatGeojsonLayerMessage(QChatMessageModel):
     type: QChatMessageTypeEnum = QChatMessageTypeEnum.GEOJSON
     author: str = QCHAT_NICKNAME_FIELD
     avatar: str | None = Field(default=None)
-    layer_name: str = Field(description="Name of the layer")
+    layer_name: str = Field(description="Name of the layer", max_length=255)
     crs_wkt: str = CRS_WKT_FIELD
     crs_authid: str = CRS_AUTHID_FIELD
     geojson: dict = Field(description="Geo data as geojson")
@@ -165,11 +165,11 @@ class QChatModelMessage(QChatMessageModel):
     type: QChatMessageTypeEnum = QChatMessageTypeEnum.MODEL
     author: str = QCHAT_NICKNAME_FIELD
     avatar: str | None = Field(default=None)
-    model_name: str = Field(description="Name of the QGIS graphic model")
+    model_name: str = Field(description="Name of the QGIS graphic model", max_length=128)
     model_group: str | None = Field(
-        default=None, description="Group of the QGIS graphic model"
+        default=None, description="Group of the QGIS graphic model", max_length=128
     )
-    raw_xml: str = Field(description="Raw XML of the QGIS graphic model")
+    raw_xml: str = Field(description="Raw XML of the QGIS graphic model", max_length=1_000_000)
 
 
 def build_message_type_mapping(
