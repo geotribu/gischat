@@ -421,7 +421,7 @@ async def websocket_endpoint(websocket: WebSocket, channel: str) -> None:
                 message = QChatUncompliantMessage(reason=str(e))
 
                 logger.error(f"❌ Uncompliant message shared: {e}")
-                await redis_dispatcher.broadcast_to_redis_channel(channel, message)
+                await websocket.send_json(jsonable_encoder(message))
 
     except WebSocketDisconnect:
 
