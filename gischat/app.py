@@ -1,5 +1,6 @@
 import asyncio
 import base64
+import binascii
 import json
 import os
 from contextlib import asynccontextmanager
@@ -13,7 +14,7 @@ from fastapi import FastAPI, HTTPException, Request, Response, WebSocket
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import HTMLResponse, StreamingResponse
 from fastapi.templating import Jinja2Templates
-from PIL import Image
+from PIL import Image, UnidentifiedImageError
 from pydantic import ValidationError
 from redis import Redis as RedisObject
 from starlette.websockets import WebSocketDisconnect
@@ -304,8 +305,16 @@ async def websocket_endpoint(websocket: WebSocket, channel: str) -> None:
                 if message.type == QChatMessageTypeEnum.IMAGE:
                     message = QChatImageMessage(**payload)
 
+                    try:
+                        raw = base64.b64decode(message.image_data, validate=True)
+                        image = Image.open(BytesIO(raw))
+                    except (binascii.Error, UnidentifiedImageError, Image.DecompressionBombError) as img_err:
+                        logger.error(f"❌ [{channel}]: invalid image from {message.author}: {img_err}")
+                        err_msg = QChatUncompliantMessage(reason="Invalid or oversized image data.")
+                        await websocket.send_json(jsonable_encoder(err_msg))
+                        continue
+
                     # resize image if needed using MAX_IMAGE_SIZE env var
-                    image = Image.open(BytesIO(base64.b64decode(message.image_data)))
                     size = int(os.environ.get("MAX_IMAGE_SIZE", 800))
                     image.thumbnail((size, size), Image.Resampling.LANCZOS)
                     img_byte_arr = BytesIO()
