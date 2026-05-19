@@ -474,9 +474,7 @@ if MATRIX_CHAT_ENABLED:
             )
         except Exception as e:
             logger.error(f"❌ Error while accepting Matrix websocket: {e}")
-            await websocket.close(
-                code=1000, reason=f"Error while accepting websocket: {e}"
-            )
+            await websocket.close(code=1011, reason="Server error")
             return
 
         room_id = matrix_dispatcher.get_registration_request_room_id(request_id)
