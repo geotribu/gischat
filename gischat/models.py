@@ -42,7 +42,9 @@ QCHAT_TEXT_MESSAGE_FIELD = Field(
 )
 
 CRS_WKT_FIELD = Field(description="WKT string of the CRS", max_length=2000)
-CRS_AUTHID_FIELD = Field(description="Auth id of the crs, e.g.: 'EPSG:4326'", max_length=50)
+CRS_AUTHID_FIELD = Field(
+    description="Auth id of the crs, e.g.: 'EPSG:4326'", max_length=50
+)
 
 
 class QChatMessageTypeEnum(Enum):
@@ -93,7 +95,10 @@ class QChatImageMessage(QChatMessageModel):
     type: QChatMessageTypeEnum = QChatMessageTypeEnum.IMAGE
     author: str = QCHAT_NICKNAME_FIELD
     avatar: str | None = Field(default=None)
-    image_data: str = Field(description="String of the encoded image", max_length=int(os.environ.get("MAX_IMAGE_RAW_LENGTH", 5_000_000)))
+    image_data: str = Field(
+        description="String of the encoded image",
+        max_length=int(os.environ.get("MAX_IMAGE_RAW_LENGTH", 5_000_000)),
+    )
 
 
 class QChatNbUsersMessage(QChatMessageModel):
@@ -165,11 +170,16 @@ class QChatModelMessage(QChatMessageModel):
     type: QChatMessageTypeEnum = QChatMessageTypeEnum.MODEL
     author: str = QCHAT_NICKNAME_FIELD
     avatar: str | None = Field(default=None)
-    model_name: str = Field(description="Name of the QGIS graphic model", max_length=128)
+    model_name: str = Field(
+        description="Name of the QGIS graphic model", max_length=128
+    )
     model_group: str | None = Field(
         default=None, description="Group of the QGIS graphic model", max_length=128
     )
-    raw_xml: str = Field(description="Raw XML of the QGIS graphic model", max_length=int(os.environ.get("MAX_MODEL_RAW_LENGTH", 1_000_000)))
+    raw_xml: str = Field(
+        description="Raw XML of the QGIS graphic model",
+        max_length=int(os.environ.get("MAX_MODEL_RAW_LENGTH", 1_000_000)),
+    )
 
 
 def build_message_type_mapping(
