@@ -253,16 +253,24 @@ Each of them has a `"type"` key based on which it is possible to parse them :
         ports:
           - 8000:8000
         restart: unless-stopped
+        depends_on:
+          redis:
+            condition: service_healthy
 
       redis:
-       image: redis:latest
-       container_name: gischat-redis
-       restart: unless-stopped
-       volumes:
-         - redis-data:/data
+        image: redis:latest
+        container_name: gischat-redis
+        restart: unless-stopped
+        healthcheck:
+          test: ["CMD", "redis-cli", "ping"]
+          interval: 5s
+          timeout: 3s
+          retries: 5
+        volumes:
+        - redis-data:/data
 
-   volumes:
-     redis-data:
+    volumes:
+      redis-data:
     ```
 
 1. Launch the app using `compose`:
