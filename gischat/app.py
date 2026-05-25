@@ -99,6 +99,11 @@ async def lifespan(app: FastAPI):
     # shutdown
     redis_dispatcher.clean()
     listener_task.cancel()
+    try:
+        await listener_task
+    except asyncio.CancelledError:
+        pass
+
     await app.state.redis_pub.aclose()
     await app.state.redis_sub.aclose()
     redis_connection.close()
@@ -122,21 +127,32 @@ async def redis_listener(app: FastAPI) -> None:
     :param channel: name of the channel to list to.
     """
 
-    pubsub = app.state.redis_sub.pubsub()
-    redis_channel = get_redis_channel_key()
+    while True:
+        try:
+            pubsub = app.state.redis_sub.pubsub()
+            redis_channel = get_redis_channel_key()
 
-    await pubsub.subscribe(redis_channel)
-    logger.info("✅ Redis listener running...")
+            await pubsub.subscribe(redis_channel)
+            logger.info("✅ Redis listener running...")
 
-    async for message in pubsub.listen():
-        if message["type"] == "message":
-            # extract the "channel" key to broadcast to the correct channel.
-            message_data = json.loads(message["data"])
-            channel = message_data.pop("channel")
+            async for message in pubsub.listen():
+                if message["type"] == "message":
+                    try:
+                        # extract the "channel" key to broadcast to the correct channel.
+                        message_data = json.loads(message["data"])
+                        channel = message_data.pop("channel")
 
-            await redis_dispatcher.broadcast_to_active_websockets(
-                channel, json.dumps(message_data)
-            )
+                        await redis_dispatcher.broadcast_to_active_websockets(
+                            channel, json.dumps(message_data)
+                        )
+                    except Exception as e:
+                        logger.error(f"❌ Error broadcasting Redis message: {e}")
+
+        except asyncio.CancelledError:
+            raise
+        except Exception as e:
+            logger.error(f"❌ Redis listener crashed, restarting in 1s: {e}")
+            await asyncio.sleep(1)
 
 
 # region API endpoints
