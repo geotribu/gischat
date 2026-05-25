@@ -1,13 +1,13 @@
 [project]
 name = "gischat"
-version = "3.3.3"
+version = "3.3.4"
 description = "QChat backend for QGIS and QField plugins"
 authors = [{ name = "Guilhem Allaman", email = "contact@guilhemallaman.net" }]
 requires-python = ">=3.12,<4"
 readme = "README.md"
 dependencies = [
-    "fastapi>=0.136.1,<1",
-    "uvicorn[standard]>=0.47.0,<1",
+    "fastapi>=0.136.3,<1",
+    "uvicorn[standard]>=0.48.0,<1",
     "colorlog>=6.10.1,<7",
     "websockets>=16.0,<17",
     "pydantic>=2.13.4,<3",
