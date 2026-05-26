@@ -99,7 +99,6 @@ async def lifespan(app: FastAPI):
     # shutdown
     redis_dispatcher.clean()
     listener_task.cancel()
-    await listener_task
 
     await app.state.redis_pub.aclose()
     await app.state.redis_sub.aclose()
