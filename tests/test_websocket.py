@@ -1,3 +1,4 @@
+from time import sleep
 from typing import Any
 
 import pytest
@@ -308,6 +309,7 @@ def test_websocket_send_newcomer_api_call(client: TestClient, channel: str):
             {"type": QChatMessageTypeEnum.NEWCOMER.value, "newcomer": "Isidore"}
         )
 
+        sleep(0.2)
         assert client.get(f"/channel/{channel}/users").json() == ["Isidore"]
 
         with client.websocket_connect(f"/channel/{channel}/ws") as websocket2:
@@ -315,10 +317,17 @@ def test_websocket_send_newcomer_api_call(client: TestClient, channel: str):
                 {"type": QChatMessageTypeEnum.NEWCOMER.value, "newcomer": "Barnabe"}
             )
 
+            sleep(0.2)
             assert client.get(f"/channel/{channel}/users").json() == [
                 "Barnabe",
                 "Isidore",
             ]
+
+        sleep(0.2)
+        assert client.get(f"/channel/{channel}/users").json() == ["Isidore"]
+
+    sleep(0.2)
+    assert client.get(f"/channel/{channel}/users").json() == []
 
 
 @pytest.mark.parametrize("channel", get_test_channels())
