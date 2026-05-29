@@ -7,4 +7,6 @@ exec uv run uvicorn gischat.app:app \
     --port 8000 \
     --proxy-headers \
     --log-config=log_config.yaml \
-    --workers $WORKERS
+    --workers $WORKERS \
+    --ws-ping-interval ${WS_PING_INTERVAL:-20} \
+    --ws-ping-timeout ${WS_PING_TIMEOUT:-10}

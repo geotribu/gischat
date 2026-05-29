@@ -7,7 +7,6 @@ from fastapi import WebSocket
 from fastapi.encoders import jsonable_encoder
 from nio import AsyncClient, MatrixRoom, RoomMessageText
 from redis import Redis as RedisObject
-from starlette.websockets import WebSocketDisconnect
 
 from gischat.env import (
     INSTANCE_CHANNELS,
@@ -122,9 +121,9 @@ class RedisDispatcher:
         for ws in active_connections:
             try:
                 await ws.send_text(message)
-            except WebSocketDisconnect as e:
+            except Exception as e:
                 logger.error(f"❌ Error sending message to {ws}: {e}")
-                active_connections.remove(ws)
+                self.active_connections[channel].remove(ws)
 
     async def broadcast_to_redis_channel(
         self, channel: str, message: QChatMessageModel
@@ -220,7 +219,7 @@ class RedisDispatcher:
                 if self.users[ws] == user:
                     try:
                         await ws.send_json(jsonable_encoder(message))
-                    except WebSocketDisconnect:
+                    except Exception:
                         logger.error("Can not send message to disconnected websocket")
             except KeyError:
                 continue

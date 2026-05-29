@@ -108,7 +108,7 @@ def test_websocket_like_message(client: TestClient, channel: str):
                     "message": "hi",
                 }
             )
-            sleep(1)
+            sleep(0.2)
 
             assert is_subdict(
                 {

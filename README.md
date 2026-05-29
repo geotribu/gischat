@@ -432,7 +432,7 @@ docker compose up -d
 1. Launch API:
 
   ```sh
-  uv run uvicorn gischat.app:app --reload --env-file .env --log-config=log_config.yaml
+  uv run uvicorn gischat.app:app --reload --env-file .env --log-config=log_config.yaml --ws-ping-interval 20 --ws-ping-timeout 10
   ```
 
 ## Build
