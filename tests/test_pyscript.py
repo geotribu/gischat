@@ -7,7 +7,7 @@ from tests.test_utils import is_subdict
 
 
 @pytest.mark.parametrize("channel", get_test_channels())
-def test_send_and_receive_model(client: TestClient, channel: str):
+def test_send_and_receive_script(client: TestClient, channel: str):
     with client.websocket_connect(f"/channel/{channel}/ws") as websocket:
 
         assert is_subdict(
@@ -20,22 +20,17 @@ def test_send_and_receive_model(client: TestClient, channel: str):
 
         websocket.send_json(
             {
-                "type": QChatMessageTypeEnum.MODEL.value,
+                "type": QChatMessageTypeEnum.SCRIPT.value,
                 "author": f"ws-tester-{channel}",
                 "avatar": "cat",
-                "model_name": "La PR, la PR, mais qu'est-ce qu'elle a fait de moi la PR ? La PR, la PR, c'est comme si c'était mon frère.",
-                "model_group": "Les Barçons Gouchers",
-                "raw_xml": "<xml>Some graphic model XML</xml>",
+                "name": "Pyscript test script",
+                "raw_pycode": "from qgis.core import QgsProject",
             }
         )
         data = websocket.receive_json()
 
-        assert data["type"] == QChatMessageTypeEnum.MODEL.value
+        assert data["type"] == QChatMessageTypeEnum.SCRIPT.value
         assert data["author"] == f"ws-tester-{channel}"
         assert data["avatar"] == "cat"
-        assert (
-            data["model_name"]
-            == "La PR, la PR, mais qu'est-ce qu'elle a fait de moi la PR ? La PR, la PR, c'est comme si c'était mon frère."
-        )
-        assert data["model_group"] == "Les Barçons Gouchers"
-        assert data["raw_xml"] == "<xml>Some graphic model XML</xml>"
+        assert data["name"] == "Pyscript test script"
+        assert data["raw_pycode"] == "from qgis.core import QgsProject"

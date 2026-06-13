@@ -60,6 +60,7 @@ class QChatMessageTypeEnum(Enum):
     BBOX = "bbox"
     POSITION = "position"
     MODEL = "model"
+    SCRIPT = "script"
 
     def __str__(self) -> str:
         return self.value
@@ -179,6 +180,19 @@ class QChatModelMessage(QChatMessageModel):
     raw_xml: str = Field(
         description="Raw XML of the QGIS graphic model",
         max_length=int(os.environ.get("MAX_MODEL_RAW_LENGTH", 1_000_000)),
+    )
+
+
+class QChatScriptMessage(QChatMessageModel):
+    type: QChatMessageTypeEnum = QChatMessageTypeEnum.SCRIPT
+    author: str = QCHAT_NICKNAME_FIELD
+    avatar: str | None = Field(default=None)
+    name: str = Field(
+        description="Name of the QGIS python processing script", max_length=128
+    )
+    raw_pycode: str = Field(
+        description="Raw Python code of the QGIS python processing script",
+        max_length=int(os.environ.get("MAX_SCRIPT_RAW_LENGTH", 2_000_000)),
     )
 
 

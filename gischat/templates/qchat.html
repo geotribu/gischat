@@ -298,6 +298,9 @@
                 case "model":
                     displayMessage(data.timestamp, "🧮", data.author, `Shared the model ${data.model_name}`, "table-info");
                     break;
+                case "script":
+                    displayMessage(data.timestamp, "🧑‍💻", data.author, `Shared the script ${data.name}`, "table-info");
+                    break;
                 default:
                     displayAdminMessage(`Unknown message received: ${data}`);
             }
