@@ -7,7 +7,7 @@ from tests.test_utils import is_subdict
 
 
 @pytest.mark.parametrize("channel", get_test_channels())
-def test_send_and_receive_geojson(client: TestClient, channel: str):
+def test_send_and_receive_model(client: TestClient, channel: str):
     with client.websocket_connect(f"/channel/{channel}/ws") as websocket:
 
         assert is_subdict(
