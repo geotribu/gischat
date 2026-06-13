@@ -79,7 +79,13 @@ async def lifespan(app: FastAPI):
     # startup
     logger.info("🚀 Starting lifespan, connecting to Redis...")
     app.state.redis_pub = await redis.from_url(REDIS_URL, decode_responses=True)
-    app.state.redis_sub = await redis.from_url(REDIS_URL, decode_responses=True)
+    app.state.redis_sub = await redis.from_url(
+        REDIS_URL,
+        decode_responses=True,
+        socket_timeout=None,
+        socket_keepalive=True,
+        health_check_interval=30,
+    )
 
     redis_connection = RedisObject(
         host=REDIS_HOST,
