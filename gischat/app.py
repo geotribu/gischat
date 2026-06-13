@@ -131,8 +131,8 @@ async def redis_listener(app: FastAPI) -> None:
     """
 
     while True:
+        pubsub = app.state.redis_sub.pubsub()
         try:
-            pubsub = app.state.redis_sub.pubsub()
             redis_channel = get_redis_channel_key()
 
             await pubsub.subscribe(redis_channel)
@@ -156,6 +156,8 @@ async def redis_listener(app: FastAPI) -> None:
         except Exception as e:
             logger.error(f"❌ Redis listener crashed, restarting in 1s: {e}")
             await asyncio.sleep(1)
+        finally:
+            await pubsub.aclose()
 
 
 # region API endpoints
