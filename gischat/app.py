@@ -50,6 +50,7 @@ from gischat.models import (
     QChatModelMessage,
     QChatNewcomerMessage,
     QChatPositionMessage,
+    QChatScriptMessage,
     QChatTextMessage,
     QChatUncompliantMessage,
     QMatrixChatTextMessage,
@@ -433,6 +434,17 @@ async def websocket_endpoint(websocket: WebSocket, channel: str) -> None:
 
                     logger.info(
                         f"🧮 [{channel}]: ({message.author}): shared graphic model '{message.model_name}'"
+                    )
+                    await redis_dispatcher.broadcast_to_redis_channel(channel, message)
+
+                    redis_dispatcher.store_message(channel, message)
+
+                # python script message
+                if message.type == QChatMessageTypeEnum.SCRIPT:
+                    message = QChatScriptMessage(**payload)
+
+                    logger.info(
+                        f"🧑‍💻 [{channel}]: ({message.author}): shared python script '{message.name}'"
                     )
                     await redis_dispatcher.broadcast_to_redis_channel(channel, message)
 
