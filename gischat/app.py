@@ -79,7 +79,13 @@ async def lifespan(app: FastAPI):
     # startup
     logger.info("🚀 Starting lifespan, connecting to Redis...")
     app.state.redis_pub = await redis.from_url(REDIS_URL, decode_responses=True)
-    app.state.redis_sub = await redis.from_url(REDIS_URL, decode_responses=True)
+    app.state.redis_sub = await redis.from_url(
+        REDIS_URL,
+        decode_responses=True,
+        socket_timeout=None,
+        socket_keepalive=True,
+        health_check_interval=30,
+    )
 
     redis_connection = RedisObject(
         host=REDIS_HOST,
@@ -125,8 +131,8 @@ async def redis_listener(app: FastAPI) -> None:
     """
 
     while True:
+        pubsub = app.state.redis_sub.pubsub()
         try:
-            pubsub = app.state.redis_sub.pubsub()
             redis_channel = get_redis_channel_key()
 
             await pubsub.subscribe(redis_channel)
@@ -150,6 +156,8 @@ async def redis_listener(app: FastAPI) -> None:
         except Exception as e:
             logger.error(f"❌ Redis listener crashed, restarting in 1s: {e}")
             await asyncio.sleep(1)
+        finally:
+            await pubsub.aclose()
 
 
 # region API endpoints
