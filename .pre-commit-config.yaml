@@ -56,6 +56,11 @@ repos:
       - id: bandit
         args: ["-c", "pyproject.toml"]
 
+  - repo: https://github.com/hadolint/hadolint
+    rev: v2.14.0
+    hooks:
+      - id: hadolint-docker
+
 ci:
   autoupdate_schedule: quarterly
   skip: []
