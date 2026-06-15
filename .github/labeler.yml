@@ -1,25 +1,46 @@
-ci-cd:
+ci:
+  - head-branch:
+    - "^ci"
+    - "ci"
   - changed-files:
-      - any-glob-to-any-file: .github/**
+    - any-glob-to-any-file:
+      - .github/**
 
 dependencies:
   - changed-files:
-      - any-glob-to-any-file:
-          - pyproject.toml
-          - uv.lock
+    - any-glob-to-any-file:
+      - pyproject.toml
+      - uv.lock
 
 documentation:
+  - head-branch:
+    - "^doc"
+    - "doc"
   - changed-files:
-      - any-glob-to-any-file:
-          - docs/**
-          - README.md
+    - any-glob-to-any-file:
+      - docs/**
+      - README.md
 
 enhancement:
-  - head-branch: ["^feature", "feature"]
+  - head-branch:
+    - "^feature"
+    - "feature"
+    - "^feat"
+    - "feat"
+
+tests:
+  - head-branch:
+    - "^test"
+    - "test"
+  - changed-files:
+    - any-glob-to-any-file:
+      - tests/**
 
 tooling:
-  - head-branch: ["^tooling", "tooling"]
+  - head-branch:
+    - "^tooling"
+    - "tooling"
   - changed-files:
-      - any-glob-to-any-file:
-          - codecov.yml
-          - .pre-commit-config.yaml
+    - any-glob-to-any-file:
+      - .gitignore
+      - .pre-commit-config.yaml
