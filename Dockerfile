@@ -19,7 +19,7 @@ COPY README.md /gischat/README.md
 COPY gischat /gischat/gischat
 
 RUN chmod +x entrypoint.sh \
-&& pip install uv
+    && pip install --no-cache-dir uv==0.11.21
 
 RUN uv sync
 
