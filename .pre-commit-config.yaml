@@ -62,6 +62,11 @@ repos:
       - id: hadolint-docker
 
 ci:
-  autoupdate_schedule: quarterly
-  skip: []
+  autofix_commit_msg: "[pre-commit.ci] Automatic git hooks fix."
+  autofix_prs: true
+  autoupdate_commit_msg: "[pre-commit.ci] Upgrade git hooks."
+  autoupdate_schedule: monthly
+  skip: [
+    "hadolint-docker"
+  ]
   submodules: false
