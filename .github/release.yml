@@ -12,7 +12,8 @@ changelog:
         - enhancement
     - title: Tooling 🔧
       labels:
-        - ci-cd
+        - ci
+        - tooling
     - title: Documentation 📖
       labels:
         - documentation
