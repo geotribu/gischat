@@ -1,3 +1,4 @@
+import asyncio
 import json
 from functools import partial
 from uuid import UUID, uuid4
@@ -7,6 +8,8 @@ from fastapi import WebSocket
 from fastapi.encoders import jsonable_encoder
 from nio import AsyncClient, MatrixRoom, RoomMessageText
 from redis import Redis as RedisObject
+from telegram import Update
+from telegram.ext import Application, ContextTypes, MessageHandler, filters
 
 from gischat.env import (
     INSTANCE_CHANNELS,
@@ -17,6 +20,8 @@ from gischat.env import (
     MAX_STORED_MESSAGES,
     REDIS_HOST,
     REDIS_PORT,
+    TELEGRAM_BOT_TOKEN,
+    TELEGRAM_CHAT_ID,
 )
 from gischat.logging import logger
 from gischat.models import (
@@ -442,3 +447,55 @@ async def forward_message_to_matrix_channel(
         )
     finally:
         await client.close()
+
+
+class TelegramDispatcher:
+
+    _instance = None
+
+    active_connections: list[WebSocket]
+    telegram_app: Application
+
+    @classmethod
+    def instance(cls) -> "TelegramDispatcher":
+        if cls._instance is None:
+            cls._instance = TelegramDispatcher()
+        return cls._instance
+
+    def __init__(self):
+        self.active_connections = []
+
+    async def start(self) -> None:
+        self.telegram_app = Application.builder().token(TELEGRAM_BOT_TOKEN).build()
+        await self.telegram_app.initialize()
+        await self.telegram_app.start()
+        self.text_message_handler = MessageHandler(filters.TEXT & ~filters.COMMAND, self.on_telegram_text_message_received)
+        self.telegram_app.add_handler(self.text_message_handler)
+        self.async_polling_task = asyncio.create_task(self.telegram_app.updater.start_polling())
+
+    async def stop(self) -> None:
+        self.async_polling_task.cancel()
+        self.telegram_app.remove_handler(self.text_message_handler)
+        await self.telegram_app.stop()
+        await self.telegram_app.shutdown()
+
+    async def connect_websocket(self, websocket: WebSocket) -> None:
+        await websocket.accept()
+        self.active_connections.append(websocket)
+
+    def disconnect_websocket(self, websocket: WebSocket) -> None:
+        self.active_connections.remove(websocket)
+
+    async def broadcast_to_websockets(self, message: str) -> None:
+        for connection in self.active_connections:
+            await connection.send_text(message)
+
+    async def send_telegram_message(self, author: str, text: str) -> None:
+        message = f"💬{author}: {text}"
+        await self.telegram_app.bot.send_message(chat_id=TELEGRAM_CHAT_ID, text=message)
+
+    async def on_telegram_text_message_received(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        text = update.message.text
+        sender = update.message.from_user.username or update.message.from_user.first_name
+        qchat_message = QChatTextMessage(author=sender, text=text)
+        await self.broadcast_to_websockets(json.dumps(qchat_message.model_dump(mode="json")))
