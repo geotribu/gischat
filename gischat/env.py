@@ -20,3 +20,11 @@ MATRIX_PING_MESSAGE_PREFIX = os.getenv("MATRIX_PING_MESSAGE_PREFIX", "@matrixpin
 MATRIX_PING_HOMESERVER = os.getenv("MATRIX_PING_HOMESERVER", "")
 MATRIX_PING_ROOMID = os.getenv("MATRIX_PING_ROOMID", "")
 MATRIX_PING_TOKEN = os.getenv("MATRIX_PING_TOKEN", "")
+
+TELEGRAM_CHAT_ENABLED = os.getenv("TELEGRAM_CHAT_ENABLED", "false").lower() in (
+    "true",
+    "1",
+    "yes",
+)
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "")
+TELEGRAM_CHAT_ID = int(os.getenv("TELEGRAM_CHAT_ID", "0"))
