@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>💬 QTelegramChat</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-LN+7fdVzj6u52u30Kp6M/trliBMCMKTyK833zpbD+pXdCLuTusPj697FH4R/5mcr" crossorigin="anonymous">
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-ndDqU0Gzau9qJ1lfW4pNLlhNTkCfHzAVBReH9diLvGRem5+R9g2FzA8ZGN954O5Q" crossorigin="anonymous"></script>
+
+    </head>
+
+<body class="container">
+
+<div class="card mt-2">
+
+    <div id="qtelegramchat-settings-header" class="card-header">
+
+        <h5 class="mb-0">
+            <button
+                class="btn"
+                data-bs-toggle="collapse"
+                data-bs-target="#qtelegramchat-settings"
+                aria-expanded="true"
+                aria-controls="qtelegramchat-settings"
+            >⚙️ QTelegramChat Settings
+            </button>
+        </h5>
+
+    </div>
+
+    <div id="qtelegramchat-settings" class="collapse show" aria-labelledby="qtelegramchat-settings-header">
+
+        <div class="card-body">
+
+             <form class="d-flex flex-column flex-md-row align-items-md-center gap-2 mb-2">
+
+                <label for="userId">User:</label>
+                <input type="text" class="form-control" id="userId" aria-describedby="user" placeholder="Enter user.">
+
+                <button class="btn btn-primary mb-2 mr-sm-2" id="connectButton" onclick="onConnectButtonClick(event)">Connect</button>
+
+            </form>
+
+        </div>
+    </div>
+
+</div>
+
+<div class="card mt-2">
+
+    <div id="qtelegramchat-header" class="card-header">
+
+        <h5 class="mb-0">
+            <button
+                id="qtelegramchat-header-button"
+                class="btn"
+                data-bs-toggle="collapse"
+                data-bs-target="#qtelegramchat"
+                aria-expanded="true"
+                aria-controls="qtelegramchat"
+            >💬 QTelegramChat
+            </button>
+        </h5>
+
+    </div>
+
+    <div id="qtelegramchat" class="collapse" aria-labelledby="qtelegramchat-header">
+
+        <div class="card-body">
+
+            <form class="d-flex flex-column flex-md-row align-items-md-center gap-2 mb-2">
+
+                <label for="messageText" class="me-2 mb-0">Message</label>
+                <input type="text" class="form-control mb-2 mr-sm-2" id="messageText" aria-describedby="textMessage" placeholder="Your message here" disabled>
+
+                <button class="btn btn-primary mb-2 mr-sm-2" onclick="sendMessage(event)" id="sendButton" disabled>Send</button>
+
+            </form>
+
+            <table class="table">
+                <thead>
+                    <tr>
+                    <th scope="col">⌚<span class="visually-hidden">Time</span></th>
+                    <th scope="col">🖨️<span class="visually-hidden">Printer</span></th>
+                    <th scope="col">🧑<span class="visually-hidden">User</span></th>
+                    <th scope="col">Message</th>
+                    </tr>
+                </thead>
+                <tbody id="messages-table-body">
+                </tbody>
+            </table>
+        </div>
+
+    </div>
+
+</div>
+
+<script>
+    let websocket = null;
+    let connected = false;
+
+    const qchatTelegramSettingsElement = document.getElementById("qtelegramchat-settings");
+    const qchatTelegramElement = document.getElementById("qtelegramchat");
+
+    const userElement = document.getElementById("userId");
+
+    const instance = window.location.host;
+    const ssl = window.location.protocol.startsWith("https");
+    const http_protocol = ssl ? "https" : "http";
+    const ws_protocol = ssl ? "wss" : "ws";
+    const userAgent = window.navigator.userAgent;
+
+    const textMessageElement = document.getElementById("messageText");
+    const qchatTableBodyElement = document.getElementById("messages-table-body");
+
+    const timeFormatter = new Intl.DateTimeFormat("fr-FR", {
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: false
+    });
+
+    const clearMessages = () =>{
+        while (qchatTableBodyElement.firstChild) {
+            qchatTableBodyElement.removeChild(qchatTableBodyElement.firstChild);
+        }
+    }
+
+    const displayMessage = (timestamp, messageType, author, message, rowClasses) => {
+        // received timestamp is in seconds.
+        const messageDate = new Date(timestamp * 1000);
+
+        const rowElement = document.createElement("tr");
+        rowElement.classList.add(rowClasses);
+
+        [
+            timeFormatter.format(messageDate),
+            messageType,
+            author,
+            message
+        ].forEach((text) => {
+            const cell = document.createElement("td");
+            cell.innerText = text;
+            rowElement.appendChild(cell);
+        });
+
+        qchatTableBodyElement.prepend(rowElement);
+    }
+
+    const displayAdminMessage = (message) => {
+        displayMessage(Math.floor(Date.now() / 1000), "🛠️", "Admin", message, "table-warning");
+    }
+
+    const setFormEnabled = (enabled) => {
+        userElement.disabled = enabled;
+        textMessageElement.disabled = !enabled;
+        document.getElementById("sendButton").disabled = !enabled;
+        document.getElementById("connectButton").innerText = enabled ? "Disconnect" : "Connect";
+    }
+
+    const onConnectButtonClick = (event) => {
+        if (connected) {
+            websocket.close();
+            event.preventDefault();
+            return;
+        }
+
+        if (!userElement.value) {
+            alert("User field must be filled");
+            return;
+        }
+
+        const ws_url = `${ws_protocol}://${instance}/telegram/ws`;
+        websocket = new WebSocket(ws_url);
+
+        websocket.onopen = (event) => {
+            clearMessages();
+            displayAdminMessage(`Connected to QChat telegram as user ${userElement.value}`);
+            connected = true;
+            setFormEnabled(true);
+            qchatTelegramSettingsElement.classList.remove("show");
+            qchatTelegramElement.classList.add("show");
+        }
+
+        websocket.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+            const type = data.type;
+
+            switch (type) {
+                case "uncompliant":
+                    displayMessage(data.timestamp, "🛠️", "Admin",`Uncompliant message: ${data.reason}`, "table-warning");
+                    break;
+                case "text":
+                    displayMessage(data.timestamp, "💬", data.author, data.text);
+                    break;
+                case "image":
+                    displayMessage(data.timestamp, "🖼️", data.author, `${data.author} sent an image`, "table-info");
+                    break;
+                default:
+                    displayAdminMessage(`Unknown message received: ${data}`);
+            }
+        };
+
+        websocket.onerror = (error) => {
+            displayAdminMessage(`Websocket error ${JSON.stringify(error)}`);
+            console.log("Websocket error", error);
+        };
+
+        websocket.onclose = (event) => {
+            connected = false;
+            displayAdminMessage("Disconnected from websocket");
+            setFormEnabled(false);
+            document.title = "💬 QChat";
+        }
+
+        event.preventDefault();
+    }
+
+    const sendMessage = (event) => {
+        if (!connected) {
+            displayAdminMessage("Not connected to websocket");
+            event.preventDefault();
+            return;
+        }
+
+        if (!textMessageElement.value) {
+            displayAdminMessage("Impossible: message must be set !");
+            event.preventDefault();
+            return;
+        }
+
+        websocket.send(JSON.stringify({type: "text", text: textMessageElement.value, author: userElement.value}));
+
+        textMessageElement.value = "";
+        event.preventDefault();
+    }
+
+</script>
+
+</body>
+</html>

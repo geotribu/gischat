@@ -22,6 +22,7 @@ from starlette.websockets import WebSocketDisconnect
 from gischat.dispatchers import (
     MatrixDispatcher,
     RedisDispatcher,
+    TelegramDispatcher,
     forward_message_to_matrix_channel,
     get_redis_channel_key,
 )
@@ -34,6 +35,7 @@ from gischat.env import (
     REDIS_HOST,
     REDIS_PORT,
     REDIS_URL,
+    TELEGRAM_CHAT_ENABLED,
 )
 from gischat.logging import logger
 from gischat.models import (
@@ -71,7 +73,7 @@ if os.getenv("SENTRY_DSN", None):
 
 
 redis_dispatcher = RedisDispatcher.instance()
-
+telegram_dispatcher = TelegramDispatcher.instance()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -100,6 +102,10 @@ async def lifespan(app: FastAPI):
     # register redis listener
     listener_task = asyncio.create_task(redis_listener(app))
 
+    if TELEGRAM_CHAT_ENABLED:
+        logger.info("✉️ Starting Telegram dispatcher...")
+        await telegram_dispatcher.start()
+
     # let the app run
     yield
 
@@ -110,6 +116,10 @@ async def lifespan(app: FastAPI):
     await app.state.redis_pub.aclose()
     await app.state.redis_sub.aclose()
     redis_connection.close()
+
+    if TELEGRAM_CHAT_ENABLED:
+        await telegram_dispatcher.stop()
+
     logger.info("👋 Lifespan shutdown done.")
 
 
@@ -552,5 +562,51 @@ if MATRIX_CHAT_ENABLED:
             logger.info("❌ Matrix websocket client disconnected.")
             await matrix_dispatcher.remove_websocket(request_id, websocket)
 
+
+# endregion
+
+# region telegram
+
+if TELEGRAM_CHAT_ENABLED:
+
+    @app.get("/telegram", response_class=HTMLResponse)
+    async def get_telegram_ws_page(request: Request):
+        return templates.TemplateResponse(
+            request=request,
+            name="qtelegramchat.html",
+        )
+
+    @app.websocket("/telegram/ws")
+    async def telegram_websocket_endpoint(websocket: WebSocket) -> None:
+
+        try:
+            await telegram_dispatcher.connect_websocket(websocket)
+            logger.info("🤝 New websocket client joined telegram channel")
+
+            while True:
+                payload = await websocket.receive_json()
+
+                try:
+                    message = QChatMessageModel(**payload)
+
+                    # text message
+                    if message.type == QChatMessageTypeEnum.TEXT:
+                        message = QChatTextMessage(**payload)
+
+                        logger.info(
+                            f"✉️ [telegram]: ({message.author}): '{message.text}'"
+                        )
+                        await telegram_dispatcher.send_telegram_message(message.author, message.text)
+                        await telegram_dispatcher.broadcast_to_websockets(json.dumps(message.model_dump(mode="json")))
+
+                except ValidationError as e:
+                    message = QChatUncompliantMessage(reason=str(e))
+                    logger.error(f"❌ Uncompliant message shared: {e}")
+                    await websocket.send_json(jsonable_encoder(message))
+
+        except WebSocketDisconnect:
+
+            logger.info("❌ Telegram websocket client disconnected.")
+            telegram_dispatcher.disconnect_websocket(websocket)
 
 # endregion
