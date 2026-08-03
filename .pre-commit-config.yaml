@@ -36,7 +36,7 @@ repos:
           - "--py311-plus"
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: "v0.15.20"
+    rev: "v0.16.1"
     hooks:
       - id: ruff-check
         args:
@@ -57,7 +57,7 @@ repos:
         args: ["-c", "pyproject.toml"]
 
   - repo: https://github.com/hadolint/hadolint
-    rev: v2.14.0
+    rev: v2.15.1
     hooks:
       - id: hadolint-docker
 
