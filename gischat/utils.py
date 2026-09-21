@@ -10,6 +10,8 @@ QCHAT_CHEATCODES = [
     "qgisprolicense",
     "wizz",
     "spaceandtime",
+    "vAIsectomy",
+    "jeanclaude",
 ]
 
 
