@@ -12,6 +12,7 @@ QCHAT_CHEATCODES = [
     "spaceandtime",
     "vAIsectomy",
     "jeanclaude",
+    "galette-saucisse",
 ]
 
 
