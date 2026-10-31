@@ -1,6 +1,7 @@
 import pytest
 from fastapi.testclient import TestClient
 
+from gischat.app import QCHAT_CHEATCODES
 from gischat.models import QChatMessageTypeEnum
 from gischat.utils import get_uv_version
 from tests import (
@@ -63,6 +64,15 @@ def test_get_rules(client: TestClient):
     assert response.json()["max_image_size"] == int(MAX_IMAGE_SIZE)
     assert response.json()["max_geojson_features"] == int(MAX_GEOJSON_FEATURES)
 
+
+def test_get_cheats(client: TestClient):
+    response = client.get("/cheats")
+
+    assert response.status_code == 200
+    assert isinstance(response.json(), list)
+
+    for cheatcode in QCHAT_CHEATCODES:
+        assert cheatcode in response.json()
 
 @pytest.mark.parametrize("channel", get_test_channels())
 def test_get_users(client: TestClient, channel: str):
