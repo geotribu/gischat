@@ -234,6 +234,11 @@ async def get_rules() -> RulesModel:
     )
 
 
+@app.get("/cheats", response_model=list[str])
+async def get_cheats() -> list[str]:
+    return QCHAT_CHEATCODES
+
+
 @app.get("/channel/{channel}/users")
 async def get_connected_users(channel: str) -> list[str]:
     if channel not in redis_dispatcher.channels:
