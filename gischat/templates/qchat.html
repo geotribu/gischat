@@ -167,6 +167,8 @@
         hour12: false
     });
 
+    const cheatCodes = [];
+
     const clearMessages = () => {
         while (qchatTableBodyElement.firstChild) {
             qchatTableBodyElement.removeChild(qchatTableBodyElement.firstChild);
@@ -244,6 +246,13 @@
         const ws_url = `${ws_protocol}://${instance}/channel/${channelDropdown.value}/ws`;
         const user = authorElement.value;
 
+        // clear existing cheat codes before fetching new ones
+        cheatCodes.length = 0;
+        const protocol = ssl ? "https" : "http";
+        fetch(`${protocol}://${instance}/cheats`)
+            .then(response => response.json())
+            .then(data => data.forEach(cheatCode => cheatCodes.push(cheatCode)));
+
         websocket = new WebSocket(ws_url);
 
         websocket.onopen = (event) => {
@@ -266,6 +275,10 @@
                     displayMessage(data.timestamp, "🛠️", "Admin",`Uncompliant message: ${data.reason}`, "table-warning");
                     break;
                 case "text":
+                    if (cheatCodes.includes(data.text)) {
+                        console.log("Cheat code received, not displaying...");
+                        break;
+                    }
                     displayMessage(data.timestamp, "💬", data.author, data.text);
                     break;
                 case "image":
